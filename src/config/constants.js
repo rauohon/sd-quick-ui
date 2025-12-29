@@ -1,0 +1,77 @@
+/**
+ * 애플리케이션 전역 상수 설정
+ */
+
+// ===== 이미지 저장 관련 =====
+export const MAX_IMAGES = 200 // IndexedDB에 저장할 최대 이미지 수
+export const MAX_IMAGES_IN_MEMORY = 30 // 메모리에 유지할 최대 이미지 수
+export const INITIAL_LOAD_COUNT = 30 // 앱 시작 시 로드할 이미지 수
+export const IMAGE_COMPRESSION_QUALITY = 0.9 // WebP 압축 품질 (0-1)
+
+// ===== 에러 처리 관련 =====
+export const MAX_CONSECUTIVE_ERRORS = 3 // 연속 에러 허용 횟수 (무한 모드)
+export const MAX_QUEUE_CONSECUTIVE_ERRORS = 3 // 연속 에러 허용 횟수 (큐 모드)
+
+// ===== 타임아웃 설정 (ms) =====
+export const GENERATION_TIMEOUT = 600000 // 이미지 생성 타임아웃 (10분)
+export const QUEUE_ITEM_TIMEOUT = 600000 // 큐 항목 생성 타임아웃 (10분)
+export const INFINITE_MODE_INITIAL_WAIT = 600000 // 무한 모드 초기 대기 타임아웃 (10분)
+
+// ===== Debounce 시간 (ms) =====
+export const DEBOUNCE_TEXT_INPUT = 1000 // 텍스트 입력 debounce (프롬프트 등)
+export const DEBOUNCE_NUMBER_INPUT = 500 // 숫자 입력 debounce (steps, cfg 등)
+export const SLOT_SAVE_FEEDBACK_INTERVAL = 10000 // 슬롯 저장 피드백 최소 간격 (10초)
+
+// ===== Progress 폴링 관련 =====
+export const PROGRESS_POLL_INTERVAL = 500 // Progress 폴링 간격 (ms)
+export const MAX_IDLE_COUNT = 6 // Idle 카운트 최대값 (6 * 500ms = 3초)
+
+// ===== API 관련 =====
+export const API_CHECK_THROTTLE = 3000 // API 상태 체크 throttle (3초)
+export const API_TIMEOUT = 5000 // API 요청 타임아웃 (5초)
+
+// ===== 큐 처리 관련 =====
+export const QUEUE_SUCCESS_DELAY = 1000 // 큐 성공 후 대기 시간 (1초)
+export const QUEUE_FAILURE_DELAY = 3000 // 큐 실패 후 대기 시간 (3초)
+
+// ===== LocalStorage 관련 =====
+export const MAX_HISTORY_SIZE = 15 // 히스토리 최대 크기
+export const MAX_STORAGE_SIZE_MB = 4 // localStorage 최대 크기 (MB)
+
+// ===== Seed 관련 =====
+export const SEED_MAX = 4294967295 // 2^32 - 1
+
+// ===== 파라미터 검증 범위 =====
+export const PARAM_RANGES = {
+  width: { min: 64, max: 2048, default: 512, step: 64 },
+  height: { min: 64, max: 2048, default: 512, step: 64 },
+  steps: { min: 1, max: 150, default: 20 },
+  cfgScale: { min: 1, max: 30, default: 7 },
+  hrSteps: { min: 0, max: 150, default: 10 },
+  denoisingStrength: { min: 0, max: 1, default: 0.7 },
+  hrUpscale: { min: 1, max: 4, default: 2 },
+  batchCount: { min: 1, max: 100, default: 1 },
+  batchSize: { min: 1, max: 8, default: 1 },
+  adConfidence: { min: 0, max: 1, default: 0.3 },
+  adDilateErode: { min: -128, max: 128, default: 4 },
+  adInpaintDenoising: { min: 0, max: 1, default: 0.4 },
+  adSteps: { min: 1, max: 150, default: 28 }
+}
+
+// ===== Toast 알림 시간 (ms) =====
+export const TOAST_DURATION = {
+  success: 2000,
+  info: 3000,
+  warning: 5000,
+  error: 8000
+}
+
+// ===== 알림 설정 =====
+export const NOTIFICATION_TYPES = {
+  NONE: 'none',
+  SOUND: 'sound',
+  BROWSER: 'browser',
+  BOTH: 'both'
+}
+
+export const DEFAULT_NOTIFICATION_VOLUME = 0.5 // 0.0 ~ 1.0
