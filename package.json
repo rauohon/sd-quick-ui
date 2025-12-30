@@ -7,7 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "i18n:verify": "node scripts/verify-translations.js",
+    "i18n:validate-usage": "node scripts/validate-translation-usage.js",
+    "i18n:validate-params": "node scripts/validate-translation-params.js",
+    "i18n:validate": "npm run i18n:verify && npm run i18n:validate-usage && npm run i18n:validate-params",
+    "test:i18n": "npm run i18n:validate"
   },
   "repository": {
     "type": "git",
