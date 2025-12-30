@@ -7,7 +7,7 @@
         @click="$emit('toggle-panel')"
         :title="isExpanded ? '패널 숨기기' : '패널 보이기'"
       >
-        {{ isExpanded ? '▼' : '▶' }}
+        {{ isExpanded ? '▲' : '▼' }}
       </button>
     </div>
     <div
@@ -153,8 +153,8 @@ async function handleDrop(e) {
 }
 
 .preview-image {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   cursor: pointer;
   transition: transform 0.2s;

@@ -66,6 +66,31 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
   let isInfiniteLoopRunning = false
 
   /**
+   * 페이지 로드 시 백엔드에 진행 중인 작업이 있는지 체크
+   * 있으면 자동으로 polling 시작
+   */
+  async function checkOngoingGeneration() {
+    try {
+      const response = await fetch(`${API_URL}/sdapi/v1/progress`)
+      if (response.ok) {
+        const data = await response.json()
+        const progressPercentage = data.progress * 100
+        const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
+
+        if (hasActiveJob) {
+          isGenerating.value = true
+          progress.value = progressPercentage
+          progressState.value = '이어서 진행 중...'
+          startProgressPolling()
+          showToast?.('🔄 진행 중인 생성 작업을 감지했습니다', 'info')
+        }
+      }
+    } catch (error) {
+      // 에러가 나도 무시 (API가 없을 수 있음)
+    }
+  }
+
+  /**
    * 진행 상태 폴링 시작
    */
   let idleCount = 0
@@ -74,7 +99,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     // CRITICAL: 중복 실행 방지 (race condition 방지)
     // 이미 폴링이 실행 중이면 중단
     if (progressInterval.value) {
-      console.log('Progress polling already running, skipping duplicate start')
       return
     }
 
@@ -96,7 +120,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
             // Stop polling after idle for too long
             if (idleCount >= MAX_IDLE_COUNT) {
-              console.log('No active generation detected, stopping progress polling')
               stopProgressPolling()
               return
             }
@@ -176,8 +199,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     const wasInfiniteMode = isInfiniteMode.value
 
     try {
-      console.log('Interrupting generation at:', `${API_URL}/sdapi/v1/interrupt`)
-
       // 중단 플래그 설정
       wasInterrupted.value = true
 
@@ -189,7 +210,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
       // 혹시 모를 상황 대비 - 루프 플래그도 강제 리셋
       if (isInfiniteLoopRunning) {
-        console.warn('Force stopping infinite loop flag')
         isInfiniteLoopRunning = false
       }
 
@@ -200,15 +220,11 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
         },
       })
 
-      console.log('Interrupt response status:', response.status)
-
       if (!response.ok) {
-        console.warn(`Interrupt API returned status: ${response.status}`)
         // API가 실패해도 계속 진행 (프론트엔드 상태는 정리)
       }
 
-      const result = await response.text()
-      console.log('Interrupt result:', result)
+      await response.text()
 
       // 프론트엔드 상태 강제 정리
       stopProgressPolling()
@@ -238,7 +254,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
       // 혹시 모를 상황 대비 - 루프 플래그도 강제 리셋
       if (isInfiniteLoopRunning) {
-        console.warn('Force stopping infinite loop flag (error case)')
         isInfiniteLoopRunning = false
       }
 
@@ -303,7 +318,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     if (isInfiniteMode.value) {
       // 이미 무한 루프가 실행 중이면 중복 실행 방지 (race condition 방지)
       if (isInfiniteLoopRunning) {
-        console.warn('Infinite loop is already running, skipping duplicate start')
         isInfiniteMode.value = false // 플래그도 원복
         showToast('⚠️ 무한 모드가 이미 실행 중입니다', 'warning')
         return
@@ -341,15 +355,11 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     // 플래그는 이미 toggleInfiniteMode에서 설정되었음 (race condition 방지)
     // 여기서는 다시 체크만 함
     if (!isInfiniteLoopRunning) {
-      console.error('isInfiniteLoopRunning should be true here!')
       isInfiniteLoopRunning = true // 안전장치
     }
 
-    console.log('Starting infinite generation loop')
-
     // 현재 생성 중이면 먼저 완료될 때까지 대기
     if (isGenerating.value) {
-      console.log('Waiting for current generation to complete before starting infinite mode')
       let waitTime = 0
       while (isGenerating.value && isInfiniteMode.value && waitTime < INFINITE_MODE_INITIAL_WAIT) {
         await sleep(500)
@@ -357,7 +367,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       }
 
       if (waitTime >= INFINITE_MODE_INITIAL_WAIT) {
-        console.error('Initial generation timeout')
         showToast('⚠️ 기존 생성 대기 시간 초과. 무한 모드 시작 취소.', 'error')
         isInfiniteMode.value = false
         isInfiniteLoopRunning = false
@@ -383,11 +392,9 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
           const range = params.seedVariationRange.value
           const variation = Math.floor(Math.random() * (range * 2 + 1)) - range
           params.seed.value = Math.max(0, Math.min(SEED_MAX, baseSeed + variation))
-          console.log(`Infinite mode: Using seed variation ${params.seed.value} (base: ${baseSeed}, variation: ${variation >= 0 ? '+' : ''}${variation})`)
         } else {
           // 완전 랜덤
           params.seed.value = -1
-          console.log('Infinite mode: Using random seed')
         }
 
         await generateImage()
@@ -427,7 +434,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       // 무한 모드 종료 시 seed 복원
       params.seed.value = baseSeed
       isInfiniteLoopRunning = false
-      console.log('Infinite generation loop stopped')
     }
   }
 
@@ -483,7 +489,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     // 파라미터 보정 알림 (주요 파라미터만)
     if (corrections.length > 0) {
       const correctionMsg = `⚙️ 파라미터 자동 보정됨: ${corrections.join(', ')}`
-      console.log(correctionMsg)
       showToast(correctionMsg, 'warning')
     }
 
@@ -513,6 +518,9 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       sd_model_name: selectedModel?.value || '',
       adetailers: cloneADetailers(adetailers.value),
     }
+    
+    // Update lastUsedParams immediately to clear "changed" indicator
+    lastUsedParams.value = usedParams
 
     try {
       // Start progress polling
@@ -594,7 +602,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
             actualSeed = info.seed
           }
         } catch (e) {
-          console.warn('Failed to parse info for actual seed:', e)
+          // Failed to parse info
         }
 
         // Add actual seed to params
@@ -617,12 +625,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
           const result = await saveImage(newImage)
           newImage.id = result.id  // IndexedDB ID 추가
 
-          if (isInfiniteMode.value) {
-            console.log(`무한 모드: 이미지 저장 완료 (ID: ${result.id}, ${infiniteCount.value + 1}장)${wasInterrupted.value ? ' [중단됨]' : ''}`)
-          } else {
-            console.log(`이미지가 IndexedDB에 저장되었습니다 (ID: ${result.id})${wasInterrupted.value ? ' [중단됨]' : ''}`)
-          }
-
           // 200장 초과로 삭제된 이미지가 있으면 알림
           if (result.deletedCount > 0) {
             showToast(`💾 200장 초과로 오래된 이미지 ${result.deletedCount}장이 자동 삭제되었습니다 (즐겨찾기 제외)`, 'info')
@@ -637,12 +639,9 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
         // Add to memory (UI will update immediately)
         generatedImages.value.unshift(newImage)
-        console.log(`✅ 히스토리에 추가 완료 (총 ${generatedImages.value.length}개, favorite: ${newImage.favorite}, interrupted: ${newImage.interrupted})`)
 
         // Keep only last N images in memory (for performance and memory optimization)
         if (generatedImages.value.length > MAX_IMAGES_IN_MEMORY) {
-          const excess = generatedImages.value.length - MAX_IMAGES_IN_MEMORY
-          console.log(`메모리 정리: ${excess}개 이미지 제거 (${MAX_IMAGES_IN_MEMORY}개 유지)`)
           generatedImages.value = generatedImages.value.slice(0, MAX_IMAGES_IN_MEMORY)
         }
 
@@ -736,5 +735,6 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     toggleInfiniteMode,
     startProgressPolling,
     stopProgressPolling,
+    checkOngoingGeneration,
   }
 }

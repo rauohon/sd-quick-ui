@@ -5,7 +5,7 @@
 // ===== 이미지 저장 관련 =====
 export const MAX_IMAGES = 200 // IndexedDB에 저장할 최대 이미지 수
 export const MAX_IMAGES_IN_MEMORY = 30 // 메모리에 유지할 최대 이미지 수
-export const INITIAL_LOAD_COUNT = 30 // 앱 시작 시 로드할 이미지 수
+export const INITIAL_LOAD_COUNT = 200 // 앱 시작 시 로드할 이미지 수
 export const IMAGE_COMPRESSION_QUALITY = 0.9 // WebP 압축 품질 (0-1)
 
 // ===== 에러 처리 관련 =====

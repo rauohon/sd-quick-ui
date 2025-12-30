@@ -439,6 +439,7 @@ onUnmounted(() => {
 
 .image-area {
   flex: 1;
+  transition: grid-template-columns 0.3s ease;
   display: grid;
   grid-template-columns: 1fr 420px;
   gap: 16px;
@@ -1332,7 +1333,7 @@ onUnmounted(() => {
 }
 
 .history-item {
-  aspect-ratio: 1;
+  height: 130px;
   border-radius: 6px;
   overflow: hidden;
   border: 2px solid transparent;
@@ -1636,5 +1637,56 @@ onUnmounted(() => {
   padding: 20px;
   text-align: center;
   color: #999;
+}
+
+/* History panel collapsed state - Horizontal collapse */
+.image-area.history-collapsed {
+  grid-template-columns: 1fr 40px;
+}
+
+.image-area.history-collapsed .history-panel {
+  width: 40px;
+}
+
+/* FIXED: Only affect history panel's header, not preview panel */
+.image-area.history-collapsed .history-panel .panel-header {
+  flex-direction: column;
+  padding: 12px 8px;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-area.history-collapsed .history-panel .panel-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  order: 2;
+}
+
+.image-area.history-collapsed .history-panel .panel-header > div {
+  order: 1;
+}
+
+.image-area.history-collapsed .history-panel .toggle-content-btn,
+.image-area.history-collapsed .history-panel .filter-favorite-btn,
+.image-area.history-collapsed .history-panel .batch-btn,
+.image-area.history-collapsed .history-panel .clear-btn {
+  display: none;
+}
+
+.image-area.history-collapsed .history-panel .history-content,
+.image-area.history-collapsed .history-panel .panel-footer {
+  display: none;
+}
+
+/* History content collapsed state - Vertical collapse (NEW) */
+.history-panel.content-collapsed .history-content {
+  display: none;
+}
+
+.history-panel.content-collapsed .panel-footer {
+  display: none;
 }
 </style>

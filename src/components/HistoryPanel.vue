@@ -1,5 +1,5 @@
 <template>
-  <div class="history-panel">
+  <div class="history-panel" :class="{ 'content-collapsed': isContentCollapsed }">
     <div class="panel-header">
       <h3 class="panel-title">
         <span>히스토리</span>
@@ -28,11 +28,18 @@
         </template>
         <template v-else>
           <button
+            class="toggle-content-btn"
+            @click="$emit('toggle-content')"
+            :title="isContentCollapsed ? '내용 펼치기' : '내용 접기'"
+          >
+            {{ isContentCollapsed ? '▼' : '▲' }}
+          </button>
+          <button
             class="toggle-panel-btn"
             @click="$emit('toggle-panel')"
             :title="isExpanded ? '패널 숨기기' : '패널 보이기'"
           >
-            {{ isExpanded ? '▼' : '▶' }}
+            {{ isExpanded ? '◀' : '▶' }}
           </button>
           <button
             class="filter-favorite-btn"
@@ -57,7 +64,7 @@
         </template>
       </div>
     </div>
-    <div v-if="isExpanded" class="history-content">
+    <div v-if="isExpanded && !isContentCollapsed" class="history-content">
       <slot></slot>
       <div v-if="isEmpty && !showFavoriteOnly" class="history-empty">
         생성된 이미지가 없습니다
@@ -69,7 +76,7 @@
         즐겨찾기한 이미지가 없습니다
       </div>
     </div>
-    <div v-if="isExpanded" class="panel-footer center">
+    <div v-if="isExpanded && !isContentCollapsed" class="panel-footer center">
       <span class="image-count">{{ imageCount }}/200</span>
       <button class="footer-btn" @click="$emit('add-sample')">
         + 샘플 추가
@@ -83,6 +90,10 @@ defineProps({
   isExpanded: {
     type: Boolean,
     default: true
+  },
+  isContentCollapsed: {
+    type: Boolean,
+    default: false
   },
   showFavoriteOnly: {
     type: Boolean,
@@ -116,6 +127,7 @@ defineProps({
 
 defineEmits([
   'toggle-panel',
+  'toggle-content',
   'toggle-favorite-filter',
   'toggle-selection-mode',
   'select-all',
@@ -161,7 +173,27 @@ defineEmits([
   font-weight: 600;
 }
 
-.toggle-panel-btn,
+.toggle-content-btn,
+.toggle-panel-btn {
+  padding: 4px 8px;
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.toggle-content-btn {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.toggle-content-btn:hover {
+  background: #bfdbfe;
+}
+
 .filter-favorite-btn,
 .batch-btn,
 .clear-btn {
@@ -176,7 +208,10 @@ defineEmits([
   color: #374151;
 }
 
-.toggle-panel-btn:hover,
+.toggle-panel-btn:hover {
+  background: #d1d5db;
+}
+
 .filter-favorite-btn:hover,
 .batch-btn:hover,
 .clear-btn:hover {
