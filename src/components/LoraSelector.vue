@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mockLoras } from '../mocks/lorasMock'
 
+const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
 const USE_MOCK_DATA = false // 개발 모드에서는 Mock 사용
 const CIVITAI_API_URL = 'https://civitai.com/api/v1'
@@ -97,7 +99,7 @@ async function fetchLoras(force = false) {
     hasLoaded.value = true
   } catch (error) {
     console.error('Failed to fetch LoRAs:', error)
-    props.showToast?.('LoRA 목록을 불러오지 못했습니다', 'error')
+    props.showToast?.(t('lora.loadFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -206,10 +208,10 @@ async function refreshLoras() {
 
     // Then fetch the updated list
     await fetchLoras(true)
-    props.showToast?.('LoRA 목록이 갱신되었습니다', 'success')
+    props.showToast?.(t('lora.refreshed'), 'success')
   } catch (error) {
     console.error('Failed to refresh LoRAs:', error)
-    props.showToast?.('LoRA 목록 갱신 실패', 'error')
+    props.showToast?.(t('lora.refreshFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -315,7 +317,7 @@ function addLoraWithTriggers(lora, event) {
 
   // Emit to parent to add to prompt
   emit('selectLora', promptText)
-  props.showToast?.(`프롬프트에 추가됨: ${lora.alias || lora.name}`, 'success')
+  props.showToast?.(t('lora.addedToPrompt', { name: lora.alias || lora.name }), 'success')
 
   // Close modal
   emit('close')

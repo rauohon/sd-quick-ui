@@ -31,6 +31,7 @@ export default {
     sort: 'Sort',
     all: 'All',
     none: 'None',
+    noSearchResults: 'No search results',
     yes: 'Yes',
     no: 'No',
 
@@ -83,7 +84,8 @@ export default {
     refreshing: 'Refreshing LoRA list...',
     refreshed: 'LoRA list refreshed',
     refreshFailed: 'Failed to refresh LoRA list',
-    loadFailed: 'Failed to load LoRA list'
+    loadFailed: 'Failed to load LoRA list',
+    addedToPrompt: 'Added to prompt: {name}'
   },
 
   // Bookmark

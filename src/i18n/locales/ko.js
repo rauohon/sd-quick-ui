@@ -31,6 +31,7 @@ export default {
     sort: '정렬',
     all: '전체',
     none: '없음',
+    noSearchResults: '검색 결과가 없습니다',
     yes: '예',
     no: '아니오',
 
@@ -83,7 +84,8 @@ export default {
     refreshing: 'LoRA 목록 새로고침 중...',
     refreshed: 'LoRA 목록이 갱신되었습니다',
     refreshFailed: 'LoRA 목록 갱신 실패',
-    loadFailed: 'LoRA 목록을 불러오지 못했습니다'
+    loadFailed: 'LoRA 목록을 불러오지 못했습니다',
+    addedToPrompt: '프롬프트에 추가됨: {name}'
   },
 
   // 북마크

@@ -163,7 +163,7 @@ function close() {
         </div>
 
         <div v-if="filteredPrompts.length === 0" class="no-prompts">
-          검색 결과가 없습니다
+          {{ $t('common.noSearchResults') }}
         </div>
       </div>
 
