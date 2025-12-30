@@ -31,7 +31,17 @@ export default {
     all: '전체',
     none: '없음',
     yes: '예',
-    no: '아니오'
+    no: '아니오',
+
+    // Confirm dialog
+    deleteImage: '이미지 삭제',
+    deleteImageConfirm: '이 이미지를 삭제하시겠습니까?',
+    deleteHistory: '히스토리 삭제',
+    deleteHistoryConfirm: '히스토리를 삭제하시겠습니까?',
+    deleteHistoryWithFavorites: '히스토리를 삭제하시겠습니까?\n\n즐겨찾기 {count}개는 유지됩니다.',
+    batchDelete: '이미지 일괄 삭제',
+    batchDeleteConfirm: '{count}개의 이미지를 삭제하시겠습니까?',
+    noSelectedImages: '선택된 이미지가 없습니다'
   },
 
   // 프롬프트 관련
@@ -132,6 +142,9 @@ export default {
     // Favorites
     addFavorite: '즐겨찾기',
     removeFavorite: '즐겨찾기 해제',
+    favoriteAdded: '⭐ 즐겨찾기에 추가되었습니다',
+    favoriteRemoved: '☆ 즐겨찾기가 해제되었습니다',
+    favoriteUpdateFailed: '즐겨찾기 업데이트 실패',
 
     // Time labels
     today: '오늘',
@@ -142,15 +155,19 @@ export default {
     copyParams: '파라미터 복사',
     paramsCopied: '파라미터가 복사되었습니다',
     download: '다운로드',
+    downloadStarted: '💾 이미지 다운로드 시작',
     downloadMultiple: '{count}개 이미지 다운로드 완료',
+    downloadComplete: '{count}개 이미지 다운로드 완료',
     sendToImg2Img: 'img2img로 보내기',
 
     // Messages
-    imageDeleted: '이미지가 삭제되었습니다',
-    imagesDeleted: '{count}개 이미지가 삭제되었습니다',
-    deletedWithProtected: '{deletedCount}개 삭제 완료 (즐겨찾기 {favoriteCount}개 보호됨)',
+    imageDeleted: '🗑️ 이미지가 삭제되었습니다',
+    imagesDeleted: '🗑️ {count}개 이미지가 삭제되었습니다',
+    deletedWithProtected: '✅ {deletedCount}개 삭제 완료 (즐겨찾기 {favoriteCount}개 보호됨)',
+    deletedCount: '✅ {count}개 이미지 삭제 완료',
     favoriteToggled: '즐겨찾기가 토글되었습니다',
-    favoriteRemoved: '즐겨찾기가 해제되었습니다',
+    batchDeleteFailed: '일괄 삭제 실패',
+    batchDownloadFailed: '일괄 다운로드 실패',
 
     // Migration
     migrating: '{count}개 이미지 마이그레이션 중...',
@@ -312,7 +329,8 @@ export default {
     },
     warning: {
       unsavedChanges: '저장하지 않은 변경사항이 있습니다',
-      confirmLeave: '페이지를 떠나시겠습니까?'
+      confirmLeave: '페이지를 떠나시겠습니까?',
+      migrationFailedContinue: '⚠️ 데이터 마이그레이션 실패 (계속 진행)'
     }
   },
 

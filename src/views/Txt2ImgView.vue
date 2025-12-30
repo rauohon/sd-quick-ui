@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, toRaw, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useImageGeneration } from '../composables/useImageGeneration'
 import { useSlotManagement } from '../composables/useSlotManagement'
 import { useLocalStorage } from '../composables/useLocalStorage'
@@ -44,6 +45,9 @@ import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useModals } from '../composables/useModals'
 import { useQueueProcessor } from '../composables/useQueueProcessor'
+
+// i18n
+const { t } = useI18n()
 
 // Props
 const props = defineProps({
@@ -363,7 +367,7 @@ const historyRefs = {
 const historyComposables = { indexedDB, localStorage, slotManagement }
 const historyCallbacks = { showToast: props.showToast, showConfirm: props.showConfirm }
 const historyConstants = { INITIAL_LOAD_COUNT, SLOT_COUNT }
-const history = useHistory(historyRefs, historyComposables, historyCallbacks, historyConstants)
+const history = useHistory(historyRefs, historyComposables, historyCallbacks, historyConstants, t)
 const {
   showFavoriteOnly,
   isSelectionMode,

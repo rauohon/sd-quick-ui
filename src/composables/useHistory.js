@@ -13,9 +13,10 @@ const JSZip = window.JSZip
  * @param {Object} composables - indexedDB, localStorage composables
  * @param {Object} callbacks - showToast, showConfirm 콜백
  * @param {Object} constants - INITIAL_LOAD_COUNT 등 상수
+ * @param {Function} t - i18n translation function
  * @returns {Object} 히스토리 관련 상태와 함수들
  */
-export function useHistory(refs, composables, callbacks, constants) {
+export function useHistory(refs, composables, callbacks, constants, t) {
   const {
     generatedImages,
     currentImage,
@@ -68,7 +69,7 @@ export function useHistory(refs, composables, callbacks, constants) {
       if (item.id) {
         await indexedDB.toggleFavorite(item.id)
         showToast?.(
-          isFavorite ? '⭐ 즐겨찾기에 추가되었습니다' : '☆ 즐겨찾기가 해제되었습니다',
+          isFavorite ? t('history.favoriteAdded') : t('history.favoriteRemoved'),
           'success'
         )
       }
@@ -76,7 +77,7 @@ export function useHistory(refs, composables, callbacks, constants) {
       console.error('즐겨찾기 토글 실패:', error)
       // Revert on error
       item.favorite = !item.favorite
-      showToast?.('즐겨찾기 업데이트 실패', 'error')
+      showToast?.(t('history.favoriteUpdateFailed'), 'error')
     }
   }
 
@@ -85,10 +86,10 @@ export function useHistory(refs, composables, callbacks, constants) {
    */
   async function deleteImage(item, index) {
     const confirmed = await showConfirm?.({
-      title: '이미지 삭제',
-      message: '이 이미지를 삭제하시겠습니까?',
-      confirmText: '삭제',
-      cancelText: '취소'
+      title: t('common.deleteImage'),
+      message: t('common.deleteImageConfirm'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel')
     })
 
     if (!confirmed) {
@@ -107,10 +108,10 @@ export function useHistory(refs, composables, callbacks, constants) {
         generatedImages.value.splice(itemIndex, 1)
       }
 
-      showToast?.('🗑️ 이미지가 삭제되었습니다', 'success')
+      showToast?.(t('history.imageDeleted'), 'success')
     } catch (error) {
       console.error('이미지 삭제 실패:', error)
-      showToast?.('이미지 삭제 실패', 'error')
+      showToast?.(t('history.deleteFailed'), 'error')
     }
   }
 
@@ -120,16 +121,16 @@ export function useHistory(refs, composables, callbacks, constants) {
   async function clearHistory() {
     const favoriteCount = generatedImages.value.filter(img => img.favorite).length
 
-    let confirmMessage = '히스토리를 삭제하시겠습니까?'
+    let confirmMessage = t('common.deleteHistoryConfirm')
     if (favoriteCount > 0) {
-      confirmMessage = `히스토리를 삭제하시겠습니까?\n\n즐겨찾기 ${favoriteCount}개는 유지됩니다.`
+      confirmMessage = t('common.deleteHistoryWithFavorites', { count: favoriteCount })
     }
 
     const confirmed = await showConfirm?.({
-      title: '히스토리 삭제',
+      title: t('common.deleteHistory'),
       message: confirmMessage,
-      confirmText: '삭제',
-      cancelText: '취소'
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel')
     })
 
     if (!confirmed) {
@@ -151,13 +152,13 @@ export function useHistory(refs, composables, callbacks, constants) {
       }
 
       if (favoriteCount > 0) {
-        showToast?.(`✅ ${deletedCount}개 삭제 완료 (즐겨찾기 ${favoriteCount}개 보호됨)`, 'success')
+        showToast?.(t('history.deletedWithProtected', { deletedCount, favoriteCount }), 'success')
       } else {
-        showToast?.(`✅ ${deletedCount}개 이미지 삭제 완료`, 'success')
+        showToast?.(t('history.deletedCount', { count: deletedCount }), 'success')
       }
     } catch (error) {
       console.error('히스토리 삭제 실패:', error)
-      showToast?.('히스토리 삭제 실패', 'error')
+      showToast?.(t('history.deleteFailed'), 'error')
     }
   }
 
@@ -190,10 +191,10 @@ export function useHistory(refs, composables, callbacks, constants) {
    */
   async function handleHistoryDelete(item) {
     const confirmed = await showConfirm?.({
-      title: '이미지 삭제',
-      message: '이 이미지를 삭제하시겠습니까?',
-      confirmText: '삭제',
-      cancelText: '취소'
+      title: t('common.deleteImage'),
+      message: t('common.deleteImageConfirm'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel')
     })
 
     if (!confirmed) {
@@ -216,7 +217,7 @@ export function useHistory(refs, composables, callbacks, constants) {
     link.href = item.image
     link.download = `sd-image-${item.timestamp || Date.now()}.png`
     link.click()
-    showToast?.('💾 이미지 다운로드 시작', 'success')
+    showToast?.(t('history.downloadStarted'), 'success')
   }
 
   /**
@@ -224,7 +225,7 @@ export function useHistory(refs, composables, callbacks, constants) {
    */
   async function handleHistoryDownloadMultiple(items) {
     if (items.length === 0) {
-      showToast?.('선택된 이미지가 없습니다', 'warning')
+      showToast?.(t('common.noSelectedImages'), 'warning')
       return
     }
 
@@ -248,10 +249,10 @@ export function useHistory(refs, composables, callbacks, constants) {
       link.download = `sd-images-${Date.now()}.zip`
       link.click()
 
-      showToast?.(`💾 ${items.length}개 이미지 다운로드 완료`, 'success')
+      showToast?.(t('history.downloadComplete', { count: items.length }), 'success')
     } catch (error) {
       console.error('일괄 다운로드 실패:', error)
-      showToast?.('일괄 다운로드 실패', 'error')
+      showToast?.(t('history.batchDownloadFailed'), 'error')
     }
   }
 
@@ -260,10 +261,10 @@ export function useHistory(refs, composables, callbacks, constants) {
    */
   async function handleHistoryDeleteMultiple(items) {
     const confirmed = await showConfirm?.({
-      title: '이미지 일괄 삭제',
-      message: `${items.length}개의 이미지를 삭제하시겠습니까?`,
-      confirmText: '삭제',
-      cancelText: '취소'
+      title: t('common.batchDelete'),
+      message: t('common.batchDeleteConfirm', { count: items.length }),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel')
     })
 
     if (!confirmed) {
@@ -282,10 +283,10 @@ export function useHistory(refs, composables, callbacks, constants) {
       const itemIds = new Set(items.map(item => item.id))
       generatedImages.value = generatedImages.value.filter(img => !itemIds.has(img.id))
 
-      showToast?.(`🗑️ ${items.length}개 이미지가 삭제되었습니다`, 'success')
+      showToast?.(t('history.imagesDeleted', { count: items.length }), 'success')
     } catch (error) {
       console.error('일괄 삭제 실패:', error)
-      showToast?.('일괄 삭제 실패', 'error')
+      showToast?.(t('history.batchDeleteFailed'), 'error')
     }
   }
 
@@ -333,7 +334,7 @@ export function useHistory(refs, composables, callbacks, constants) {
    */
   async function downloadSelectedImages() {
     if (selectedImages.value.size === 0) {
-      showToast?.('선택된 이미지가 없습니다', 'warning')
+      showToast?.(t('common.noSelectedImages'), 'warning')
       return
     }
 
@@ -370,14 +371,14 @@ export function useHistory(refs, composables, callbacks, constants) {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      showToast?.(`${selectedImages.value.size}개 이미지 다운로드 완료`, 'success')
+      showToast?.(t('history.downloadComplete', { count: selectedImages.value.size }), 'success')
 
       // Exit selection mode and clear selections
       isSelectionMode.value = false
       selectedImages.value.clear()
     } catch (error) {
       console.error('일괄 다운로드 실패:', error)
-      showToast?.('일괄 다운로드 실패', 'error')
+      showToast?.(t('history.batchDownloadFailed'), 'error')
     }
   }
 
@@ -426,10 +427,10 @@ export function useHistory(refs, composables, callbacks, constants) {
         window.localStorage.removeItem('sd-history')
         console.log('localStorage 정리 완료')
 
-        showToast?.('✅ 데이터가 IndexedDB로 마이그레이션되었습니다', 'success')
+        showToast?.(t('message.success.migrationComplete'), 'success')
       } catch (error) {
         console.error('마이그레이션 실패:', error)
-        showToast?.('⚠️ 데이터 마이그레이션 실패 (계속 진행)', 'warning')
+        showToast?.(t('message.warning.migrationFailedContinue'), 'warning')
       }
     }
 

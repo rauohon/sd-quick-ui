@@ -31,7 +31,17 @@ export default {
     all: 'All',
     none: 'None',
     yes: 'Yes',
-    no: 'No'
+    no: 'No',
+
+    // Confirm dialog
+    deleteImage: 'Delete Image',
+    deleteImageConfirm: 'Delete this image?',
+    deleteHistory: 'Delete History',
+    deleteHistoryConfirm: 'Delete history?',
+    deleteHistoryWithFavorites: 'Delete history?\n\n{count} favorites will be kept.',
+    batchDelete: 'Batch Delete Images',
+    batchDeleteConfirm: 'Delete {count} images?',
+    noSelectedImages: 'No images selected'
   },
 
   // Prompt related
@@ -132,6 +142,9 @@ export default {
     // Favorites
     addFavorite: 'Add to Favorites',
     removeFavorite: 'Remove from Favorites',
+    favoriteAdded: '⭐ Added to favorites',
+    favoriteRemoved: '☆ Removed from favorites',
+    favoriteUpdateFailed: 'Failed to update favorite',
 
     // Time labels
     today: 'Today',
@@ -142,15 +155,19 @@ export default {
     copyParams: 'Copy Parameters',
     paramsCopied: 'Parameters copied',
     download: 'Download',
+    downloadStarted: '💾 Download started',
     downloadMultiple: '{count} images downloaded',
+    downloadComplete: '{count} images downloaded',
     sendToImg2Img: 'Send to img2img',
 
     // Messages
-    imageDeleted: 'Image deleted',
-    imagesDeleted: '{count} images deleted',
-    deletedWithProtected: '{deletedCount} deleted ({favoriteCount} favorites protected)',
+    imageDeleted: '🗑️ Image deleted',
+    imagesDeleted: '🗑️ {count} images deleted',
+    deletedWithProtected: '✅ {deletedCount} deleted ({favoriteCount} favorites protected)',
+    deletedCount: '✅ {count} images deleted',
     favoriteToggled: 'Favorite toggled',
-    favoriteRemoved: 'Favorite removed',
+    batchDeleteFailed: 'Batch delete failed',
+    batchDownloadFailed: 'Batch download failed',
 
     // Migration
     migrating: 'Migrating {count} images...',
@@ -312,7 +329,8 @@ export default {
     },
     warning: {
       unsavedChanges: 'You have unsaved changes',
-      confirmLeave: 'Are you sure you want to leave?'
+      confirmLeave: 'Are you sure you want to leave?',
+      migrationFailedContinue: '⚠️ Data migration failed (continuing)'
     }
   },
 
