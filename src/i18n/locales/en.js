@@ -499,6 +499,14 @@ export default {
     skipNextBatch: 'Skip current image and go to next (batch of {batchSize})'
   },
 
+  // Params Panel
+  paramsPanel: {
+    title: 'Parameters',
+    editPrompts: '✏️ Edit',
+    editPromptsWithContent: '✏️ Edit ●',
+    promptSlots: 'Prompt Slots:'
+  },
+
   // Buttons
   button: {
     generate: 'Generate',

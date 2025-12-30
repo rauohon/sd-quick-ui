@@ -499,6 +499,14 @@ export default {
     skipNextBatch: '현재 이미지 건너뛰고 다음 (배치 {batchSize}개 중)'
   },
 
+  // 파라미터 패널
+  paramsPanel: {
+    title: '파라미터',
+    editPrompts: '✏️ 편집',
+    editPromptsWithContent: '✏️ 편집 ●',
+    promptSlots: '프롬프트 슬롯:'
+  },
+
   // 버튼
   button: {
     generate: '생성',

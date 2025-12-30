@@ -4,11 +4,11 @@
       <button
         class="toggle-advanced-btn"
         @click="$emit('toggle-panel')"
-        :title="isExpanded ? '패널 접기' : '패널 펼치기'"
+        :title="isExpanded ? $t('advancedPanel.foldPanel') : $t('advancedPanel.unfoldPanel')"
       >
         {{ isExpanded ? '◀' : '▶' }}
       </button>
-      <h3 class="panel-title">파라미터</h3>
+      <h3 class="panel-title">{{ $t('paramsPanel.title') }}</h3>
     </div>
 
     <div v-if="isExpanded" class="params-content">
@@ -128,7 +128,7 @@
               :disabled="isGenerating"
               :title="ad.prompt || ad.negativePrompt ? 'Edit prompts (Has content)' : 'Edit prompts'"
             >
-              {{ ad.prompt || ad.negativePrompt ? '✏️ 편집 ●' : '✏️ 편집' }}
+              {{ ad.prompt || ad.negativePrompt ? $t('paramsPanel.editPromptsWithContent') : $t('paramsPanel.editPrompts') }}
             </button>
           </div>
 
@@ -209,9 +209,8 @@
       </template>
     </div>
 
-    <!-- 슬롯 페이지네이션 -->
     <div v-if="isExpanded" class="panel-footer">
-      <span class="footer-label">프롬프트 슬롯:</span>
+      <span class="footer-label">{{ $t('paramsPanel.promptSlots') }}</span>
       <div class="footer-buttons">
         <button
           v-for="i in slotCount"
@@ -222,7 +221,7 @@
             'active': activeSlot === i - 1
           }"
           @click="$emit('select-slot', i - 1)"
-          :title="`Slot ${i}: 클릭하여 선택 (자동 저장됨)`"
+          :title="$t('prompt.slotClickToSelect', { i })"
         >
           {{ i }}
         </button>
