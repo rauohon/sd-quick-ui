@@ -68,8 +68,8 @@
             </div>
 
             <div class="png-preview-actions">
-              <button class="png-cancel-btn" @click="handleCancel">취소</button>
-              <button class="png-apply-btn" @click="handleApply">적용</button>
+              <button class="png-cancel-btn" @click="handleCancel">{{ $t('common.cancel') }}</button>
+              <button class="png-apply-btn" @click="handleApply">{{ $t('common.apply') }}</button>
             </div>
           </div>
         </Transition>
