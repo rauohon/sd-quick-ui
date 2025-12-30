@@ -466,6 +466,18 @@ export default {
     autoStopped: '⚠️ Infinite mode auto-stopped after {count} consecutive errors'
   },
 
+  // Advanced Panel
+  advancedPanel: {
+    title: 'Advanced Settings',
+    foldPanel: 'Fold panel',
+    unfoldPanel: 'Unfold panel',
+    selectModel: 'Please select...',
+    seedVariation: 'Seed Variation',
+    seedVariationTooltip: 'Random generation within seed ± this range in infinite mode',
+    reconnect: '🔄 Reconnect',
+    checking: 'Checking...'
+  },
+
   // Buttons
   button: {
     generate: 'Generate',

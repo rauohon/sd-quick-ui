@@ -466,6 +466,18 @@ export default {
     autoStopped: '⚠️ 연속 {count}회 에러 발생으로 무한 생성 모드가 자동 중단되었습니다'
   },
 
+  // 고급 설정 패널
+  advancedPanel: {
+    title: '고급 설정',
+    foldPanel: '패널 접기',
+    unfoldPanel: '패널 펼치기',
+    selectModel: '선택하세요...',
+    seedVariation: 'Seed 변동',
+    seedVariationTooltip: '무한 모드에서 seed ± 이 범위 내에서 랜덤 생성',
+    reconnect: '🔄 재연결',
+    checking: '확인 중...'
+  },
+
   // 버튼
   button: {
     generate: '생성',

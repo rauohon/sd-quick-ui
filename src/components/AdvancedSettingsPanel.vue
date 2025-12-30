@@ -4,17 +4,20 @@
       <button
         class="toggle-advanced-btn"
         @click="$emit('toggle-panel')"
-        :title="isExpanded ? '패널 접기' : '패널 펼치기'"
+        :title="isExpanded ? $t('advancedPanel.foldPanel') : $t('advancedPanel.unfoldPanel')"
       >
         {{ isExpanded ? '◀' : '▶' }}
       </button>
-      <h3 class="panel-title">고급 설정</h3>
-      <ApiStatusIndicator
-        v-if="isExpanded"
-        :connected="apiConnected"
-        :checking="apiChecking"
-        @check="$emit('check-api')"
-      />
+      <h3 class="panel-title">{{ $t('advancedPanel.title') }}</h3>
+      <div class="header-right">
+        <LanguageSwitcher v-if="isExpanded" />
+        <ApiStatusIndicator
+          v-if="isExpanded"
+          :connected="apiConnected"
+          :checking="apiChecking"
+          @check="$emit('check-api')"
+        />
+      </div>
     </div>
 
     <div v-if="isExpanded" class="advanced-content">
@@ -25,7 +28,7 @@
           @change="$emit('update:selectedModel', $event.target.value)"
           :disabled="isGenerating"
         >
-          <option value="">선택하세요...</option>
+          <option value="">{{ $t('advancedPanel.selectModel') }}</option>
           <option v-for="model in availableModels" :key="model.title" :value="model.title">
             {{ model.model_name }}
           </option>
@@ -149,7 +152,7 @@
       </div>
 
       <div v-if="seed !== -1" class="form-group horizontal">
-        <label>Seed 변동</label>
+        <label>{{ $t('advancedPanel.seedVariation') }}</label>
         <input
           type="number"
           :value="seedVariationRange"
@@ -157,7 +160,7 @@
           min="0"
           max="10000"
           :disabled="isGenerating"
-          title="무한 모드에서 seed ± 이 범위 내에서 랜덤 생성"
+          :title="$t('advancedPanel.seedVariationTooltip')"
         >
       </div>
 
@@ -218,9 +221,9 @@
         class="footer-btn"
         @click="$emit('check-api')"
         :disabled="apiChecking"
-        title="API 재연결"
+        :title="$t('api.checkConnection')"
       >
-        {{ apiChecking ? '확인 중...' : '🔄 재연결' }}
+        {{ apiChecking ? $t('advancedPanel.checking') : $t('advancedPanel.reconnect') }}
       </button>
     </div>
   </div>
@@ -229,6 +232,7 @@
 <script setup>
 import ApiStatusIndicator from './ApiStatusIndicator.vue'
 import LastParamsSection from './LastParamsSection.vue'
+import LanguageSwitcher from './LanguageSwitcher.vue'
 
 defineProps({
   isExpanded: {
@@ -375,6 +379,13 @@ defineEmits([
   padding: 8px 12px;
   background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .toggle-advanced-btn {
