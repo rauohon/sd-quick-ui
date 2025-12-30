@@ -24,6 +24,7 @@ const showEditDialog = ref(false)
 const showDeleteConfirm = ref(false)
 const editingPreset = ref(null)
 const deletingPreset = ref(null)
+const expandedPresetId = ref(null)
 
 // Form data
 const presetName = ref('')
@@ -114,8 +115,51 @@ function close() {
   emit('close')
 }
 
+// Helper to safely access params (handles both camelCase and snake_case)
+function getParam(params, camelKey, snakeKey, defaultValue = '') {
+  return params[camelKey] ?? params[snakeKey] ?? defaultValue
+}
+
 function getPresetSummary(params) {
-  return `${params.samplerName} | ${params.steps}steps | CFG${params.cfgScale} | ${params.width}x${params.height}`
+  const parts = []
+
+  // Core settings
+  const sampler = getParam(params, 'samplerName', 'sampler_name', 'Unknown')
+  const steps = getParam(params, 'steps', 'steps', 20)
+  const cfg = getParam(params, 'cfgScale', 'cfg_scale', 7)
+  const width = getParam(params, 'width', 'width', 512)
+  const height = getParam(params, 'height', 'height', 512)
+  const scheduler = getParam(params, 'scheduler', 'scheduler', '')
+
+  parts.push(`${sampler}${scheduler ? ` (${scheduler})` : ''} | ${steps}steps | CFG${cfg} | ${width}×${height}`)
+
+  // Batch settings
+  const batchCount = getParam(params, 'batchCount', 'batch_count', 1)
+  const batchSize = getParam(params, 'batchSize', 'batch_size', 1)
+  if (batchCount > 1 || batchSize > 1) {
+    parts.push(`Batch: ${batchCount}×${batchSize}=${batchCount * batchSize}img`)
+  }
+
+  // Hires Fix
+  const enableHr = getParam(params, 'enable_hr', 'enable_hr', false)
+  if (enableHr) {
+    const hrUpscaler = getParam(params, 'hrUpscaler', 'hr_upscaler', 'Latent')
+    const hrScale = getParam(params, 'hrUpscale', 'hr_scale', 2)
+    parts.push(`Hires: ${hrUpscaler} ${hrScale}x`)
+  }
+
+  // ADetailer
+  const adetailers = params.adetailers || []
+  const enabledCount = adetailers.filter(ad => ad.enable).length
+  if (enabledCount > 0) {
+    parts.push(`AD: ${enabledCount}`)
+  }
+
+  return parts.join(' | ')
+}
+
+function togglePresetDetails(presetId) {
+  expandedPresetId.value = expandedPresetId.value === presetId ? null : presetId
 }
 
 // Load presets on mount
@@ -168,7 +212,70 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        <div class="preset-summary">{{ getPresetSummary(preset.params) }}</div>
+        <div class="preset-summary" @click.stop="togglePresetDetails(preset.id)">
+          {{ getPresetSummary(preset.params) }}
+          <span class="expand-icon">{{ expandedPresetId === preset.id ? '▼' : '▶' }}</span>
+        </div>
+        <div v-if="expandedPresetId === preset.id" class="preset-details">
+          <div class="detail-row">
+            <span class="detail-label">Steps:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'steps', 'steps', 20) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">CFG Scale:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'cfgScale', 'cfg_scale', 7) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Sampler:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'samplerName', 'sampler_name', 'Unknown') }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Scheduler:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'scheduler', 'scheduler', 'Automatic') }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Size:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'width', 'width', 512) }}×{{ getParam(preset.params, 'height', 'height', 512) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Batch Count:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'batchCount', 'batch_count', 1) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Batch Size:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'batchSize', 'batch_size', 1) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Seed:</span>
+            <span class="detail-value">{{ getParam(preset.params, 'seed', 'seed', -1) }}</span>
+          </div>
+          <div v-if="getParam(preset.params, 'enable_hr', 'enable_hr', false)" class="detail-section">
+            <div class="detail-section-title">Hires Fix</div>
+            <div class="detail-row">
+              <span class="detail-label">Upscaler:</span>
+              <span class="detail-value">{{ getParam(preset.params, 'hrUpscaler', 'hr_upscaler', 'Latent') }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Scale:</span>
+              <span class="detail-value">{{ getParam(preset.params, 'hrUpscale', 'hr_scale', 2) }}x</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Steps:</span>
+              <span class="detail-value">{{ getParam(preset.params, 'hrSteps', 'hr_steps', 0) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Denoising:</span>
+              <span class="detail-value">{{ getParam(preset.params, 'denoisingStrength', 'denoising_strength', 0.7) }}</span>
+            </div>
+          </div>
+          <div v-if="preset.params.adetailers && preset.params.adetailers.length > 0" class="detail-section">
+            <div class="detail-section-title">ADetailer</div>
+            <div class="detail-row">
+              <span class="detail-label">Enabled:</span>
+              <span class="detail-value">{{ preset.params.adetailers.filter(ad => ad.enable).length }} / {{ preset.params.adetailers.length }}</span>
+            </div>
+          </div>
+        </div>
         <div v-if="preset.description" class="preset-description">{{ preset.description }}</div>
         <div class="preset-date">{{ preset.createdAt }}</div>
       </div>
@@ -187,8 +294,56 @@ onMounted(() => {
 
     <!-- Add Dialog -->
     <div v-if="showAddDialog" class="dialog-overlay" @click="closeAddDialog">
-      <div class="dialog" @click.stop>
+      <div class="dialog dialog-large" @click.stop>
         <h3>{{ $t('preset.newPreset') }}</h3>
+
+        <!-- Preview of values to be saved -->
+        <div class="save-preview-section">
+          <div class="preview-header">
+            <span class="preview-icon">📋</span>
+            <span class="preview-title">저장될 설정값</span>
+          </div>
+          <div class="preview-content" v-if="currentParams">
+            <div class="preview-summary">{{ getPresetSummary(currentParams) }}</div>
+            <div class="preview-details">
+              <div class="preview-grid">
+                <div class="preview-item">
+                  <span class="preview-label">Sampler:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'samplerName', 'sampler_name', 'Unknown') }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Scheduler:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'scheduler', 'scheduler', 'Automatic') }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Steps:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'steps', 'steps', 20) }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">CFG Scale:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'cfgScale', 'cfg_scale', 7) }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Size:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'width', 'width', 512) }}×{{ getParam(currentParams, 'height', 'height', 512) }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Batch:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'batchCount', 'batch_count', 1) }}×{{ getParam(currentParams, 'batchSize', 'batch_size', 1) }}</span>
+                </div>
+                <div class="preview-item" v-if="getParam(currentParams, 'enable_hr', 'enable_hr', false)">
+                  <span class="preview-label">Hires Fix:</span>
+                  <span class="preview-value">{{ getParam(currentParams, 'hrUpscaler', 'hr_upscaler', 'Latent') }} {{ getParam(currentParams, 'hrUpscale', 'hr_scale', 2) }}x</span>
+                </div>
+                <div class="preview-item" v-if="currentParams.adetailers && currentParams.adetailers.length > 0">
+                  <span class="preview-label">ADetailer:</span>
+                  <span class="preview-value">{{ currentParams.adetailers.filter(ad => ad.enable).length }} enabled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>{{ $t('preset.nameRequired') }}</label>
           <input
@@ -436,6 +591,23 @@ onMounted(() => {
   color: #666;
   margin-bottom: 6px;
   font-family: monospace;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 20px;
+  transition: color 0.2s;
+}
+
+.preset-summary:hover {
+  color: #10b981;
+}
+
+.expand-icon {
+  position: absolute;
+  right: 0;
+  font-size: 10px;
+  color: #999;
+  transition: transform 0.2s;
 }
 
 .preset-description {
@@ -448,6 +620,51 @@ onMounted(() => {
 .preset-date {
   font-size: 11px;
   color: #999;
+}
+
+.preset-details {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 11px;
+  border: 1px solid #e0e0e0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: #666;
+  font-weight: 600;
+}
+
+.detail-value {
+  color: #333;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.detail-section {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.detail-section-title {
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 6px;
+  font-size: 12px;
 }
 
 .empty-state {
@@ -498,6 +715,10 @@ onMounted(() => {
   width: 90%;
   max-width: 400px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-large {
+  max-width: 550px;
 }
 
 .dialog h3 {
@@ -586,5 +807,86 @@ onMounted(() => {
   margin-bottom: 20px;
   font-size: 14px;
   color: #666;
+}
+
+/* Save Preview Section */
+.save-preview-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 2px solid #e0e0e0;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.preview-icon {
+  font-size: 16px;
+}
+
+.preview-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.preview-content {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.preview-summary {
+  font-size: 12px;
+  font-family: monospace;
+  color: #666;
+  padding: 8px;
+  background: #f0fdf4;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  border-left: 3px solid #10b981;
+}
+
+.preview-details {
+  margin-top: 8px;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.preview-item:has(.preview-label:contains("Hires Fix")),
+.preview-item:has(.preview-label:contains("ADetailer")) {
+  grid-column: 1 / -1;
+}
+
+.preview-label {
+  color: #666;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.preview-value {
+  color: #333;
+  font-family: monospace;
+  text-align: right;
 }
 </style>

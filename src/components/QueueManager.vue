@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQueue } from '../composables/useQueue'
 
@@ -40,6 +40,8 @@ const showAddDialog = ref(false)
 const showEditDialog = ref(false)
 const showClearConfirm = ref(false)
 const editingItem = ref(null)
+const highlightedItemId = ref(null)
+const queueListRef = ref(null)
 
 // Form data
 const queuePrompt = ref('')
@@ -93,7 +95,7 @@ function handleAddToQueue() {
     return
   }
 
-  addToQueue(
+  const newItem = addToQueue(
     queuePrompt.value,
     queueNegativePrompt.value,
     props.currentParams,
@@ -102,6 +104,7 @@ function handleAddToQueue() {
 
   props.showToast?.(t('queue.added'), 'success')
   closeAddDialog()
+  scrollToNewItem(newItem.id)
 }
 
 function openEditDialog(item) {
@@ -209,6 +212,25 @@ function getStatusColor(status) {
 function truncateText(text, maxLength = 50) {
   if (!text) return ''
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
+}
+
+function scrollToNewItem(itemId) {
+  highlightedItemId.value = itemId
+
+  nextTick(() => {
+    const itemElement = document.querySelector(`[data-item-id="${itemId}"]`)
+
+    if (itemElement && queueListRef.value) {
+      itemElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+
+    setTimeout(() => {
+      highlightedItemId.value = null
+    }, 2500)
+  })
 }
 
 function close() {
@@ -321,13 +343,15 @@ onMounted(() => {
     </div>
 
     <!-- Queue List -->
-    <div class="queue-list">
+    <div class="queue-list" ref="queueListRef">
       <div
         v-for="(item, index) in queue"
         :key="item.id"
+        :data-item-id="item.id"
         class="queue-item"
         :class="{
           active: index === currentIndex,
+          highlighted: highlightedItemId === item.id,
           [item.status]: true
         }"
       >
@@ -406,7 +430,7 @@ onMounted(() => {
           <textarea
             v-model="queuePrompt"
             placeholder="Enter prompt..."
-            rows="3"
+            rows="18"
           ></textarea>
         </div>
         <div class="form-group">
@@ -414,7 +438,7 @@ onMounted(() => {
           <textarea
             v-model="queueNegativePrompt"
             placeholder="Enter negative prompt..."
-            rows="2"
+            rows="6"
           ></textarea>
         </div>
         <div class="form-group">
@@ -441,14 +465,14 @@ onMounted(() => {
           <label>{{ $t('queue.promptRequired') }}</label>
           <textarea
             v-model="queuePrompt"
-            rows="3"
+            rows="18"
           ></textarea>
         </div>
         <div class="form-group">
           <label>{{ $t('queue.negativePrompt') }}</label>
           <textarea
             v-model="queueNegativePrompt"
-            rows="2"
+            rows="6"
           ></textarea>
         </div>
         <div class="form-group">
@@ -775,6 +799,30 @@ onMounted(() => {
   background: #fee2e2;
 }
 
+.queue-item.highlighted {
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
+  animation: highlight-pulse 2.5s ease-out;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    transform: scale(1);
+  }
+  10% {
+    box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.4);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    transform: scale(1);
+  }
+}
+
 .item-header {
   display: flex;
   flex-direction: column;
@@ -916,8 +964,11 @@ onMounted(() => {
   background: white;
   border-radius: 12px;
   padding: 24px;
-  width: 90%;
-  max-width: 500px;
+  width: 500px;
+  max-width: 90vw;
+  height: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
