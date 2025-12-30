@@ -478,6 +478,27 @@ export default {
     checking: 'Checking...'
   },
 
+  // Prompt Panel
+  promptPanel: {
+    title: 'Prompt',
+    infiniteModeOn: 'Enable infinite generation mode',
+    infiniteModeOff: 'Disable infinite generation mode (click)',
+    apiNotConnected: 'API is not connected',
+    generating: 'Generating...',
+    apiConnectionRequired: '⚠️ API Connection Required',
+    generate: '🚀 Generate',
+    infiniteStatus: '🔄 Infinite mode: {count} images generated',
+    interruptImmediately: '⏹️ Interrupt Now',
+    interruptImmediatelyTooltip: 'Immediately interrupt current generating image',
+    disableInfiniteMode: '⏸️ Disable Infinite',
+    disableInfiniteModeTooltip: 'Disable infinite mode after completing current image',
+    interrupt: '⏹️ Interrupt',
+    interruptTooltip: 'Completely interrupt current generation',
+    skip: '⏭️ Skip',
+    skipNextInfinite: 'Skip current image and generate next',
+    skipNextBatch: 'Skip current image and go to next (batch of {batchSize})'
+  },
+
   // Buttons
   button: {
     generate: 'Generate',

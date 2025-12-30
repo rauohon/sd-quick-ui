@@ -478,6 +478,27 @@ export default {
     checking: '확인 중...'
   },
 
+  // 프롬프트 패널
+  promptPanel: {
+    title: '프롬프트',
+    infiniteModeOn: '무한 생성 모드 켜기',
+    infiniteModeOff: '무한 생성 모드 끄기 (클릭)',
+    apiNotConnected: 'API가 연결되지 않았습니다',
+    generating: '생성 중...',
+    apiConnectionRequired: '⚠️ API 연결 필요',
+    generate: '🚀 생성',
+    infiniteStatus: '🔄 무한모드: {count}장 생성됨',
+    interruptImmediately: '⏹️ 즉시 중단',
+    interruptImmediatelyTooltip: '현재 생성 중인 이미지도 즉시 중단',
+    disableInfiniteMode: '⏸️ 무한모드 해제',
+    disableInfiniteModeTooltip: '현재 이미지 완성 후 무한모드만 해제',
+    interrupt: '⏹️ 중단',
+    interruptTooltip: '현재 생성 완전 중단',
+    skip: '⏭️ 스킵',
+    skipNextInfinite: '현재 이미지 건너뛰고 다음 생성',
+    skipNextBatch: '현재 이미지 건너뛰고 다음 (배치 {batchSize}개 중)'
+  },
+
   // 버튼
   button: {
     generate: '생성',

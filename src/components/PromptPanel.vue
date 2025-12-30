@@ -1,13 +1,13 @@
 <template>
   <div class="prompt-panel">
     <div class="panel-header">
-      <h3 class="panel-title">프롬프트</h3>
+      <h3 class="panel-title">{{ $t('promptPanel.title') }}</h3>
       <div class="header-buttons">
         <button
           class="control-btn infinite-btn-header"
           :class="{ active: isInfiniteMode }"
           @click="$emit('toggle-infinite')"
-          :title="isInfiniteMode ? '무한 생성 모드 끄기 (클릭)' : '무한 생성 모드 켜기'"
+          :title="isInfiniteMode ? $t('promptPanel.infiniteModeOff') : $t('promptPanel.infiniteModeOn')"
         >
           <span v-if="!isInfiniteMode" style="font-size: 22px; font-weight: 700; line-height: 1;">∞</span>
           <span v-else style="font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 2px;">
@@ -18,9 +18,9 @@
           class="generate-btn"
           @click="$emit('generate')"
           :disabled="isGenerating || !apiConnected"
-          :title="!apiConnected ? 'API가 연결되지 않았습니다' : ''"
+          :title="!apiConnected ? $t('promptPanel.apiNotConnected') : ''"
         >
-          {{ isGenerating ? '생성 중...' : !apiConnected ? '⚠️ API 연결 필요' : '🚀 생성' }}
+          {{ isGenerating ? $t('promptPanel.generating') : !apiConnected ? $t('promptPanel.apiConnectionRequired') : $t('promptPanel.generate') }}
         </button>
       </div>
     </div>
@@ -33,48 +33,44 @@
         <span v-if="progressState" class="progress-state">{{ progressState }}</span>
         <span class="progress-percent">{{ Math.round(progress) }}%</span>
         <span v-if="isInfiniteMode" class="infinite-indicator">
-          🔄 무한모드: {{ infiniteCount }}장 생성됨
+          {{ $t('promptPanel.infiniteStatus', { count: infiniteCount }) }}
         </span>
       </div>
     </div>
 
-    <!-- 생성 제어 버튼들 -->
     <div class="generation-controls" v-if="isGenerating">
-      <!-- 무한 모드일 때: 두 가지 중단 옵션 제공 -->
       <template v-if="isInfiniteMode">
         <button
           class="control-btn interrupt-btn"
           @click="$emit('interrupt')"
-          title="현재 생성 중인 이미지도 즉시 중단"
+          :title="$t('promptPanel.interruptImmediatelyTooltip')"
         >
-          ⏹️ 즉시 중단
+          {{ $t('promptPanel.interruptImmediately') }}
         </button>
         <button
           class="control-btn pause-btn"
           @click="$emit('stop-infinite')"
-          title="현재 이미지 완성 후 무한모드만 해제"
+          :title="$t('promptPanel.disableInfiniteModeTooltip')"
         >
-          ⏸️ 무한모드 해제
+          {{ $t('promptPanel.disableInfiniteMode') }}
         </button>
       </template>
-      <!-- 일반 모드일 때: 중단 버튼만 -->
       <template v-else>
         <button
           class="control-btn interrupt-btn"
           @click="$emit('interrupt')"
-          title="현재 생성 완전 중단"
+          :title="$t('promptPanel.interruptTooltip')"
         >
-          ⏹️ 중단
+          {{ $t('promptPanel.interrupt') }}
         </button>
       </template>
-      <!-- 스킵 버튼 (배치 생성 또는 무한 모드일 때만) -->
       <button
         v-if="batchSize > 1 || isInfiniteMode"
         class="control-btn skip-btn"
         @click="$emit('skip')"
-        :title="isInfiniteMode ? '현재 이미지 건너뛰고 다음 생성' : `현재 이미지 건너뛰고 다음 (배치 ${batchSize}개 중)`"
+        :title="isInfiniteMode ? $t('promptPanel.skipNextInfinite') : $t('promptPanel.skipNextBatch', { batchSize })"
       >
-        ⏭️ 스킵
+        {{ $t('promptPanel.skip') }}
       </button>
     </div>
 
