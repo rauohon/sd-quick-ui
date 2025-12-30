@@ -135,9 +135,17 @@ export default {
 
     // Selection
     selectedCount: '{count}개 선택됨',
+    selectedCountShort: '{count}개 선택',
     selectAll: '전체 선택',
+    selectAllShort: '전체',
     deselectAll: '선택 해제',
+    deselectAllShort: '해제',
     selectImage: '이미지를 선택하세요',
+    downloadSelected: '💾 다운',
+    downloadSelectedTooltip: '선택된 이미지 다운로드',
+    cancelSelectionMode: '선택 모드 종료',
+    batchSelect: '📦 선택',
+    batchSelectTooltip: '일괄 다운로드',
 
     // Compare
     compare: '비교',
@@ -180,6 +188,19 @@ export default {
     downloadMultiple: '{count}개 이미지 다운로드 완료',
     downloadComplete: '{count}개 이미지 다운로드 완료',
     sendToImg2Img: 'img2img로 보내기',
+
+    // Panel controls
+    foldContent: '내용 접기',
+    unfoldContent: '내용 펼치기',
+    hidePanel: '패널 숨기기',
+    showPanel: '패널 보이기',
+    showAllImages: '전체 보기',
+    showFavoritesOnly: '즐겨찾기만 보기',
+
+    // Empty states
+    noFavorites: '즐겨찾기한 이미지가 없습니다',
+    addTestSample: '테스트용 샘플 추가',
+    addSample: '+ 샘플 추가',
 
     // Messages
     imageDeleted: '🗑️ 이미지가 삭제되었습니다',

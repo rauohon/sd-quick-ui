@@ -135,9 +135,17 @@ export default {
 
     // Selection
     selectedCount: '{count} selected',
+    selectedCountShort: '{count} selected',
     selectAll: 'Select All',
+    selectAllShort: 'All',
     deselectAll: 'Deselect All',
+    deselectAllShort: 'None',
     selectImage: 'Select an image',
+    downloadSelected: '💾 Download',
+    downloadSelectedTooltip: 'Download selected images',
+    cancelSelectionMode: 'Exit selection mode',
+    batchSelect: '📦 Select',
+    batchSelectTooltip: 'Batch download',
 
     // Compare
     compare: 'Compare',
@@ -180,6 +188,19 @@ export default {
     downloadMultiple: '{count} images downloaded',
     downloadComplete: '{count} images downloaded',
     sendToImg2Img: 'Send to img2img',
+
+    // Panel controls
+    foldContent: 'Fold content',
+    unfoldContent: 'Unfold content',
+    hidePanel: 'Hide panel',
+    showPanel: 'Show panel',
+    showAllImages: 'Show all',
+    showFavoritesOnly: 'Show favorites only',
+
+    // Empty states
+    noFavorites: 'No favorite images',
+    addTestSample: 'Add test sample',
+    addSample: '+ Add sample',
 
     // Messages
     imageDeleted: '🗑️ Image deleted',

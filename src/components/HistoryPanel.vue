@@ -2,42 +2,42 @@
   <div class="history-panel" :class="{ 'content-collapsed': isContentCollapsed }">
     <div class="panel-header">
       <h3 class="panel-title">
-        <span>히스토리</span>
+        <span>{{ $t('history.title') }}</span>
         <span v-if="showFavoriteOnly" style="color: #ffd700; font-size: 16px;">⭐</span>
-        <span v-if="isSelectionMode" class="selection-count">{{ selectedCount }}개 선택</span>
+        <span v-if="isSelectionMode" class="selection-count">{{ $t('history.selectedCountShort', { count: selectedCount }) }}</span>
       </h3>
       <div style="display: flex; gap: 8px;">
         <template v-if="isSelectionMode">
-          <button class="batch-btn" @click="$emit('select-all')" title="전체 선택">
-            전체
+          <button class="batch-btn" @click="$emit('select-all')" :title="$t('history.selectAll')">
+            {{ $t('history.selectAllShort') }}
           </button>
-          <button class="batch-btn" @click="$emit('deselect-all')" title="선택 해제">
-            해제
+          <button class="batch-btn" @click="$emit('deselect-all')" :title="$t('history.deselectAll')">
+            {{ $t('history.deselectAllShort') }}
           </button>
           <button
             class="batch-download-btn"
             @click="$emit('download-selected')"
             :disabled="selectedCount === 0"
-            title="선택된 이미지 다운로드"
+            :title="$t('history.downloadSelectedTooltip')"
           >
-            💾 다운
+            {{ $t('history.downloadSelected') }}
           </button>
-          <button class="batch-btn cancel" @click="$emit('toggle-selection-mode')" title="선택 모드 종료">
-            취소
+          <button class="batch-btn cancel" @click="$emit('toggle-selection-mode')" :title="$t('history.cancelSelectionMode')">
+            {{ $t('common.cancel') }}
           </button>
         </template>
         <template v-else>
           <button
             class="toggle-content-btn"
             @click="$emit('toggle-content')"
-            :title="isContentCollapsed ? '내용 펼치기' : '내용 접기'"
+            :title="isContentCollapsed ? $t('history.unfoldContent') : $t('history.foldContent')"
           >
             {{ isContentCollapsed ? '▼' : '▲' }}
           </button>
           <button
             class="toggle-panel-btn"
             @click="$emit('toggle-panel')"
-            :title="isExpanded ? '패널 숨기기' : '패널 보이기'"
+            :title="isExpanded ? $t('history.hidePanel') : $t('history.showPanel')"
           >
             {{ isExpanded ? '◀' : '▶' }}
           </button>
@@ -45,7 +45,7 @@
             class="filter-favorite-btn"
             @click="$emit('toggle-favorite-filter')"
             :class="{ active: showFavoriteOnly }"
-            :title="showFavoriteOnly ? '전체 보기' : '즐겨찾기만 보기'"
+            :title="showFavoriteOnly ? $t('history.showAllImages') : $t('history.showFavoritesOnly')"
             v-if="hasFavorites"
           >
             {{ showFavoriteOnly ? '⭐' : '☆' }}
@@ -54,12 +54,12 @@
             class="batch-btn"
             @click="$emit('toggle-selection-mode')"
             v-if="hasImages"
-            title="일괄 다운로드"
+            :title="$t('history.batchSelectTooltip')"
           >
-            📦 선택
+            {{ $t('history.batchSelect') }}
           </button>
           <button class="clear-btn" @click="$emit('clear-history')" v-if="hasImages">
-            Clear
+            {{ $t('history.clear') }}
           </button>
         </template>
       </div>
@@ -67,19 +67,19 @@
     <div v-if="isExpanded && !isContentCollapsed" class="history-content">
       <slot></slot>
       <div v-if="isEmpty && !showFavoriteOnly" class="history-empty">
-        생성된 이미지가 없습니다
+        {{ $t('history.noImages') }}
         <button class="sample-btn" @click="$emit('add-sample')">
-          테스트용 샘플 추가
+          {{ $t('history.addTestSample') }}
         </button>
       </div>
       <div v-if="isEmpty && showFavoriteOnly" class="history-empty">
-        즐겨찾기한 이미지가 없습니다
+        {{ $t('history.noFavorites') }}
       </div>
     </div>
     <div v-if="isExpanded && !isContentCollapsed" class="panel-footer center">
       <span class="image-count">{{ imageCount }}/200</span>
       <button class="footer-btn" @click="$emit('add-sample')">
-        + 샘플 추가
+        {{ $t('history.addSample') }}
       </button>
     </div>
   </div>
