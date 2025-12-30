@@ -760,7 +760,7 @@ onUnmounted(() => {
       >
         <PromptTextarea
           v-model="prompt"
-          label="프롬프트"
+          :label="$t('prompt.positive')"
           placeholder="beautiful landscape, detailed, masterpiece, best quality..."
           :is-generating="isGenerating"
           :is-changed="promptChanged"
@@ -769,7 +769,7 @@ onUnmounted(() => {
 
         <PromptTextarea
           v-model="negativePrompt"
-          label="네거티브 프롬프트"
+          :label="$t('prompt.negative')"
           placeholder="ugly, blurry, low quality..."
           :is-generating="isGenerating"
           :is-changed="negativePromptChanged"
