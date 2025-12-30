@@ -445,7 +445,14 @@ export default {
     sendToTxt2Img: 'Send to txt2img',
     sendToImg2Img: 'Send to img2img',
     selectPngFile: 'Please select a PNG file!',
-    pngOnly: 'PNG files only!'
+    pngOnly: 'PNG files only!',
+    selectFile: '📁 Select PNG File',
+    analyzeButton: '🔍 Analyze',
+    loadPrompt: '⬅️ Load Prompt',
+    promptLoaded: 'Prompt loaded successfully!',
+    noGenerationInfo: 'This image has no generation information.',
+    apiError: 'API error: {status}',
+    connectionError: 'Cannot connect to WebUI. Please check if WebUI is running.'
   },
 
   // API status

@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
 
 // Props
@@ -23,7 +25,7 @@ function handleFileChange(event) {
   if (file && file.type === 'image/png') {
     pngInfoFile.value = file
   } else {
-    props.showToast('PNG 파일만 선택해주세요!', 'error')
+    props.showToast(t('pngInfo.pngOnly'), 'error')
   }
 }
 
@@ -32,7 +34,7 @@ function handleFileChange(event) {
  */
 async function analyzePngInfo() {
   if (!pngInfoFile.value) {
-    props.showToast('PNG 파일을 선택해주세요!', 'error')
+    props.showToast(t('pngInfo.selectPngFile'), 'error')
     return
   }
 
@@ -54,19 +56,19 @@ async function analyzePngInfo() {
       })
 
       if (!response.ok) {
-        throw new Error(`API 에러: ${response.status}`)
+        throw new Error(t('pngInfo.apiError', { status: response.status }))
       }
 
       const data = await response.json()
       pngInfoResult.value = data
     } catch (error) {
-      console.error('PNG Info 분석 실패:', error)
+      console.error(t('pngInfo.failed') + ':', error)
 
-      let message = 'PNG Info 분석 실패'
+      let message = t('pngInfo.failed')
       if (error.message.includes('Failed to fetch')) {
-        message = 'WebUI에 연결할 수 없습니다. WebUI가 실행 중인지 확인해주세요.'
+        message = t('pngInfo.connectionError')
       } else {
-        message = `PNG Info 분석 실패: ${error.message}`
+        message = t('pngInfo.failedWithMessage', { error: error.message })
       }
 
       props.showToast(message, 'error')
@@ -83,7 +85,7 @@ function loadPromptFromInfo(info) {
   if (info.parameters) {
     emit('loadPrompt', info.parameters)
     emit('switchTab', 'txt2img')
-    props.showToast('프롬프트를 불러왔습니다!', 'success')
+    props.showToast(t('pngInfo.promptLoaded'), 'success')
   }
 }
 </script>
@@ -93,7 +95,7 @@ function loadPromptFromInfo(info) {
     <div class="pnginfo-container">
       <div class="upload-section">
         <label for="png-upload" class="upload-label">
-          📁 PNG 파일 선택
+          {{ $t('pngInfo.selectFile') }}
         </label>
         <input
           id="png-upload"
@@ -108,12 +110,12 @@ function loadPromptFromInfo(info) {
           @click="analyzePngInfo"
           :disabled="!pngInfoFile"
         >
-          🔍 분석하기
+          {{ $t('pngInfo.analyzeButton') }}
         </button>
       </div>
 
       <div v-if="pngInfoResult" class="pnginfo-result">
-        <h3>PNG 정보</h3>
+        <h3>{{ $t('pngInfo.title') }}</h3>
 
         <div v-if="pngInfoResult.info" class="info-section">
           <h4>Generation Info</h4>
@@ -129,12 +131,12 @@ function loadPromptFromInfo(info) {
           </div>
 
           <button class="load-btn" @click="loadPromptFromInfo(pngInfoResult)">
-            ⬅️ 프롬프트 불러오기
+            {{ $t('pngInfo.loadPrompt') }}
           </button>
         </div>
 
         <div v-else class="no-info">
-          이 이미지에는 generation 정보가 없습니다.
+          {{ $t('pngInfo.noGenerationInfo') }}
         </div>
       </div>
     </div>

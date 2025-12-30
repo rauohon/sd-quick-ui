@@ -445,7 +445,14 @@ export default {
     sendToTxt2Img: 'txt2img로 보내기',
     sendToImg2Img: 'img2img로 보내기',
     selectPngFile: 'PNG 파일을 선택해주세요!',
-    pngOnly: 'PNG 파일만 선택해주세요!'
+    pngOnly: 'PNG 파일만 선택해주세요!',
+    selectFile: '📁 PNG 파일 선택',
+    analyzeButton: '🔍 분석하기',
+    loadPrompt: '⬅️ 프롬프트 불러오기',
+    promptLoaded: '프롬프트를 불러왔습니다!',
+    noGenerationInfo: '이 이미지에는 generation 정보가 없습니다.',
+    apiError: 'API 에러: {status}',
+    connectionError: 'WebUI에 연결할 수 없습니다. WebUI가 실행 중인지 확인해주세요.'
   },
 
   // API 상태
