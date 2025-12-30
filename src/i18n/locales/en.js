@@ -83,15 +83,35 @@ export default {
   // Bookmark
   bookmark: {
     title: 'Bookmarks',
+    promptBookmarks: '🔖 Prompt Bookmarks',
     add: 'Add Bookmark',
+    addNew: '➕ New Bookmark',
+    addFirst: '➕ Create First Bookmark',
     name: 'Bookmark Name',
+    nameRequired: 'Bookmark Name *',
+    namePlaceholder: 'e.g., Photo Style',
     saved: 'Bookmark saved',
     updated: 'Bookmark updated',
     deleted: 'Bookmark deleted',
     added: 'Bookmark added',
+    applied: '"{name}" applied',
+    deleteTitle: 'Delete Bookmark',
     deleteConfirm: 'Delete this bookmark?',
+    deleteConfirmWithName: 'Delete "{name}" bookmark?',
     loadConfirm: 'Load this bookmark?',
-    noBookmarks: 'No saved bookmarks'
+    noBookmarks: 'No saved bookmarks',
+    noSearchResults: 'No search results',
+    searchPlaceholder: '🔍 Search bookmarks...',
+    bookmarks: 'bookmarks',
+    selected: 'Selected:',
+    applyPrompt: '✅ Apply Prompt',
+    newBookmark: 'New Bookmark',
+    editBookmark: 'Edit Bookmark',
+    promptPlaceholder: 'Enter prompt...',
+    negativePrompt: 'Negative Prompt',
+    negativePromptPlaceholder: 'Enter negative prompt...',
+    none: '(none)',
+    nameRequiredError: 'Please enter bookmark name'
   },
 
   // History

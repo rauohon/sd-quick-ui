@@ -83,15 +83,35 @@ export default {
   // 북마크
   bookmark: {
     title: '북마크',
+    promptBookmarks: '🔖 프롬프트 북마크',
     add: '북마크 추가',
+    addNew: '➕ 새 북마크',
+    addFirst: '➕ 첫 북마크 만들기',
     name: '북마크 이름',
+    nameRequired: '북마크 이름 *',
+    namePlaceholder: '예: 사진 스타일',
     saved: '북마크가 저장되었습니다',
     updated: '북마크가 수정되었습니다',
     deleted: '북마크가 삭제되었습니다',
     added: '북마크가 추가되었습니다',
+    applied: '"{name}" 적용됨',
+    deleteTitle: '북마크 삭제',
     deleteConfirm: '이 북마크를 삭제하시겠습니까?',
+    deleteConfirmWithName: '"{name}" 북마크를 삭제하시겠습니까?',
     loadConfirm: '이 북마크를 불러오시겠습니까?',
-    noBookmarks: '저장된 북마크가 없습니다'
+    noBookmarks: '저장된 북마크가 없습니다',
+    noSearchResults: '검색 결과가 없습니다',
+    searchPlaceholder: '🔍 북마크 검색...',
+    bookmarks: '북마크',
+    selected: '선택:',
+    applyPrompt: '✅ 프롬프트 적용',
+    newBookmark: '새 북마크',
+    editBookmark: '북마크 수정',
+    promptPlaceholder: '프롬프트 입력...',
+    negativePrompt: '네거티브 프롬프트',
+    negativePromptPlaceholder: '네거티브 프롬프트 입력...',
+    none: '(없음)',
+    nameRequiredError: '북마크 이름을 입력해주세요'
   },
 
   // 히스토리

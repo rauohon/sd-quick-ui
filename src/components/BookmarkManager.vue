@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBookmarks } from '../composables/useBookmarks'
+
+const { t } = useI18n()
 
 // Props
 const props = defineProps({
@@ -61,7 +64,7 @@ function closeDialog() {
 
 function saveBookmark() {
   if (!bookmarkName.value.trim()) {
-    props.showToast?.('북마크 이름을 입력해주세요', 'error')
+    props.showToast?.(t('bookmark.nameRequiredError'), 'error')
     return
   }
 
@@ -72,7 +75,7 @@ function saveBookmark() {
       prompt: bookmarkPrompt.value,
       negativePrompt: bookmarkNegativePrompt.value,
     })
-    props.showToast?.('북마크가 수정되었습니다', 'success')
+    props.showToast?.(t('bookmark.updated'), 'success')
   } else {
     // Add new
     addBookmark(
@@ -80,7 +83,7 @@ function saveBookmark() {
       bookmarkPrompt.value,
       bookmarkNegativePrompt.value
     )
-    props.showToast?.('북마크가 추가되었습니다', 'success')
+    props.showToast?.(t('bookmark.added'), 'success')
   }
 
   closeDialog()
@@ -97,17 +100,17 @@ function applyBookmark() {
     prompt: selectedBookmark.value.prompt,
     negativePrompt: selectedBookmark.value.negativePrompt,
   })
-  props.showToast?.(`"${selectedBookmark.value.name}" 적용됨`, 'success')
+  props.showToast?.(t('bookmark.applied', { name: selectedBookmark.value.name }), 'success')
 }
 
 async function handleDeleteBookmark(bookmark, event) {
   event.stopPropagation()
 
   const confirmed = await props.showConfirm?.({
-    title: '북마크 삭제',
-    message: `"${bookmark.name}" 북마크를 삭제하시겠습니까?`,
-    confirmText: '삭제',
-    cancelText: '취소'
+    title: t('bookmark.deleteTitle'),
+    message: t('bookmark.deleteConfirmWithName', { name: bookmark.name }),
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel')
   })
 
   if (confirmed) {
@@ -115,7 +118,7 @@ async function handleDeleteBookmark(bookmark, event) {
     if (selectedBookmark.value?.id === bookmark.id) {
       selectedBookmark.value = null
     }
-    props.showToast?.('북마크가 삭제되었습니다', 'success')
+    props.showToast?.(t('bookmark.deleted'), 'success')
   }
 }
 
@@ -137,10 +140,10 @@ onMounted(() => {
 <template>
   <div class="bookmark-manager-panel">
     <div class="panel-header">
-      <h3>🔖 프롬프트 북마크</h3>
+      <h3>{{ $t('bookmark.promptBookmarks') }}</h3>
       <div class="header-actions">
         <button class="add-btn" @click="openAddDialog">
-          ➕ 새 북마크
+          {{ $t('bookmark.addNew') }}
         </button>
         <button class="close-btn" @click="close">✕</button>
       </div>
@@ -151,11 +154,11 @@ onMounted(() => {
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="🔍 북마크 검색..."
+        :placeholder="$t('bookmark.searchPlaceholder')"
         class="search-input"
       >
       <div class="bookmark-count" v-if="bookmarks.length > 0">
-        {{ filteredBookmarks.length }} / {{ bookmarks.length }} 북마크
+        {{ filteredBookmarks.length }} / {{ bookmarks.length }} {{ $t('bookmark.bookmarks') }}
       </div>
     </div>
 
@@ -174,14 +177,14 @@ onMounted(() => {
             <button
               class="icon-btn edit-btn"
               @click="handleEditBookmark(bookmark, $event)"
-              title="수정"
+              :title="$t('common.edit')"
             >
               ✏️
             </button>
             <button
               class="icon-btn delete-btn"
               @click="handleDeleteBookmark(bookmark, $event)"
-              title="삭제"
+              :title="$t('common.delete')"
             >
               🗑️
             </button>
@@ -189,10 +192,10 @@ onMounted(() => {
         </div>
         <div class="bookmark-content">
           <div class="bookmark-prompt">
-            <strong>Prompt:</strong> {{ bookmark.prompt || '(없음)' }}
+            <strong>{{ $t('prompt.title') }}:</strong> {{ bookmark.prompt || $t('bookmark.none') }}
           </div>
           <div class="bookmark-negative" v-if="bookmark.negativePrompt">
-            <strong>Negative:</strong> {{ bookmark.negativePrompt }}
+            <strong>{{ $t('bookmark.negativePrompt') }}:</strong> {{ bookmark.negativePrompt }}
           </div>
         </div>
         <div class="bookmark-footer">
@@ -201,13 +204,13 @@ onMounted(() => {
       </div>
 
       <div v-if="filteredBookmarks.length === 0 && bookmarks.length > 0" class="no-results">
-        검색 결과가 없습니다
+        {{ $t('bookmark.noSearchResults') }}
       </div>
 
       <div v-if="bookmarks.length === 0" class="empty-state">
-        <p>저장된 북마크가 없습니다</p>
+        <p>{{ $t('bookmark.noBookmarks') }}</p>
         <button class="add-first-btn" @click="openAddDialog">
-          ➕ 첫 북마크 만들기
+          {{ $t('bookmark.addFirst') }}
         </button>
       </div>
     </div>
@@ -215,10 +218,10 @@ onMounted(() => {
     <!-- Apply Button -->
     <div v-if="selectedBookmark" class="action-panel">
       <div class="selected-info">
-        <strong>선택:</strong> {{ selectedBookmark.name }}
+        <strong>{{ $t('bookmark.selected') }}</strong> {{ selectedBookmark.name }}
       </div>
       <button @click="applyBookmark" class="apply-btn">
-        ✅ 프롬프트 적용
+        {{ $t('bookmark.applyPrompt') }}
       </button>
     </div>
 
@@ -226,43 +229,43 @@ onMounted(() => {
     <div v-if="showAddDialog" class="dialog-overlay" @click="closeDialog">
       <div class="dialog" @click.stop>
         <div class="dialog-header">
-          <h3>{{ editingBookmark ? '북마크 수정' : '새 북마크' }}</h3>
+          <h3>{{ editingBookmark ? $t('bookmark.editBookmark') : $t('bookmark.newBookmark') }}</h3>
           <button class="close-btn" @click="closeDialog">✕</button>
         </div>
         <div class="dialog-content">
           <div class="form-group">
-            <label>북마크 이름 *</label>
+            <label>{{ $t('bookmark.nameRequired') }}</label>
             <input
               v-model="bookmarkName"
               type="text"
-              placeholder="예: 사진 스타일"
+              :placeholder="$t('bookmark.namePlaceholder')"
               class="form-input"
               @keyup.enter="saveBookmark"
             >
           </div>
           <div class="form-group">
-            <label>프롬프트</label>
+            <label>{{ $t('prompt.title') }}</label>
             <textarea
               v-model="bookmarkPrompt"
-              placeholder="프롬프트 입력..."
+              :placeholder="$t('bookmark.promptPlaceholder')"
               class="form-textarea"
               rows="4"
             ></textarea>
           </div>
           <div class="form-group">
-            <label>네거티브 프롬프트</label>
+            <label>{{ $t('bookmark.negativePrompt') }}</label>
             <textarea
               v-model="bookmarkNegativePrompt"
-              placeholder="네거티브 프롬프트 입력..."
+              :placeholder="$t('bookmark.negativePromptPlaceholder')"
               class="form-textarea"
               rows="3"
             ></textarea>
           </div>
         </div>
         <div class="dialog-footer">
-          <button class="cancel-btn" @click="closeDialog">취소</button>
+          <button class="cancel-btn" @click="closeDialog">{{ $t('common.cancel') }}</button>
           <button class="save-btn" @click="saveBookmark">
-            {{ editingBookmark ? '수정' : '저장' }}
+            {{ editingBookmark ? $t('common.edit') : $t('common.save') }}
           </button>
         </div>
       </div>
