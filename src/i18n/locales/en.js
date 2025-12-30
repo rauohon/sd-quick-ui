@@ -557,6 +557,12 @@ export default {
     hint: '💡 If ADetailer prompts are empty, main prompts will be used.'
   },
 
+  // Image Preview
+  imagePreview: {
+    title: 'Image (PNG Info)',
+    noImagePlaceholder: 'Image will be displayed here'
+  },
+
   // Buttons
   button: {
     generate: 'Generate',

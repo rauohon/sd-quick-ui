@@ -557,6 +557,12 @@ export default {
     hint: '💡 ADetailer 프롬프트를 비워두면 메인 프롬프트가 사용됩니다.'
   },
 
+  // 이미지 프리뷰
+  imagePreview: {
+    title: '이미지 (PNG Info)',
+    noImagePlaceholder: '이미지가 여기에 표시됩니다'
+  },
+
   // 버튼
   button: {
     generate: '생성',

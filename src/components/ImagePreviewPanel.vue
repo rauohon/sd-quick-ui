@@ -1,11 +1,11 @@
 <template>
   <div class="preview-panel">
     <div class="panel-header">
-      <h3 class="panel-title">이미지 (PNG Info)</h3>
+      <h3 class="panel-title">{{ $t('imagePreview.title') }}</h3>
       <button
         class="toggle-panel-btn"
         @click="$emit('toggle-panel')"
-        :title="isExpanded ? '패널 숨기기' : '패널 보이기'"
+        :title="isExpanded ? $t('history.hidePanel') : $t('history.showPanel')"
       >
         {{ isExpanded ? '▲' : '▼' }}
       </button>
@@ -30,7 +30,7 @@
         <p>⏳ Loading PNG metadata...</p>
       </div>
       <div v-else class="preview-placeholder">
-        <p>이미지가 여기에 표시됩니다</p>
+        <p>{{ $t('imagePreview.noImagePlaceholder') }}</p>
         <p class="drop-hint">📎 Drop PNG image here to load settings</p>
       </div>
     </div>
