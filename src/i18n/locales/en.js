@@ -542,6 +542,14 @@ export default {
     promptSlots: 'Prompt Slots:'
   },
 
+  // Last generation settings
+  lastParams: {
+    title: 'Last Generation Settings',
+    basic: 'Basic',
+    random: 'Random',
+    input: 'Input'
+  },
+
   // Buttons
   button: {
     generate: 'Generate',

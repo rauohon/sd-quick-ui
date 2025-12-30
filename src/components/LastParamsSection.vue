@@ -2,7 +2,7 @@
   <div class="last-params-section" :class="{ collapsed: !sectionExpanded }" v-if="lastParams">
     <div class="params-section-title" @click="sectionExpanded = !sectionExpanded">
       <span class="fold-icon">{{ sectionExpanded ? '▼' : '▶' }}</span>
-      마지막 생성 설정
+      {{ $t('lastParams.title') }}
     </div>
 
     <div v-if="sectionExpanded" class="params-section-content">
@@ -10,7 +10,7 @@
       <div class="params-group">
         <div class="params-group-label" @click="basicExpanded = !basicExpanded">
           <span class="fold-icon">{{ basicExpanded ? '▼' : '▶' }}</span>
-          기본
+          {{ $t('lastParams.basic') }}
         </div>
         <div v-if="basicExpanded">
           <div class="param-row-full" v-if="lastParams.sd_model_name">
@@ -22,10 +22,10 @@
             <span class="param-label">Seed:</span>
             <span class="param-value">
               <template v-if="lastParams.seed === -1">
-                {{ lastParams.actual_seed }} <span style="color: #999; font-size: 0.9em;">(랜덤)</span>
+                {{ lastParams.actual_seed }} <span style="color: #999; font-size: 0.9em;">({{ $t('lastParams.random') }})</span>
               </template>
               <template v-else-if="lastParams.actual_seed && lastParams.actual_seed !== lastParams.seed">
-                {{ lastParams.actual_seed }} <span style="color: #999; font-size: 0.9em;">(입력: {{ lastParams.seed }})</span>
+                {{ lastParams.actual_seed }} <span style="color: #999; font-size: 0.9em;">({{ $t('lastParams.input') }}: {{ lastParams.seed }})</span>
               </template>
               <template v-else>
                 {{ lastParams.actual_seed || lastParams.seed }}

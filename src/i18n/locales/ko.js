@@ -542,6 +542,14 @@ export default {
     promptSlots: '프롬프트 슬롯:'
   },
 
+  // 마지막 생성 설정
+  lastParams: {
+    title: '마지막 생성 설정',
+    basic: '기본',
+    random: '랜덤',
+    input: '입력'
+  },
+
   // 버튼
   button: {
     generate: '생성',
