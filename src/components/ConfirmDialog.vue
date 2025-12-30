@@ -6,7 +6,7 @@
           <div v-if="isVisible" class="confirm-dialog" @click.stop>
             <div class="confirm-header">
               <span class="confirm-icon">⚠️</span>
-              <h3 class="confirm-title">{{ title }}</h3>
+              <h3 class="confirm-title">{{ displayTitle }}</h3>
             </div>
 
             <div class="confirm-body">
@@ -19,14 +19,14 @@
                 @click="handleCancel"
                 ref="cancelBtn"
               >
-                {{ cancelText }}
+                {{ displayCancelText }}
               </button>
               <button
                 class="confirm-btn confirm-btn-confirm"
                 @click="handleConfirm"
                 ref="confirmBtn"
               >
-                {{ confirmText }}
+                {{ displayConfirmText }}
               </button>
             </div>
           </div>
@@ -37,12 +37,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   title: {
     type: String,
-    default: '확인'
+    default: null
   },
   message: {
     type: String,
@@ -50,11 +53,11 @@ const props = defineProps({
   },
   confirmText: {
     type: String,
-    default: '확인'
+    default: null
   },
   cancelText: {
     type: String,
-    default: '취소'
+    default: null
   },
   onConfirm: {
     type: Function,
@@ -65,6 +68,11 @@ const props = defineProps({
     default: () => {}
   }
 })
+
+// Use i18n defaults when props are not provided
+const displayTitle = computed(() => props.title || t('common.confirm'))
+const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
+const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
 
 const isVisible = ref(false)
 const confirmBtn = ref(null)
