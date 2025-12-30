@@ -45,11 +45,16 @@ export default {
     infiniteMode: 'Infinite Generation Mode',
     infiniteModeOn: 'Enable Infinite Mode',
     infiniteModeOff: 'Disable Infinite Mode',
+    infiniteModeTooltip: 'Ctrl+↑/↓: Adjust weight',
 
-    // Prompt slots (for Phase 3 - will be filled later)
+    // Prompt slots
     slots: 'Prompt Slots',
     slotEmpty: 'Empty Slot',
-    addSlot: 'Add Slot'
+    addSlot: 'Add Slot',
+    slotClickToSelect: 'Slot {i}: Click to select (auto-saved)',
+    slotSaved: 'Slot saved',
+    slotLoaded: 'Slot loaded',
+    slotDeleted: 'Slot deleted'
   },
 
   // LoRA
@@ -60,7 +65,9 @@ export default {
     addToPrompt: 'Add to Prompt',
     noLorasFound: 'No LoRAs found',
     refreshing: 'Refreshing LoRA list...',
-    refreshed: 'LoRA list refreshed'
+    refreshed: 'LoRA list refreshed',
+    refreshFailed: 'Failed to refresh LoRA list',
+    loadFailed: 'Failed to load LoRA list'
   },
 
   // Bookmark
@@ -69,7 +76,9 @@ export default {
     add: 'Add Bookmark',
     name: 'Bookmark Name',
     saved: 'Bookmark saved',
+    updated: 'Bookmark updated',
     deleted: 'Bookmark deleted',
+    added: 'Bookmark added',
     deleteConfirm: 'Delete this bookmark?',
     loadConfirm: 'Load this bookmark?',
     noBookmarks: 'No saved bookmarks'
@@ -80,7 +89,9 @@ export default {
     title: 'History',
     clear: 'Clear All',
     clearConfirm: 'Delete all history?',
+    clearNonFavorites: 'Clear Non-Favorites',
     deleteSelected: 'Delete Selected',
+    deleteConfirm: 'Delete {count} images?',
     noImages: 'No generated images',
 
     // Time labels
@@ -92,7 +103,25 @@ export default {
     copyParams: 'Copy Parameters',
     paramsCopied: 'Parameters copied',
     download: 'Download',
-    sendToImg2Img: 'Send to img2img'
+    downloadMultiple: '{count} images downloaded',
+    sendToImg2Img: 'Send to img2img',
+
+    // Messages
+    imageDeleted: 'Image deleted',
+    imagesDeleted: '{count} images deleted',
+    deletedWithProtected: '{deletedCount} deleted ({favoriteCount} favorites protected)',
+    favoriteToggled: 'Favorite toggled',
+    favoriteRemoved: 'Favorite removed',
+
+    // Migration
+    migrating: 'Migrating {count} images...',
+    migrationComplete: 'Image migration complete',
+    migrationFailed: 'Image migration failed (skipped)',
+
+    // Errors
+    deleteFailed: 'Failed to delete image',
+    downloadFailed: 'Batch download failed',
+    loadFailed: 'Failed to load image'
   },
 
   // Queue
@@ -100,10 +129,14 @@ export default {
     title: 'Queue',
     add: 'Add to Queue',
     clear: 'Clear Queue',
+    clearCompleted: 'Clear Completed',
+    clearAll: 'Clear All',
     start: 'Start',
     stop: 'Stop',
     pause: 'Pause',
     resume: 'Resume',
+    retry: 'Retry',
+    retryFailed: 'Retry Failed Items',
 
     status: {
       pending: 'Pending',
@@ -114,7 +147,16 @@ export default {
     },
 
     empty: 'Queue is empty',
-    itemsInQueue: '{count} items in queue'
+    itemsInQueue: '{count} items in queue',
+
+    // Messages
+    added: 'Added to queue',
+    removed: 'Removed from queue',
+    updated: 'Updated',
+    completedRemoved: 'Completed items removed',
+    allRemoved: 'All items removed',
+    retrying: 'Retrying failed items',
+    itemFailed: 'Queue item failed: {id}'
   },
 
   // Preset
@@ -125,7 +167,9 @@ export default {
     delete: 'Delete Preset',
     name: 'Preset Name',
     saved: 'Preset saved',
+    updated: 'Preset updated',
     deleted: 'Preset deleted',
+    loaded: 'Preset loaded',
     loadConfirm: 'Load this preset?',
     deleteConfirm: 'Delete this preset?',
     noPresets: 'No saved presets'
@@ -153,8 +197,24 @@ export default {
       deleted: 'Deleted successfully',
       copied: 'Copied to clipboard',
       generated: 'Generation completed',
+      generationComplete: 'Image generation completed',
       loaded: 'Loaded successfully',
-      applied: 'Applied successfully'
+      applied: 'Applied successfully',
+      completed: 'Completed',
+      interrupted: 'Generation interrupted',
+      skipped: 'Skipped',
+
+      // LoRA
+      loraRefreshed: 'LoRA list refreshed',
+
+      // Model
+      modelLoaded: 'Model list loaded',
+
+      // Migration/DB
+      migrationComplete: 'Data migrated to IndexedDB',
+      indexedDBInitialized: 'IndexedDB initialized',
+      storageCleared: 'localStorage cleared',
+      allImagesCleared: 'All images cleared'
     },
     error: {
       saveFailed: 'Failed to save',
@@ -162,7 +222,54 @@ export default {
       loadFailed: 'Failed to load',
       networkError: 'Network error occurred',
       apiError: 'API error occurred',
-      unknown: 'Unknown error occurred'
+      apiErrorWithStatus: 'API error: {status}',
+      unknown: 'Unknown error occurred',
+
+      // Generation errors
+      generationFailed: 'Image generation failed',
+      generationFailedMessage: 'Image generation failed: {error}',
+      interruptFailed: 'Failed to interrupt',
+      interruptMessage: 'Interrupt requested (API response: {error})',
+      skipFailed: 'Failed to skip',
+      progressFailed: 'Failed to get progress',
+      maxErrorsReached: 'Infinite mode auto-stopped after {count} consecutive errors',
+
+      // LoRA errors
+      loraRefreshFailed: 'Failed to refresh LoRA list',
+      loraLoadFailed: 'Failed to load LoRA list',
+
+      // Model errors
+      modelLoadFailed: 'Failed to load model list',
+      modelChangeFailed: 'Failed to change model',
+
+      // API connection errors
+      accessDenied: 'Access denied',
+      serverError: 'Server error ({status})',
+      serverInternalError: 'WebUI server internal error',
+      noResponse: 'WebUI is not responding. Please try again later.',
+      apiResponseError: 'API response error',
+
+      // Storage errors
+      storageFull: 'Storage full: localStorage cleared',
+      indexedDBOpenFailed: 'Failed to open IndexedDB',
+      indexedDBSaveFailed: 'Failed to save to IndexedDB (ignored)',
+      indexedDBLoadFailed: 'Failed to load from IndexedDB',
+      localStorageSaveFailed: 'Failed to save to localStorage',
+      localStorageLoadFailed: 'Failed to load from localStorage',
+      localStorageClearFailed: 'Failed to clear localStorage',
+      historySaveFailed: 'Failed to save history',
+      historyMinSaveFailed: 'Failed to save minimal history',
+
+      // Migration errors
+      migrationFailed: 'Migration failed',
+      migrationFailedContinue: 'Data migration failed (continuing)',
+
+      // Image errors
+      imageLoadFailed: 'Failed to load image',
+      imageCompressFailed: 'Image compression failed, using original',
+
+      // Slot errors
+      slotLoadFailed: 'Failed to load slot'
     },
     warning: {
       unsavedChanges: 'You have unsaved changes',
@@ -195,17 +302,23 @@ export default {
     noInfo: 'No PNG info available',
     analyzing: 'Analyzing...',
     failed: 'Failed to analyze PNG info',
+    failedWithMessage: 'Failed to analyze PNG info: {error}',
     sendToTxt2Img: 'Send to txt2img',
-    sendToImg2Img: 'Send to img2img'
+    sendToImg2Img: 'Send to img2img',
+    selectPngFile: 'Please select a PNG file!',
+    pngOnly: 'PNG files only!'
   },
 
   // API status
   api: {
     connecting: 'Connecting to API...',
     connected: 'API Connected',
+    connectionSuccess: 'API connection successful',
+    connectionFailed: 'API connection failed',
     disconnected: 'API Disconnected',
+    notConnected: 'API not connected',
     error: 'API Error',
-    checkConnection: 'Check Connection',
+    checkConnection: 'Reconnect API',
     retrying: 'Reconnecting...'
   },
 
@@ -218,7 +331,9 @@ export default {
     weeksAgo: '{n} weeks ago',
     monthsAgo: '{n} months ago',
     yearsAgo: '{n} years ago',
-    remaining: '{time} remaining'
+    remaining: '{time} remaining',
+    secondsRemaining: '{eta}s remaining',
+    imageGenerated: '{size} image generated'
   },
 
   // Buttons
@@ -231,6 +346,4 @@ export default {
     checkpoint: 'Checkpoint',
     settings: 'Settings'
   }
-
-  // Will be filled with actual texts from extracted-texts.json in Phase 3
 }
