@@ -233,7 +233,21 @@ export default {
     completedRemoved: 'Completed items removed',
     allRemoved: 'All items removed',
     retrying: 'Retrying failed items',
-    itemFailed: 'Queue item failed: {id}'
+    itemFailed: 'Queue item failed: {id}',
+
+    // Dialogs
+    addToQueue: 'Add to Queue',
+    editItem: 'Edit Queue Item',
+    promptRequired: 'Prompt *',
+    negativePrompt: 'Negative Prompt',
+    batchCount: 'Batch Count',
+    addFirstItem: '➕ Add First Item',
+    clearAllTitle: 'Clear All Items',
+    clearAllConfirm: 'Delete all items in the queue?',
+
+    // Errors
+    promptRequiredError: 'Please enter a prompt',
+    noSettings: 'No generation settings available'
   },
 
   // Preset

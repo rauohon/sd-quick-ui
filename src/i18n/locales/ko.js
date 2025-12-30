@@ -233,7 +233,21 @@ export default {
     completedRemoved: '완료된 항목이 제거되었습니다',
     allRemoved: '모든 항목이 제거되었습니다',
     retrying: '실패한 항목을 재시도합니다',
-    itemFailed: '큐 아이템 실패: {id}'
+    itemFailed: '큐 아이템 실패: {id}',
+
+    // Dialogs
+    addToQueue: '큐에 추가',
+    editItem: '큐 항목 수정',
+    promptRequired: '프롬프트 *',
+    negativePrompt: '네거티브 프롬프트',
+    batchCount: '생성 횟수',
+    addFirstItem: '➕ 첫 항목 추가하기',
+    clearAllTitle: '모든 항목 삭제',
+    clearAllConfirm: '큐의 모든 항목을 삭제하시겠습니까?',
+
+    // Errors
+    promptRequiredError: '프롬프트를 입력하세요',
+    noSettings: '생성 설정이 없습니다'
   },
 
   // 프리셋

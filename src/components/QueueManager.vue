@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useQueue } from '../composables/useQueue'
+
+const { t } = useI18n()
 
 // Props
 const props = defineProps({
@@ -81,12 +84,12 @@ function closeAddDialog() {
 
 function handleAddToQueue() {
   if (!queuePrompt.value.trim()) {
-    props.showToast?.('프롬프트를 입력하세요', 'error')
+    props.showToast?.(t('queue.promptRequiredError'), 'error')
     return
   }
 
   if (!props.currentParams) {
-    props.showToast?.('생성 설정이 없습니다', 'error')
+    props.showToast?.(t('queue.noSettings'), 'error')
     return
   }
 
@@ -97,7 +100,7 @@ function handleAddToQueue() {
     queueBatchCount.value
   )
 
-  props.showToast?.('큐에 추가되었습니다', 'success')
+  props.showToast?.(t('queue.added'), 'success')
   closeAddDialog()
 }
 
@@ -116,7 +119,7 @@ function closeEditDialog() {
 
 function handleUpdateItem() {
   if (!queuePrompt.value.trim()) {
-    props.showToast?.('프롬프트를 입력하세요', 'error')
+    props.showToast?.(t('queue.promptRequiredError'), 'error')
     return
   }
 
@@ -126,13 +129,13 @@ function handleUpdateItem() {
     batchCount: queueBatchCount.value,
   })
 
-  props.showToast?.('수정되었습니다', 'success')
+  props.showToast?.(t('queue.updated'), 'success')
   closeEditDialog()
 }
 
 function handleRemove(id) {
   removeFromQueue(id)
-  props.showToast?.('큐에서 제거되었습니다', 'info')
+  props.showToast?.(t('queue.removed'), 'info')
 }
 
 function handleMoveUp(id) {
@@ -161,7 +164,7 @@ function handleStop() {
 
 function handleClearCompleted() {
   clearCompleted()
-  props.showToast?.('완료된 항목이 제거되었습니다', 'info')
+  props.showToast?.(t('queue.completedRemoved'), 'info')
 }
 
 function openClearConfirm() {
@@ -174,13 +177,13 @@ function closeClearConfirm() {
 
 function handleClearAll() {
   clearAll()
-  props.showToast?.('모든 항목이 제거되었습니다', 'info')
+  props.showToast?.(t('queue.allRemoved'), 'info')
   closeClearConfirm()
 }
 
 function handleResetFailed() {
   resetFailed()
-  props.showToast?.('실패한 항목을 재시도합니다', 'info')
+  props.showToast?.(t('queue.retrying'), 'info')
 }
 
 function getStatusIcon(status) {
@@ -387,9 +390,9 @@ onMounted(() => {
       </div>
 
       <div v-if="queue.length === 0" class="empty-state">
-        <p>큐가 비어있습니다</p>
+        <p>{{ $t('queue.empty') }}</p>
         <button class="add-queue-btn" @click="openAddDialog" :disabled="isGenerating">
-          ➕ 첫 항목 추가하기
+          {{ $t('queue.addFirstItem') }}
         </button>
       </div>
     </div>
@@ -397,9 +400,9 @@ onMounted(() => {
     <!-- Add Dialog -->
     <div v-if="showAddDialog" class="dialog-overlay" @click="closeAddDialog">
       <div class="dialog" @click.stop>
-        <h3>큐에 추가</h3>
+        <h3>{{ $t('queue.addToQueue') }}</h3>
         <div class="form-group">
-          <label>프롬프트 *</label>
+          <label>{{ $t('queue.promptRequired') }}</label>
           <textarea
             v-model="queuePrompt"
             placeholder="Enter prompt..."
@@ -407,7 +410,7 @@ onMounted(() => {
           ></textarea>
         </div>
         <div class="form-group">
-          <label>네거티브 프롬프트</label>
+          <label>{{ $t('queue.negativePrompt') }}</label>
           <textarea
             v-model="queueNegativePrompt"
             placeholder="Enter negative prompt..."
@@ -415,7 +418,7 @@ onMounted(() => {
           ></textarea>
         </div>
         <div class="form-group">
-          <label>생성 횟수</label>
+          <label>{{ $t('queue.batchCount') }}</label>
           <input
             type="number"
             v-model.number="queueBatchCount"
@@ -424,8 +427,8 @@ onMounted(() => {
           >
         </div>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeAddDialog">취소</button>
-          <button class="confirm-btn" @click="handleAddToQueue">추가</button>
+          <button class="cancel-btn" @click="closeAddDialog">{{ $t('common.cancel') }}</button>
+          <button class="confirm-btn" @click="handleAddToQueue">{{ $t('queue.add') }}</button>
         </div>
       </div>
     </div>
@@ -433,23 +436,23 @@ onMounted(() => {
     <!-- Edit Dialog -->
     <div v-if="showEditDialog" class="dialog-overlay" @click="closeEditDialog">
       <div class="dialog" @click.stop>
-        <h3>큐 항목 수정</h3>
+        <h3>{{ $t('queue.editItem') }}</h3>
         <div class="form-group">
-          <label>프롬프트 *</label>
+          <label>{{ $t('queue.promptRequired') }}</label>
           <textarea
             v-model="queuePrompt"
             rows="3"
           ></textarea>
         </div>
         <div class="form-group">
-          <label>네거티브 프롬프트</label>
+          <label>{{ $t('queue.negativePrompt') }}</label>
           <textarea
             v-model="queueNegativePrompt"
             rows="2"
           ></textarea>
         </div>
         <div class="form-group">
-          <label>생성 횟수</label>
+          <label>{{ $t('queue.batchCount') }}</label>
           <input
             type="number"
             v-model.number="queueBatchCount"
@@ -458,8 +461,8 @@ onMounted(() => {
           >
         </div>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeEditDialog">취소</button>
-          <button class="confirm-btn" @click="handleUpdateItem">수정</button>
+          <button class="cancel-btn" @click="closeEditDialog">{{ $t('common.cancel') }}</button>
+          <button class="confirm-btn" @click="handleUpdateItem">{{ $t('common.edit') }}</button>
         </div>
       </div>
     </div>
@@ -467,11 +470,11 @@ onMounted(() => {
     <!-- Clear All Confirm -->
     <div v-if="showClearConfirm" class="dialog-overlay" @click="closeClearConfirm">
       <div class="dialog confirm-dialog" @click.stop>
-        <h3>모든 항목 삭제</h3>
-        <p>큐의 모든 항목을 삭제하시겠습니까?</p>
+        <h3>{{ $t('queue.clearAllTitle') }}</h3>
+        <p>{{ $t('queue.clearAllConfirm') }}</p>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeClearConfirm">취소</button>
-          <button class="delete-confirm-btn" @click="handleClearAll">삭제</button>
+          <button class="cancel-btn" @click="closeClearConfirm">{{ $t('common.cancel') }}</button>
+          <button class="delete-confirm-btn" @click="handleClearAll">{{ $t('common.delete') }}</button>
         </div>
       </div>
     </div>
