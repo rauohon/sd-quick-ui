@@ -7,7 +7,7 @@
         'disconnected': !connected && !checking,
         'checking': checking
       }"
-      :title="checking ? 'API 연결 확인 중...' : connected ? 'API 연결됨' : 'API 연결 끊김'"
+      :title="checking ? $t('api.connecting') : connected ? $t('api.connected') : $t('api.disconnected')"
       @click="$emit('check')"
     >
       {{ checking ? '⏳' : connected ? '🟢' : '🔴' }}
