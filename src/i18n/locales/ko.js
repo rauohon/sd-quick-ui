@@ -10,6 +10,7 @@ export default {
     close: '닫기',
     edit: '수정',
     confirm: '확인',
+    done: '완료',
     apply: '적용',
     reset: '초기화',
     copy: '복사',
@@ -548,6 +549,12 @@ export default {
     basic: '기본',
     random: '랜덤',
     input: '입력'
+  },
+
+  // ADetailer
+  adetailer: {
+    modalTitle: '✏️ ADetailer {label} - Prompt',
+    hint: '💡 ADetailer 프롬프트를 비워두면 메인 프롬프트가 사용됩니다.'
   },
 
   // 버튼

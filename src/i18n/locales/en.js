@@ -10,6 +10,7 @@ export default {
     close: 'Close',
     edit: 'Edit',
     confirm: 'Confirm',
+    done: 'Done',
     apply: 'Apply',
     reset: 'Reset',
     copy: 'Copy',
@@ -548,6 +549,12 @@ export default {
     basic: 'Basic',
     random: 'Random',
     input: 'Input'
+  },
+
+  // ADetailer
+  adetailer: {
+    modalTitle: '✏️ ADetailer {label} - Prompt',
+    hint: '💡 If ADetailer prompts are empty, main prompts will be used.'
   },
 
   // Buttons

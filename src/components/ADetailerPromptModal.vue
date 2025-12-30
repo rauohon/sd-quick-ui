@@ -5,7 +5,7 @@
         <Transition name="ad-scale">
           <div v-if="modelValue && adetailerIndex >= 0" class="ad-prompt-modal" @click.stop>
             <div class="ad-prompt-header">
-              <h3>✏️ ADetailer {{ label }} - Prompt</h3>
+              <h3>{{ $t('adetailer.modalTitle', { label }) }}</h3>
               <button class="ad-prompt-close-btn" @click="handleClose">✕</button>
             </div>
 
@@ -31,12 +31,12 @@
               </div>
 
               <div class="ad-prompt-hint">
-                💡 ADetailer 프롬프트를 비워두면 메인 프롬프트가 사용됩니다.
+                {{ $t('adetailer.hint') }}
               </div>
             </div>
 
             <div class="ad-prompt-actions">
-              <button class="ad-prompt-done-btn" @click="handleClose">완료</button>
+              <button class="ad-prompt-done-btn" @click="handleClose">{{ $t('common.done') }}</button>
             </div>
           </div>
         </Transition>
