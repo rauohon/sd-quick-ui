@@ -87,12 +87,51 @@ export default {
   // History
   history: {
     title: 'History',
+    manage: 'History Manager',
     clear: 'Clear All',
     clearConfirm: 'Delete all history?',
     clearNonFavorites: 'Clear Non-Favorites',
     deleteSelected: 'Delete Selected',
     deleteConfirm: 'Delete {count} images?',
     noImages: 'No generated images',
+    noSearchResults: 'No search results',
+
+    // Search and filter
+    searchPlaceholder: 'Search prompts, parameters...',
+    sortNewest: 'Newest',
+    sortOldest: 'Oldest',
+    sortFavorite: 'Favorites',
+
+    // Selection
+    selectedCount: '{count} selected',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    selectImage: 'Select an image',
+
+    // Compare
+    compare: 'Compare',
+    compareTooltip: 'Compare selected images with current image',
+    compareMode: 'Compare Mode',
+    selectCompareImage: 'Select image to compare',
+    imageCompare: 'Image Comparison',
+    currentImage: 'Current Image',
+    compareImage: 'Compare Image',
+    closeCompare: 'Close Compare',
+    previous: 'Previous',
+    next: 'Next',
+
+    // Details
+    detailsTitle: 'Details',
+    generatedAt: 'Generated At',
+    status: 'Status',
+    interrupted: 'Interrupted Image',
+    parameters: 'Parameters',
+    loadParams: 'Load Parameters',
+    unknown: 'Unknown',
+
+    // Favorites
+    addFavorite: 'Add to Favorites',
+    removeFavorite: 'Remove from Favorites',
 
     // Time labels
     today: 'Today',

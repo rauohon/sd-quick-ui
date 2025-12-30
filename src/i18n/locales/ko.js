@@ -87,12 +87,51 @@ export default {
   // 히스토리
   history: {
     title: '히스토리',
+    manage: '히스토리 관리',
     clear: '전체 삭제',
     clearConfirm: '모든 히스토리를 삭제하시겠습니까?',
     clearNonFavorites: '즐겨찾기 제외 삭제',
     deleteSelected: '선택 삭제',
     deleteConfirm: '{count}개의 이미지를 삭제하시겠습니까?',
     noImages: '생성된 이미지가 없습니다',
+    noSearchResults: '검색 결과가 없습니다',
+
+    // Search and filter
+    searchPlaceholder: '프롬프트, 파라미터 검색...',
+    sortNewest: '최신순',
+    sortOldest: '오래된순',
+    sortFavorite: '즐겨찾기',
+
+    // Selection
+    selectedCount: '{count}개 선택됨',
+    selectAll: '전체 선택',
+    deselectAll: '선택 해제',
+    selectImage: '이미지를 선택하세요',
+
+    // Compare
+    compare: '비교',
+    compareTooltip: '선택한 이미지들과 현재 이미지 비교',
+    compareMode: '비교 모드',
+    selectCompareImage: '비교할 이미지 선택',
+    imageCompare: '이미지 비교',
+    currentImage: '현재 이미지',
+    compareImage: '비교 이미지',
+    closeCompare: '비교 종료',
+    previous: '이전',
+    next: '다음',
+
+    // Details
+    detailsTitle: '상세 정보',
+    generatedAt: '생성 시간',
+    status: '상태',
+    interrupted: '중단된 이미지',
+    parameters: '파라미터',
+    loadParams: '파라미터 적용',
+    unknown: '알 수 없음',
+
+    // Favorites
+    addFavorite: '즐겨찾기',
+    removeFavorite: '즐겨찾기 해제',
 
     // Time labels
     today: '오늘',

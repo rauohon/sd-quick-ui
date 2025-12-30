@@ -4,45 +4,45 @@
       <!-- Header -->
       <div class="modal-header">
         <div class="header-title">
-          <h3>히스토리 관리</h3>
+          <h3>{{ $t('history.manage') }}</h3>
           <span class="image-count-badge">{{ items.length }}/200</span>
         </div>
         <div class="header-actions">
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="프롬프트, 파라미터 검색..."
+            :placeholder="$t('history.searchPlaceholder')"
             class="search-input"
           />
           <select v-model="sortBy" class="sort-select">
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-            <option value="favorite">즐겨찾기</option>
+            <option value="newest">{{ $t('history.sortNewest') }}</option>
+            <option value="oldest">{{ $t('history.sortOldest') }}</option>
+            <option value="favorite">{{ $t('history.sortFavorite') }}</option>
           </select>
-          <span v-if="selectedIds.size > 0" class="selection-count-badge">{{ selectedIds.size }}개 선택됨</span>
-          <button @click="selectAll" class="select-btn" :disabled="filteredItems.length === 0">전체 선택</button>
-          <button @click="deselectAll" class="select-btn" :disabled="selectedIds.size === 0">선택 해제</button>
+          <span v-if="selectedIds.size > 0" class="selection-count-badge">{{ $t('history.selectedCount', { count: selectedIds.size }) }}</span>
+          <button @click="selectAll" class="select-btn" :disabled="filteredItems.length === 0">{{ $t('history.selectAll') }}</button>
+          <button @click="deselectAll" class="select-btn" :disabled="selectedIds.size === 0">{{ $t('history.deselectAll') }}</button>
           <button
             @click="compareSelected"
             :disabled="selectedIds.size === 0 || !selectedItem"
             class="action-btn compare"
-            title="선택한 이미지들과 현재 이미지 비교"
+            :title="$t('history.compareTooltip')"
           >
-            🔍 비교
+            🔍 {{ $t('history.compare') }}
           </button>
           <button
             @click="downloadSelected"
             :disabled="selectedIds.size === 0"
             class="action-btn download"
           >
-            💾 다운로드
+            💾 {{ $t('history.download') }}
           </button>
           <button
             @click="deleteSelected"
             :disabled="selectedIds.size === 0"
             class="action-btn delete"
           >
-            🗑️ 삭제
+            🗑️ {{ $t('common.delete') }}
           </button>
           <button class="close-btn" @click="$emit('close')">✕</button>
         </div>
@@ -53,7 +53,7 @@
         <!-- Left: Image Grid -->
         <div class="image-list">
           <div v-if="filteredItems.length === 0" class="empty-state">
-            <p>{{ searchQuery ? '검색 결과가 없습니다' : '히스토리가 비어있습니다' }}</p>
+            <p>{{ searchQuery ? $t('history.noSearchResults') : $t('history.noImages') }}</p>
           </div>
           <div
             v-for="item in sortedItems"
@@ -85,7 +85,7 @@
         <!-- Right: Detail Panel -->
         <div v-if="selectedItem" class="detail-panel">
           <div class="detail-header">
-            <h4>상세 정보</h4>
+            <h4>{{ $t('history.detailsTitle') }}</h4>
             <div class="detail-nav">
               <button
                 @click="navigatePrevious"
@@ -117,34 +117,34 @@
                 @click="toggleFavorite(selectedItem)"
                 :class="['action-btn', { favorite: selectedItem.favorite }]"
               >
-                {{ selectedItem.favorite ? '⭐ 즐겨찾기 해제' : '☆ 즐겨찾기' }}
+                {{ selectedItem.favorite ? '⭐ ' + $t('history.removeFavorite') : '☆ ' + $t('history.addFavorite') }}
               </button>
               <button @click="loadParams(selectedItem)" class="action-btn">
-                🔄 파라미터 적용
+                🔄 {{ $t('history.loadParams') }}
               </button>
               <button @click="downloadImage(selectedItem)" class="action-btn">
-                💾 다운로드
+                💾 {{ $t('history.download') }}
               </button>
               <button @click="startCompareMode(selectedItem)" class="action-btn">
-                🔍 비교 모드
+                🔍 {{ $t('history.compareMode') }}
               </button>
               <button @click="deleteImage(selectedItem)" class="action-btn delete">
-                🗑️ 삭제
+                🗑️ {{ $t('common.delete') }}
               </button>
             </div>
 
             <!-- Image Info -->
             <div class="info-section">
               <div class="info-item">
-                <strong>생성 시간</strong>
+                <strong>{{ $t('history.generatedAt') }}</strong>
                 <span>{{ formatFullTimestamp(selectedItem.timestamp) }}</span>
               </div>
               <div v-if="selectedItem.interrupted" class="info-item warning">
-                <strong>상태</strong>
-                <span>⚠️ 중단된 이미지</span>
+                <strong>{{ $t('history.status') }}</strong>
+                <span>⚠️ {{ $t('history.interrupted') }}</span>
               </div>
               <div v-if="selectedItem.params" class="params-section">
-                <strong>파라미터</strong>
+                <strong>{{ $t('history.parameters') }}</strong>
                 <div class="params-content">
                   <div v-if="selectedItem.params.prompt" class="param-item">
                     <span class="param-label">Prompt:</span>
@@ -189,7 +189,7 @@
         <!-- Empty Detail Panel -->
         <div v-else class="detail-panel empty">
           <div class="empty-detail">
-            <p>이미지를 선택하세요</p>
+            <p>{{ $t('history.selectImage') }}</p>
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@
       <!-- Comparison Mode -->
       <div v-if="isCompareMode" class="compare-overlay">
         <div class="compare-content">
-          <h4>비교할 이미지 선택</h4>
+          <h4>{{ $t('history.selectCompareImage') }}</h4>
           <div class="compare-grid">
             <div
               v-for="item in sortedItems.filter(i => i.id !== selectedItem?.id)"
@@ -209,7 +209,7 @@
               <div class="compare-time">{{ formatTimestamp(item.timestamp) }}</div>
             </div>
           </div>
-          <button @click="cancelCompare" class="cancel-compare-btn">취소</button>
+          <button @click="cancelCompare" class="cancel-compare-btn">{{ $t('common.cancel') }}</button>
         </div>
       </div>
 
@@ -217,14 +217,14 @@
       <div v-if="compareImages.length > 0" class="comparison-overlay">
         <div class="comparison-content">
           <div class="comparison-header">
-            <h3>이미지 비교</h3>
+            <h3>{{ $t('history.imageCompare') }}</h3>
             <div class="comparison-nav">
               <button
                 @click="previousCompareImage"
                 :disabled="compareIndex === 0"
                 class="compare-nav-btn"
               >
-                ◀ 이전
+                ◀ {{ $t('history.previous') }}
               </button>
               <span class="compare-counter">{{ compareIndex + 1 }} / {{ compareImages.length }}</span>
               <button
@@ -232,23 +232,23 @@
                 :disabled="compareIndex === compareImages.length - 1"
                 class="compare-nav-btn"
               >
-                다음 ▶
+                {{ $t('history.next') }} ▶
               </button>
             </div>
           </div>
           <div class="comparison-images">
             <div class="compare-image-wrapper">
-              <h4>현재 이미지</h4>
+              <h4>{{ $t('history.currentImage') }}</h4>
               <img :src="selectedItem.image" alt="Current" />
               <div class="compare-info">{{ formatFullTimestamp(selectedItem.timestamp) }}</div>
             </div>
             <div class="compare-image-wrapper">
-              <h4>비교 이미지</h4>
+              <h4>{{ $t('history.compareImage') }}</h4>
               <img :src="compareImages[compareIndex].image" alt="Compare" />
               <div class="compare-info">{{ formatFullTimestamp(compareImages[compareIndex].timestamp) }}</div>
             </div>
           </div>
-          <button @click="closeCompare" class="close-compare-btn">비교 종료</button>
+          <button @click="closeCompare" class="close-compare-btn">{{ $t('history.closeCompare') }}</button>
         </div>
       </div>
     </div>
@@ -257,6 +257,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   items: {
@@ -468,7 +471,7 @@ function formatTimestamp(timestamp) {
 }
 
 function formatFullTimestamp(timestamp) {
-  if (!timestamp) return '알 수 없음'
+  if (!timestamp) return t('history.unknown')
 
   try {
     const date = new Date(timestamp)
