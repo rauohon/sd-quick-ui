@@ -2,8 +2,8 @@
   <div class="form-group">
     <label>
       {{ label }}
-      <span class="weight-hint">(Ctrl+↑/↓: 가중치 조정)</span>
-      <span v-if="isGenerating && isChanged" class="generating-indicator" title="수정됨 - 다음 생성에 반영됩니다">
+      <span class="weight-hint">{{ $t('prompt.weightHint') }}</span>
+      <span v-if="isGenerating && isChanged" class="generating-indicator" :title="$t('prompt.changedDuringGeneration')">
         <span class="spinner"></span>
       </span>
     </label>

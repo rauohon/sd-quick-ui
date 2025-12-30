@@ -59,6 +59,10 @@ export default {
     infiniteModeOff: '무한 생성 모드 끄기',
     infiniteModeTooltip: 'Ctrl+↑/↓: 가중치 조정',
 
+    // Weight adjustment
+    weightHint: '(Ctrl+↑/↓: 가중치 조정)',
+    changedDuringGeneration: '수정됨 - 다음 생성에 반영됩니다',
+
     // Prompt slots
     slots: '프롬프트 슬롯',
     slotEmpty: '빈 슬롯',

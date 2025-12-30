@@ -59,6 +59,10 @@ export default {
     infiniteModeOff: 'Disable Infinite Mode',
     infiniteModeTooltip: 'Ctrl+↑/↓: Adjust weight',
 
+    // Weight adjustment
+    weightHint: '(Ctrl+↑/↓: Adjust weight)',
+    changedDuringGeneration: 'Modified - will apply to next generation',
+
     // Prompt slots
     slots: 'Prompt Slots',
     slotEmpty: 'Empty Slot',
