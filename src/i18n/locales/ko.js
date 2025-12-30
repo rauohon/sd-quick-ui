@@ -239,17 +239,36 @@ export default {
   // 프리셋
   preset: {
     title: '프리셋',
+    manager: '⚙️ Preset Manager',
     save: '프리셋 저장',
     load: '프리셋 불러오기',
     delete: '프리셋 삭제',
     name: '프리셋 이름',
+    nameRequired: '프리셋 이름 *',
+    namePlaceholder: '예: High Quality Portrait',
+    descriptionOptional: '설명 (선택)',
+    descriptionPlaceholder: '예: 고품질 인물 사진용 설정',
     saved: '프리셋이 저장되었습니다',
     updated: '프리셋이 수정되었습니다',
     deleted: '프리셋이 삭제되었습니다',
     loaded: '프리셋을 불러왔습니다',
     loadConfirm: '이 프리셋을 불러오시겠습니까?',
     deleteConfirm: '이 프리셋을 삭제하시겠습니까?',
-    noPresets: '저장된 프리셋이 없습니다'
+    deleteConfirmWithName: '프리셋 "{name}"을(를) 삭제하시겠습니까?',
+    noPresets: '저장된 프리셋이 없습니다',
+    noSettings: '저장할 설정이 없습니다',
+    nameRequiredError: '프리셋 이름을 입력하세요',
+    savedWithName: '프리셋 "{name}" 저장됨',
+    appliedWithName: '프리셋 "{name}" 적용됨',
+    newPreset: '새 프리셋 저장',
+    editPreset: '프리셋 수정',
+    addFirst: '➕ 첫 프리셋 저장하기',
+    addNew: '➕ New',
+    searchPlaceholder: '🔍 Search presets...',
+    presets: 'presets',
+    noSearchResults: '검색 결과가 없습니다',
+    applyTooltip: 'Apply preset',
+    saveCurrentTooltip: 'Save current settings as preset'
   },
 
   // 설정

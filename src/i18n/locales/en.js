@@ -239,17 +239,36 @@ export default {
   // Preset
   preset: {
     title: 'Presets',
+    manager: '⚙️ Preset Manager',
     save: 'Save Preset',
     load: 'Load Preset',
     delete: 'Delete Preset',
     name: 'Preset Name',
+    nameRequired: 'Preset Name *',
+    namePlaceholder: 'e.g., High Quality Portrait',
+    descriptionOptional: 'Description (Optional)',
+    descriptionPlaceholder: 'e.g., Settings for high-quality portrait photos',
     saved: 'Preset saved',
     updated: 'Preset updated',
     deleted: 'Preset deleted',
     loaded: 'Preset loaded',
     loadConfirm: 'Load this preset?',
     deleteConfirm: 'Delete this preset?',
-    noPresets: 'No saved presets'
+    deleteConfirmWithName: 'Delete preset "{name}"?',
+    noPresets: 'No saved presets',
+    noSettings: 'No settings to save',
+    nameRequiredError: 'Please enter preset name',
+    savedWithName: 'Preset "{name}" saved',
+    appliedWithName: 'Preset "{name}" applied',
+    newPreset: 'New Preset',
+    editPreset: 'Edit Preset',
+    addFirst: '➕ Save First Preset',
+    addNew: '➕ New',
+    searchPlaceholder: '🔍 Search presets...',
+    presets: 'presets',
+    noSearchResults: 'No search results',
+    applyTooltip: 'Apply preset',
+    saveCurrentTooltip: 'Save current settings as preset'
   },
 
   // Settings

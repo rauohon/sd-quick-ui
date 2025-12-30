@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePresets } from '../composables/usePresets'
+
+const { t } = useI18n()
 
 // Props
 const props = defineProps({
@@ -44,17 +47,17 @@ function closeAddDialog() {
 
 function handleAddPreset() {
   if (!presetName.value.trim()) {
-    props.showToast?.('프리셋 이름을 입력하세요', 'error')
+    props.showToast?.(t('preset.nameRequiredError'), 'error')
     return
   }
 
   if (!props.currentParams) {
-    props.showToast?.('저장할 설정이 없습니다', 'error')
+    props.showToast?.(t('preset.noSettings'), 'error')
     return
   }
 
   const preset = addPreset(presetName.value, presetDescription.value, props.currentParams)
-  props.showToast?.(`프리셋 "${preset.name}" 저장됨`, 'success')
+  props.showToast?.(t('preset.savedWithName', { name: preset.name }), 'success')
   closeAddDialog()
 }
 
@@ -74,7 +77,7 @@ function closeEditDialog() {
 
 function handleUpdatePreset() {
   if (!presetName.value.trim()) {
-    props.showToast?.('프리셋 이름을 입력하세요', 'error')
+    props.showToast?.(t('preset.nameRequiredError'), 'error')
     return
   }
 
@@ -82,7 +85,7 @@ function handleUpdatePreset() {
     name: presetName.value,
     description: presetDescription.value,
   })
-  props.showToast?.('프리셋이 수정되었습니다', 'success')
+  props.showToast?.(t('preset.updated'), 'success')
   closeEditDialog()
 }
 
@@ -98,13 +101,13 @@ function closeDeleteConfirm() {
 
 function handleDeletePreset() {
   deletePreset(deletingPreset.value.id)
-  props.showToast?.('프리셋이 삭제되었습니다', 'success')
+  props.showToast?.(t('preset.deleted'), 'success')
   closeDeleteConfirm()
 }
 
 function applyPreset(preset) {
   emit('applyPreset', preset.params)
-  props.showToast?.(`프리셋 "${preset.name}" 적용됨`, 'success')
+  props.showToast?.(t('preset.appliedWithName', { name: preset.name }), 'success')
 }
 
 function close() {
@@ -124,10 +127,10 @@ onMounted(() => {
 <template>
   <div class="preset-manager-panel">
     <div class="panel-header">
-      <h3>⚙️ Preset Manager</h3>
+      <h3>{{ $t('preset.manager') }}</h3>
       <div class="header-actions">
-        <button class="add-btn" @click="openAddDialog" title="Save current settings as preset">
-          ➕ New
+        <button class="add-btn" @click="openAddDialog" :title="$t('preset.saveCurrentTooltip')">
+          {{ $t('preset.addNew') }}
         </button>
         <button class="close-btn" @click="close">✕</button>
       </div>
@@ -137,11 +140,11 @@ onMounted(() => {
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="🔍 Search presets..."
+        :placeholder="$t('preset.searchPlaceholder')"
         class="search-input"
       >
       <div class="preset-count" v-if="presets.length > 0">
-        {{ filteredPresets.length }} / {{ presets.length }} presets
+        {{ filteredPresets.length }} / {{ presets.length }} {{ $t('preset.presets') }}
       </div>
     </div>
 
@@ -154,13 +157,13 @@ onMounted(() => {
         <div class="preset-header">
           <div class="preset-name">{{ preset.name }}</div>
           <div class="preset-actions">
-            <button class="action-btn apply-btn" @click="applyPreset(preset)" title="Apply preset">
+            <button class="action-btn apply-btn" @click="applyPreset(preset)" :title="$t('preset.applyTooltip')">
               ✓
             </button>
-            <button class="action-btn edit-btn" @click="openEditDialog(preset)" title="Edit">
+            <button class="action-btn edit-btn" @click="openEditDialog(preset)" :title="$t('common.edit')">
               ✏️
             </button>
-            <button class="action-btn delete-btn" @click="openDeleteConfirm(preset)" title="Delete">
+            <button class="action-btn delete-btn" @click="openDeleteConfirm(preset)" :title="$t('common.delete')">
               🗑️
             </button>
           </div>
@@ -171,41 +174,41 @@ onMounted(() => {
       </div>
 
       <div v-if="filteredPresets.length === 0 && presets.length === 0" class="empty-state">
-        <p>저장된 프리셋이 없습니다</p>
+        <p>{{ $t('preset.noPresets') }}</p>
         <button class="add-preset-btn" @click="openAddDialog">
-          ➕ 첫 프리셋 저장하기
+          {{ $t('preset.addFirst') }}
         </button>
       </div>
 
       <div v-if="filteredPresets.length === 0 && presets.length > 0" class="empty-state">
-        <p>검색 결과가 없습니다</p>
+        <p>{{ $t('preset.noSearchResults') }}</p>
       </div>
     </div>
 
     <!-- Add Dialog -->
     <div v-if="showAddDialog" class="dialog-overlay" @click="closeAddDialog">
       <div class="dialog" @click.stop>
-        <h3>새 프리셋 저장</h3>
+        <h3>{{ $t('preset.newPreset') }}</h3>
         <div class="form-group">
-          <label>프리셋 이름 *</label>
+          <label>{{ $t('preset.nameRequired') }}</label>
           <input
             v-model="presetName"
             type="text"
-            placeholder="예: High Quality Portrait"
+            :placeholder="$t('preset.namePlaceholder')"
             @keyup.enter="handleAddPreset"
           >
         </div>
         <div class="form-group">
-          <label>설명 (선택)</label>
+          <label>{{ $t('preset.descriptionOptional') }}</label>
           <textarea
             v-model="presetDescription"
-            placeholder="예: 고품질 인물 사진용 설정"
+            :placeholder="$t('preset.descriptionPlaceholder')"
             rows="3"
           ></textarea>
         </div>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeAddDialog">취소</button>
-          <button class="confirm-btn" @click="handleAddPreset">저장</button>
+          <button class="cancel-btn" @click="closeAddDialog">{{ $t('common.cancel') }}</button>
+          <button class="confirm-btn" @click="handleAddPreset">{{ $t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -213,9 +216,9 @@ onMounted(() => {
     <!-- Edit Dialog -->
     <div v-if="showEditDialog" class="dialog-overlay" @click="closeEditDialog">
       <div class="dialog" @click.stop>
-        <h3>프리셋 수정</h3>
+        <h3>{{ $t('preset.editPreset') }}</h3>
         <div class="form-group">
-          <label>프리셋 이름 *</label>
+          <label>{{ $t('preset.nameRequired') }}</label>
           <input
             v-model="presetName"
             type="text"
@@ -223,15 +226,15 @@ onMounted(() => {
           >
         </div>
         <div class="form-group">
-          <label>설명 (선택)</label>
+          <label>{{ $t('preset.descriptionOptional') }}</label>
           <textarea
             v-model="presetDescription"
             rows="3"
           ></textarea>
         </div>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeEditDialog">취소</button>
-          <button class="confirm-btn" @click="handleUpdatePreset">수정</button>
+          <button class="cancel-btn" @click="closeEditDialog">{{ $t('common.cancel') }}</button>
+          <button class="confirm-btn" @click="handleUpdatePreset">{{ $t('common.edit') }}</button>
         </div>
       </div>
     </div>
@@ -239,11 +242,11 @@ onMounted(() => {
     <!-- Delete Confirm -->
     <div v-if="showDeleteConfirm" class="dialog-overlay" @click="closeDeleteConfirm">
       <div class="dialog confirm-dialog" @click.stop>
-        <h3>프리셋 삭제</h3>
-        <p>프리셋 "{{ deletingPreset?.name }}"을(를) 삭제하시겠습니까?</p>
+        <h3>{{ $t('preset.delete') }}</h3>
+        <p>{{ $t('preset.deleteConfirmWithName', { name: deletingPreset?.name }) }}</p>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeDeleteConfirm">취소</button>
-          <button class="delete-confirm-btn" @click="handleDeletePreset">삭제</button>
+          <button class="cancel-btn" @click="closeDeleteConfirm">{{ $t('common.cancel') }}</button>
+          <button class="delete-confirm-btn" @click="handleDeletePreset">{{ $t('common.delete') }}</button>
         </div>
       </div>
     </div>
