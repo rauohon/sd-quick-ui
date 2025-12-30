@@ -51,6 +51,7 @@ export default {
     negative: 'Negative Prompt',
     placeholder: 'Enter prompt...',
     negativePlaceholder: 'Enter negative prompt...',
+    required: 'Please enter prompt!',
 
     infiniteMode: 'Infinite Generation Mode',
     infiniteModeOn: 'Enable Infinite Mode',
@@ -319,10 +320,12 @@ export default {
       modelChangeFailed: 'Failed to change model',
 
       // API connection errors
+      authRequired: 'Authentication required',
       accessDenied: 'Access denied',
       serverError: 'Server error ({status})',
       serverInternalError: 'WebUI server internal error',
       noResponse: 'WebUI is not responding. Please try again later.',
+      connectionFailed: 'Cannot connect to WebUI. Please check if WebUI is running and --api flag is set.',
       apiResponseError: 'API response error',
 
       // Storage errors
@@ -411,6 +414,37 @@ export default {
     remaining: '{time} remaining',
     secondsRemaining: '{eta}s remaining',
     imageGenerated: '{size} image generated'
+  },
+
+  // Image Generation
+  generation: {
+    resuming: 'Resuming...',
+    ongoingDetected: '🔄 Detected ongoing generation',
+    processing: 'Processing...',
+    preparing: 'Preparing...',
+    interrupted: 'Generation interrupted',
+    skipCurrent: 'Skipping current image',
+    skipFailed: 'Skip failed',
+    interruptFailed: 'Interrupt failed',
+    interruptComplete: 'Interrupt requested (API response: {error})',
+    imageCount: 'Image {current}/{total}',
+    step: 'Step {current}/{total}',
+    progressFetchFailed: 'Failed to fetch progress',
+    parametersCorrected: '⚙️ Parameters auto-corrected: {corrections}',
+    autoDeleted: '💾 {count} old images auto-deleted due to 200 image limit (favorites excluded)'
+  },
+
+  // Infinite Mode
+  infiniteMode: {
+    started: 'Infinite mode started',
+    interrupted: 'Infinite mode interrupted (total {count} images generated)',
+    stopped: 'Infinite mode stopped (total {count} images generated)',
+    stoppedCurrent: '⏸️ Infinite mode disabled - will stop after current image completes (total {count} images)',
+    alreadyRunning: '⚠️ Infinite mode is already running',
+    waitingCurrent: '⚠️ Infinite mode will start after current generation completes',
+    waitTimeout: '⚠️ Wait timeout exceeded. Infinite mode start cancelled.',
+    generationTimeout: '⚠️ Generation timeout (10 min). Infinite mode stopped.',
+    autoStopped: '⚠️ Infinite mode auto-stopped after {count} consecutive errors'
   },
 
   // Buttons

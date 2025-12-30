@@ -42,7 +42,7 @@ function validateNumber(value, min, max, defaultValue, step = null) {
 // Sleep utility function (reusable Promise for delays)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-export function useImageGeneration(params, enabledADetailers, showToast) {
+export function useImageGeneration(params, enabledADetailers, showToast, t) {
   const isGenerating = ref(false)
   const progress = ref(0)
   const progressState = ref('')
@@ -80,9 +80,9 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
         if (hasActiveJob) {
           isGenerating.value = true
           progress.value = progressPercentage
-          progressState.value = '이어서 진행 중...'
+          progressState.value = t('generation.resuming')
           startProgressPolling()
-          showToast?.('🔄 진행 중인 생성 작업을 감지했습니다', 'info')
+          showToast?.(t('generation.ongoingDetected'), 'info')
         }
       }
     } catch (error) {
@@ -144,7 +144,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
             // Job number (for batch)
             if (state.job_count > 1) {
-              parts.push(`이미지 ${state.job_no}/${state.job_count}`)
+              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
             }
 
             // Job description
@@ -154,18 +154,18 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
             // Sampling progress
             if (state.sampling_step !== undefined && state.sampling_steps > 0) {
-              parts.push(`Step ${state.sampling_step}/${state.sampling_steps}`)
+              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
             }
 
             // ETA
             if (data.eta_relative > 0) {
               const eta = Math.ceil(data.eta_relative)
-              parts.push(`${eta}초 남음`)
+              parts.push(t('time.secondsRemaining', { eta }))
             }
 
-            stateText = parts.join(' • ') || '처리 중...'
+            stateText = parts.join(' • ') || t('generation.processing')
           } else {
-            stateText = '처리 중...'
+            stateText = t('generation.processing')
           }
 
           progressState.value = stateText
@@ -176,7 +176,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
           }
         }
       } catch (error) {
-        console.error('진행상황 조회 실패:', error)
+        console.error(t('generation.progressFetchFailed'), error)
       }
     }, PROGRESS_POLL_INTERVAL)
   }
@@ -239,12 +239,12 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       }, 1000)
 
       if (wasInfiniteMode) {
-        showToast(`무한 생성 모드가 중단되었습니다 (총 ${infiniteCount.value}장 생성)`, 'info')
+        showToast(t('infiniteMode.interrupted', { count: infiniteCount.value }), 'info')
       } else {
-        showToast('생성이 중단되었습니다', 'info')
+        showToast(t('generation.interrupted'), 'info')
       }
     } catch (error) {
-      console.error('중단 실패:', error)
+      console.error(t('generation.interruptFailed'), error)
 
       // 에러가 발생해도 프론트엔드 상태는 정리
       if (isInfiniteMode.value) {
@@ -267,7 +267,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
         }
       }, 1000)
 
-      showToast(`중단 요청 완료 (API 응답: ${error.message})`, 'warning')
+      showToast(t('generation.interruptComplete', { error: error.message }), 'warning')
     }
   }
 
@@ -282,10 +282,10 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       await fetch(`${API_URL}/sdapi/v1/skip`, {
         method: 'POST',
       })
-      showToast('현재 이미지를 스킵합니다', 'info')
+      showToast(t('generation.skipCurrent'), 'info')
     } catch (error) {
-      console.error('스킵 실패:', error)
-      showToast('스킵 실패', 'error')
+      console.error(t('generation.skipFailed'), error)
+      showToast(t('generation.skipFailed'), 'error')
     }
   }
 
@@ -306,7 +306,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     // 루프 플래그는 그대로 두어 현재 생성이 완료되면 자연스럽게 종료되도록 함
     // isInfiniteLoopRunning은 startInfiniteGeneration의 while 루프에서 체크됨
 
-    showToast(`⏸️ 무한모드 해제 - 현재 이미지 완성 후 중단됩니다 (총 ${currentCount}장 생성)`, 'info')
+    showToast(t('infiniteMode.stoppedCurrent', { count: currentCount }), 'info')
   }
 
   /**
@@ -319,13 +319,13 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       // 이미 무한 루프가 실행 중이면 중복 실행 방지 (race condition 방지)
       if (isInfiniteLoopRunning) {
         isInfiniteMode.value = false // 플래그도 원복
-        showToast('⚠️ 무한 모드가 이미 실행 중입니다', 'warning')
+        showToast(t('infiniteMode.alreadyRunning'), 'warning')
         return
       }
 
       // 현재 생성 중이면 경고
       if (isGenerating.value) {
-        showToast('⚠️ 현재 생성이 완료된 후 무한 모드가 시작됩니다', 'info')
+        showToast(t('infiniteMode.waitingCurrent'), 'info')
       }
 
       infiniteCount.value = 0
@@ -334,12 +334,12 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       // CRITICAL: 플래그를 미리 설정해서 중복 호출 방지 (race condition 방지)
       isInfiniteLoopRunning = true
 
-      showToast('무한 생성 모드 시작', 'success')
+      showToast(t('infiniteMode.started'), 'success')
       // 무한 생성 시작
       startInfiniteGeneration()
     } else {
       consecutiveErrors.value = 0 // 에러 카운터 리셋
-      showToast(`무한 생성 모드 중단 (총 ${infiniteCount.value}장 생성)`, 'info')
+      showToast(t('infiniteMode.stopped', { count: infiniteCount.value }), 'info')
     }
   }
 
@@ -367,7 +367,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       }
 
       if (waitTime >= INFINITE_MODE_INITIAL_WAIT) {
-        showToast('⚠️ 기존 생성 대기 시간 초과. 무한 모드 시작 취소.', 'error')
+        showToast(t('infiniteMode.waitTimeout'), 'error')
         isInfiniteMode.value = false
         isInfiniteLoopRunning = false
         return
@@ -408,8 +408,8 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
         }
 
         if (waitTime >= GENERATION_TIMEOUT) {
-          console.error('Generation timeout (10분 초과)')
-          showToast('⚠️ 생성 시간 초과 (10분). 무한 모드 중단됨.', 'error')
+          console.error('Generation timeout (10 min)')
+          showToast(t('infiniteMode.generationTimeout'), 'error')
           isInfiniteMode.value = false
           break
         }
@@ -449,7 +449,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
     } = params
 
     if (!prompt.value.trim()) {
-      showToast('프롬프트를 입력해주세요!', 'error')
+      showToast(t('prompt.required'), 'error')
       return
     }
 
@@ -488,13 +488,12 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
     // 파라미터 보정 알림 (주요 파라미터만)
     if (corrections.length > 0) {
-      const correctionMsg = `⚙️ 파라미터 자동 보정됨: ${corrections.join(', ')}`
-      showToast(correctionMsg, 'warning')
+      showToast(t('generation.parametersCorrected', { corrections: corrections.join(', ') }), 'warning')
     }
 
     isGenerating.value = true
     progress.value = 0
-    progressState.value = '준비 중...'
+    progressState.value = t('generation.preparing')
     currentImage.value = ''
     finalImageReceived.value = false // 플래그 리셋
 
@@ -588,7 +587,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
       })
 
       if (!response.ok) {
-        throw new Error(`API 에러: ${response.status}`)
+        throw new Error(t('message.error.apiErrorWithStatus', { status: response.status }))
       }
 
       const data = await response.json()
@@ -627,7 +626,7 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
 
           // 200장 초과로 삭제된 이미지가 있으면 알림
           if (result.deletedCount > 0) {
-            showToast(`💾 200장 초과로 오래된 이미지 ${result.deletedCount}장이 자동 삭제되었습니다 (즐겨찾기 제외)`, 'info')
+            showToast(t('generation.autoDeleted', { count: result.deletedCount }), 'info')
           }
         } catch (error) {
           console.error('IndexedDB 저장 실패 (무시):', error)
@@ -664,44 +663,44 @@ export function useImageGeneration(params, enabledADetailers, showToast) {
         }
       }
     } catch (error) {
-      console.error('이미지 생성 실패:', error)
+      console.error(t('message.error.generationFailed'), error)
 
       // 에러 카운터 증가
       consecutiveErrors.value++
 
-      let message = '이미지 생성 실패'
+      let message = t('message.error.generationFailed')
 
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = 'WebUI에 연결할 수 없습니다. WebUI가 실행 중인지, --api 플래그가 설정되었는지 확인해주세요.'
-      } else if (error.message.includes('API 에러')) {
+        message = t('message.error.connectionFailed')
+      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
         const statusMatch = error.message.match(/\d+/)
         const status = statusMatch ? parseInt(statusMatch[0]) : null
 
         switch (status) {
           case 401:
-            message = '인증이 필요합니다'
+            message = t('message.error.authRequired')
             break
           case 403:
-            message = '접근이 거부되었습니다'
+            message = t('message.error.accessDenied')
             break
           case 500:
-            message = 'WebUI 서버 내부 오류가 발생했습니다'
+            message = t('message.error.serverInternalError')
             break
           case 503:
-            message = 'WebUI가 응답하지 않습니다. 잠시 후 다시 시도해주세요.'
+            message = t('message.error.noResponse')
             break
           default:
-            message = `서버 오류 (${status})`
+            message = t('message.error.serverError', { status })
         }
       } else {
-        message = `이미지 생성 실패: ${error.message}`
+        message = t('message.error.generationFailedMessage', { error: error.message })
       }
 
       // 무한 모드일 때 연속 에러 체크
       if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
         isInfiniteMode.value = false
         isInfiniteLoopRunning = false // 루프 플래그도 리셋
-        showToast(`⚠️ 연속 ${MAX_CONSECUTIVE_ERRORS}회 에러 발생으로 무한 생성 모드가 자동 중단되었습니다`, 'error')
+        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
         console.warn(`Infinite mode auto-stopped after ${consecutiveErrors.value} consecutive errors`)
       } else {
         showToast(message, 'error')

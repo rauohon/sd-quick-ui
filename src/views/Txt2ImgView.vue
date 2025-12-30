@@ -322,7 +322,8 @@ const imageGeneration = useImageGeneration(
     adetailers, notificationType, notificationVolume, selectedModel
   },
   enabledADetailers,
-  props.showToast
+  props.showToast,
+  t
 )
 
 const {

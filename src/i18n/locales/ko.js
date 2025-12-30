@@ -51,6 +51,7 @@ export default {
     negative: '네거티브 프롬프트',
     placeholder: '프롬프트를 입력하세요...',
     negativePlaceholder: '네거티브 프롬프트를 입력하세요...',
+    required: '프롬프트를 입력해주세요!',
 
     infiniteMode: '무한 생성 모드',
     infiniteModeOn: '무한 생성 모드 켜기',
@@ -319,10 +320,12 @@ export default {
       modelChangeFailed: '모델 변경 실패',
 
       // API connection errors
+      authRequired: '인증이 필요합니다',
       accessDenied: '접근이 거부되었습니다',
       serverError: '서버 오류 ({status})',
       serverInternalError: 'WebUI 서버 내부 오류가 발생했습니다',
       noResponse: 'WebUI가 응답하지 않습니다. 잠시 후 다시 시도해주세요.',
+      connectionFailed: 'WebUI에 연결할 수 없습니다. WebUI가 실행 중인지, --api 플래그가 설정되었는지 확인해주세요.',
       apiResponseError: 'API 응답 오류',
 
       // Storage errors
@@ -411,6 +414,37 @@ export default {
     remaining: '{time} 남음',
     secondsRemaining: '{eta}초 남음',
     imageGenerated: '{size} 이미지가 생성되었습니다'
+  },
+
+  // 이미지 생성
+  generation: {
+    resuming: '이어서 진행 중...',
+    ongoingDetected: '🔄 진행 중인 생성 작업을 감지했습니다',
+    processing: '처리 중...',
+    preparing: '준비 중...',
+    interrupted: '생성이 중단되었습니다',
+    skipCurrent: '현재 이미지를 스킵합니다',
+    skipFailed: '스킵 실패',
+    interruptFailed: '중단 실패',
+    interruptComplete: '중단 요청 완료 (API 응답: {error})',
+    imageCount: '이미지 {current}/{total}',
+    step: 'Step {current}/{total}',
+    progressFetchFailed: '진행상황 조회 실패',
+    parametersCorrected: '⚙️ 파라미터 자동 보정됨: {corrections}',
+    autoDeleted: '💾 200장 초과로 오래된 이미지 {count}장이 자동 삭제되었습니다 (즐겨찾기 제외)'
+  },
+
+  // 무한 생성 모드
+  infiniteMode: {
+    started: '무한 생성 모드 시작',
+    interrupted: '무한 생성 모드가 중단되었습니다 (총 {count}장 생성)',
+    stopped: '무한 생성 모드 중단 (총 {count}장 생성)',
+    stoppedCurrent: '⏸️ 무한모드 해제 - 현재 이미지 완성 후 중단됩니다 (총 {count}장 생성)',
+    alreadyRunning: '⚠️ 무한 모드가 이미 실행 중입니다',
+    waitingCurrent: '⚠️ 현재 생성이 완료된 후 무한 모드가 시작됩니다',
+    waitTimeout: '⚠️ 기존 생성 대기 시간 초과. 무한 모드 시작 취소.',
+    generationTimeout: '⚠️ 생성 시간 초과 (10분). 무한 모드 중단됨.',
+    autoStopped: '⚠️ 연속 {count}회 에러 발생으로 무한 생성 모드가 자동 중단되었습니다'
   },
 
   // 버튼
