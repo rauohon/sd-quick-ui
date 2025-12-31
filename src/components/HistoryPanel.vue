@@ -77,7 +77,15 @@
       </div>
     </div>
     <div v-if="isExpanded && !isContentCollapsed" class="panel-footer center">
-      <span class="image-count">{{ imageCount }}/200</span>
+      <span class="image-count">{{ totalImageCount }}/200</span>
+      <button
+        v-if="imageCount < totalImageCount"
+        class="footer-btn load-more"
+        @click="$emit('load-more')"
+        :title="$t('history.loadMoreTooltip')"
+      >
+        {{ $t('history.loadMore') }} ({{ imageCount }}/{{ totalImageCount }})
+      </button>
       <button class="footer-btn" @click="$emit('add-sample')">
         {{ $t('history.addSample') }}
       </button>
@@ -111,6 +119,10 @@ defineProps({
     type: Number,
     default: 0
   },
+  totalImageCount: {
+    type: Number,
+    default: 0
+  },
   isEmpty: {
     type: Boolean,
     default: true
@@ -134,7 +146,8 @@ defineEmits([
   'deselect-all',
   'download-selected',
   'clear-history',
-  'add-sample'
+  'add-sample',
+  'load-more'
 ])
 </script>
 

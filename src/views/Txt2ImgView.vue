@@ -14,6 +14,7 @@ import {
   API_CHECK_THROTTLE,
   API_TIMEOUT,
   INITIAL_LOAD_COUNT,
+  LOAD_MORE_COUNT,
   DEBOUNCE_TEXT_INPUT,
   DEBOUNCE_NUMBER_INPUT,
   NOTIFICATION_TYPES,
@@ -367,7 +368,7 @@ const historyRefs = {
 }
 const historyComposables = { indexedDB, localStorage, slotManagement }
 const historyCallbacks = { showToast: props.showToast, showConfirm: props.showConfirm }
-const historyConstants = { INITIAL_LOAD_COUNT, SLOT_COUNT }
+const historyConstants = { INITIAL_LOAD_COUNT, LOAD_MORE_COUNT, SLOT_COUNT }
 const history = useHistory(historyRefs, historyComposables, historyCallbacks, historyConstants, t)
 const {
   showFavoriteOnly,
@@ -375,10 +376,12 @@ const {
   selectedImages,
   showHistoryDetail,
   selectedHistoryItem,
+  totalImageCount,
   filteredImages,
   toggleImageFavorite,
   deleteImage,
   clearHistory,
+  loadMoreImages,
   openHistoryDetail,
   openHistoryManager,
   closeHistoryDetail,
@@ -818,6 +821,7 @@ onUnmounted(() => {
         :is-selection-mode="isSelectionMode"
         :selected-count="selectedImages.size"
         :image-count="generatedImages.length"
+        :total-image-count="totalImageCount"
         :is-empty="filteredImages.length === 0"
         :has-favorites="generatedImages.some(img => img.favorite)"
         :has-images="generatedImages.length > 0"
@@ -830,6 +834,7 @@ onUnmounted(() => {
         @download-selected="downloadSelectedImages"
         @clear-history="clearHistory"
         @add-sample="addSampleImage"
+        @load-more="loadMoreImages"
       >
         <HistoryImageItem
           v-for="(item, index) in filteredImages"

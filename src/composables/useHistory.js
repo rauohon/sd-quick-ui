@@ -35,7 +35,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
   const { indexedDB, localStorage, slotManagement } = composables
   const { showToast, showConfirm } = callbacks
-  const { INITIAL_LOAD_COUNT, SLOT_COUNT } = constants
+  const { INITIAL_LOAD_COUNT, LOAD_MORE_COUNT, SLOT_COUNT } = constants
 
   // Initialize SampleImage composable
   const sampleImageRefs = { generatedImages, currentImage, lastUsedParams, adetailers }
@@ -47,6 +47,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
   const selectedImages = ref(new Set())
   const showHistoryDetail = ref(false)
   const selectedHistoryItem = ref(null)
+  const totalImageCount = ref(0) // IndexedDB에 저장된 전체 이미지 수
 
   // Computed
   const filteredImages = computed(() => {
@@ -108,6 +109,9 @@ export function useHistory(refs, composables, callbacks, constants, t) {
         generatedImages.value.splice(itemIndex, 1)
       }
 
+      // Update total count
+      totalImageCount.value = await indexedDB.getImageCount()
+
       showToast?.(t('history.imageDeleted'), 'success')
     } catch (error) {
       console.error('이미지 삭제 실패:', error)
@@ -145,6 +149,9 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       const favoriteImages = generatedImages.value.filter(img => img.favorite)
       generatedImages.value = favoriteImages
 
+      // Update total count
+      totalImageCount.value = await indexedDB.getImageCount()
+
       // 즐겨찾기가 없으면 현재 이미지도 클리어
       if (favoriteImages.length === 0) {
         currentImage.value = ''
@@ -159,6 +166,29 @@ export function useHistory(refs, composables, callbacks, constants, t) {
     } catch (error) {
       console.error('히스토리 삭제 실패:', error)
       showToast?.(t('history.deleteFailed'), 'error')
+    }
+  }
+
+  /**
+   * 더 많은 이미지 로드
+   */
+  async function loadMoreImages() {
+    try {
+      const currentCount = generatedImages.value.length
+      const loadCount = Math.min(currentCount + LOAD_MORE_COUNT, totalImageCount.value)
+
+      if (currentCount >= totalImageCount.value) {
+        showToast?.(t('history.noMoreImages'), 'info')
+        return
+      }
+
+      const history = await indexedDB.getRecentImages(loadCount)
+      generatedImages.value = history
+      console.log(`추가 로드: ${history.length}/${totalImageCount.value}개 이미지`)
+      showToast?.(t('history.loadedMore', { count: history.length - currentCount }), 'success')
+    } catch (error) {
+      console.error('이미지 추가 로드 실패:', error)
+      showToast?.(t('history.loadMoreFailed'), 'error')
     }
   }
 
@@ -436,12 +466,15 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
     // Load history from IndexedDB
     try {
+      // Get total image count first
+      totalImageCount.value = await indexedDB.getImageCount()
+
       const history = await indexedDB.getRecentImages(INITIAL_LOAD_COUNT) // 최근 N장 로드 (메모리 최적화)
       if (history.length > 0) {
         generatedImages.value = history
         currentImage.value = history[0].image
         lastUsedParams.value = history[0].params
-        console.log(`IndexedDB에서 ${history.length}개 이미지 로드 완료`)
+        console.log(`IndexedDB에서 ${history.length}/${totalImageCount.value}개 이미지 로드 완료`)
       }
     } catch (error) {
       console.error('IndexedDB 로드 실패:', error)
@@ -497,6 +530,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
     selectedImages,
     showHistoryDetail,
     selectedHistoryItem,
+    totalImageCount,
 
     // Computed
     filteredImages,
@@ -505,6 +539,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
     toggleImageFavorite,
     deleteImage,
     clearHistory,
+    loadMoreImages,
 
     // Functions - Modal
     openHistoryDetail,

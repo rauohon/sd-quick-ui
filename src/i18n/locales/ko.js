@@ -217,6 +217,13 @@ export default {
     addTestSample: '테스트용 샘플 추가',
     addSample: '+ 샘플 추가',
 
+    // Load more
+    loadMore: '더보기',
+    loadMoreTooltip: '추가 이미지 로드 (50개)',
+    noMoreImages: '더 이상 로드할 이미지가 없습니다',
+    loadedMore: '✅ {count}개 이미지 추가 로드',
+    loadMoreFailed: '이미지 추가 로드에 실패했습니다',
+
     // Messages
     imageDeleted: '🗑️ 이미지가 삭제되었습니다',
     imagesDeleted: '🗑️ {count}개 이미지가 삭제되었습니다',

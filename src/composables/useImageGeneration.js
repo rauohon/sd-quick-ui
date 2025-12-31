@@ -12,7 +12,7 @@ import {
   PROGRESS_POLL_INTERVAL,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT,
-  MAX_IMAGES_IN_MEMORY,
+  MAX_IMAGES,
   PARAM_RANGES
 } from '../config/constants'
 
@@ -636,8 +636,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t) {
         generatedImages.value.unshift(newImage)
 
         // Keep only last N images in memory (for performance and memory optimization)
-        if (generatedImages.value.length > MAX_IMAGES_IN_MEMORY) {
-          generatedImages.value = generatedImages.value.slice(0, MAX_IMAGES_IN_MEMORY)
+        if (generatedImages.value.length > MAX_IMAGES) {
+          generatedImages.value = generatedImages.value.slice(0, MAX_IMAGES)
         }
 
         // 최종 이미지 설정 (이후 progress polling에서 덮어쓰지 않도록 플래그 설정)

@@ -217,6 +217,13 @@ export default {
     addTestSample: 'Add test sample',
     addSample: '+ Add sample',
 
+    // Load more
+    loadMore: 'Load More',
+    loadMoreTooltip: 'Load 50 more images',
+    noMoreImages: 'No more images to load',
+    loadedMore: '✅ Loaded {count} more images',
+    loadMoreFailed: 'Failed to load more images',
+
     // Messages
     imageDeleted: '🗑️ Image deleted',
     imagesDeleted: '🗑️ {count} images deleted',
