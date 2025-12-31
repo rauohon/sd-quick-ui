@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Test files
+test-edit-tool.txt
