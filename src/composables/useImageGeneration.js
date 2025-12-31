@@ -3,6 +3,7 @@
  */
 import { ref, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
+import { useBookmarks } from './useBookmarks'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import {
@@ -42,7 +43,7 @@ function validateNumber(value, min, max, defaultValue, step = null) {
 // Sleep utility function (reusable Promise for delays)
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-export function useImageGeneration(params, enabledADetailers, showToast, t) {
+export function useImageGeneration(params, enabledADetailers, showToast, t, appliedBookmarkId = null) {
   const isGenerating = ref(false)
   const progress = ref(0)
   const progressState = ref('')
@@ -619,6 +620,16 @@ export function useImageGeneration(params, enabledADetailers, showToast, t) {
         try {
           const result = await saveImage(newImage)
           newImage.id = result.id  // IndexedDB ID 추가
+
+          // Auto-link thumbnail if bookmark was applied
+          if (appliedBookmarkId && appliedBookmarkId.value) {
+            try {
+              const { setBookmarkThumbnail } = useBookmarks()
+              setBookmarkThumbnail(appliedBookmarkId.value, result.id)
+            } catch (error) {
+              console.error('Failed to auto-link thumbnail:', error)
+            }
+          }
 
           // 200장 초과로 삭제된 이미지가 있으면 알림
           if (result.deletedCount > 0) {

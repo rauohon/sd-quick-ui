@@ -2,8 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBookmarks } from '../composables/useBookmarks'
+import { useIndexedDB } from '../composables/useIndexedDB'
 
 const { t } = useI18n()
+const indexedDB = useIndexedDB()
 
 // Props
 const props = defineProps({
@@ -20,6 +22,14 @@ const selectedBookmark = ref(null)
 const showAddDialog = ref(false)
 const editingBookmark = ref(null)
 const applyMode = ref('replace') // 'replace' | 'prepend' | 'append'
+const fileInput = ref(null)
+
+// Thumbnail management
+const thumbnails = ref(new Map())  // bookmarkId → imageDataUrl
+const showThumbnailPicker = ref(false)
+const selectedImageForThumbnail = ref(null)
+const targetBookmarkId = ref(null)
+const generatedImages = ref([])
 
 // Form state
 const bookmarkName = ref('')
@@ -34,6 +44,10 @@ const {
   updateBookmark,
   deleteBookmark,
   searchBookmarks,
+  exportBookmarks,
+  importBookmarks,
+  setBookmarkThumbnail,
+  getBookmarkThumbnail,
 } = useBookmarks()
 
 // Computed
@@ -98,6 +112,7 @@ function applyBookmark() {
   if (!selectedBookmark.value) return
 
   emit('applyBookmark', {
+    bookmarkId: selectedBookmark.value.id,
     prompt: selectedBookmark.value.prompt,
     negativePrompt: selectedBookmark.value.negativePrompt,
     mode: applyMode.value,
@@ -133,9 +148,98 @@ function close() {
   emit('close')
 }
 
+// Export bookmarks to JSON file
+function handleExportBookmarks() {
+  const result = exportBookmarks()
+  if (result.success) {
+    props.showToast?.(t('bookmark.exported', { count: result.count }), 'success')
+  } else {
+    props.showToast?.(t('bookmark.noBookmarksToExport'), 'warning')
+  }
+}
+
+// Trigger file input for import
+function handleImportBookmarks() {
+  fileInput.value?.click()
+}
+
+// Handle file selection for import
+async function handleFileSelected(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    const result = await importBookmarks(file)
+    props.showToast?.(t('bookmark.imported', { count: result.count }), 'success')
+
+    // Reset file input
+    event.target.value = ''
+  } catch (error) {
+    console.error('Import failed:', error)
+    props.showToast?.(t('bookmark.importFailed'), 'error')
+  }
+}
+
+// Load thumbnails for all bookmarks (parallel loading)
+async function loadThumbnails() {
+  const promises = bookmarks.value
+    .filter(bookmark => bookmark.thumbnailId)
+    .map(async (bookmark) => {
+      const thumbnailUrl = await getBookmarkThumbnail(bookmark.id, indexedDB)
+      if (thumbnailUrl) {
+        thumbnails.value.set(bookmark.id, thumbnailUrl)
+      }
+    })
+
+  await Promise.all(promises)
+}
+
+// Open thumbnail picker
+function openThumbnailPicker(bookmarkId) {
+  targetBookmarkId.value = bookmarkId
+  selectedImageForThumbnail.value = null
+  showThumbnailPicker.value = true
+}
+
+// Close thumbnail picker
+function closeThumbnailPicker() {
+  showThumbnailPicker.value = false
+  targetBookmarkId.value = null
+  selectedImageForThumbnail.value = null
+}
+
+// Confirm thumbnail selection
+function confirmThumbnailSelection() {
+  if (selectedImageForThumbnail.value && targetBookmarkId.value) {
+    setBookmarkThumbnail(targetBookmarkId.value, selectedImageForThumbnail.value.id)
+
+    // Update local thumbnail map
+    thumbnails.value.set(targetBookmarkId.value, selectedImageForThumbnail.value.image)
+
+    props.showToast?.(t('bookmark.thumbnailSet'), 'success')
+  }
+  closeThumbnailPicker()
+}
+
+// Handle thumbnail load error
+function handleThumbnailError(bookmarkId) {
+  // Remove broken thumbnail
+  thumbnails.value.delete(bookmarkId)
+}
+
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   loadBookmarks()
+
+  // Load generated images for thumbnail picker
+  try {
+    generatedImages.value = await indexedDB.getRecentImages(200)
+  } catch (error) {
+    console.error('Failed to load generated images:', error)
+  }
+
+  // Load thumbnails
+  await loadThumbnails()
 })
 </script>
 
@@ -144,12 +248,35 @@ onMounted(() => {
     <div class="panel-header">
       <h3>{{ $t('bookmark.promptBookmarks') }}</h3>
       <div class="header-actions">
+        <button
+          class="import-btn"
+          @click="handleImportBookmarks"
+          :title="$t('bookmark.import')"
+        >
+          📥
+        </button>
+        <button
+          class="export-btn"
+          @click="handleExportBookmarks"
+          :title="$t('bookmark.export')"
+        >
+          📤
+        </button>
         <button class="add-btn" @click="openAddDialog">
           {{ $t('bookmark.addNew') }}
         </button>
         <button class="close-btn" @click="close">✕</button>
       </div>
     </div>
+
+    <!-- Hidden file input for import -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".json"
+      style="display: none"
+      @change="handleFileSelected"
+    >
 
     <!-- Search Bar -->
     <div class="search-section">
@@ -201,44 +328,64 @@ onMounted(() => {
     <!-- Divider -->
     <div class="mode-divider"></div>
 
-    <!-- Bookmarks List -->
-    <div class="bookmarks-list">
+    <!-- Bookmarks Grid -->
+    <div class="bookmarks-grid">
       <div
         v-for="bookmark in filteredBookmarks"
         :key="bookmark.id"
-        class="bookmark-item"
+        class="bookmark-card"
         :class="{ selected: selectedBookmark?.id === bookmark.id }"
         @click="selectBookmark(bookmark)"
       >
-        <div class="bookmark-header">
-          <h4 class="bookmark-name">{{ bookmark.name }}</h4>
-          <div class="bookmark-actions">
+        <!-- Thumbnail (180×180px) -->
+        <div class="bookmark-thumbnail">
+          <!-- Real thumbnail if available -->
+          <img
+            v-if="thumbnails.get(bookmark.id)"
+            :src="thumbnails.get(bookmark.id)"
+            :alt="bookmark.name"
+            loading="lazy"
+            @error="handleThumbnailError(bookmark.id)"
+          >
+          <!-- Placeholder with initials -->
+          <div v-else class="no-thumbnail-placeholder">
+            <span>{{ bookmark.name.substring(0, 2).toUpperCase() }}</span>
+          </div>
+
+          <!-- Overlay buttons (shown on hover) -->
+          <div class="thumbnail-overlay">
             <button
-              class="icon-btn edit-btn"
-              @click="handleEditBookmark(bookmark, $event)"
+              class="overlay-btn thumbnail-btn"
+              @click.stop="openThumbnailPicker(bookmark.id)"
+              :title="$t('bookmark.setThumbnail')"
+            >
+              🖼️
+            </button>
+            <button
+              class="overlay-btn edit-btn"
+              @click.stop="handleEditBookmark(bookmark, $event)"
               :title="$t('common.edit')"
             >
               ✏️
             </button>
             <button
-              class="icon-btn delete-btn"
-              @click="handleDeleteBookmark(bookmark, $event)"
+              class="overlay-btn delete-btn"
+              @click.stop="handleDeleteBookmark(bookmark, $event)"
               :title="$t('common.delete')"
             >
               🗑️
             </button>
           </div>
         </div>
-        <div class="bookmark-content">
-          <div class="bookmark-prompt">
-            <strong>{{ $t('prompt.title') }}:</strong> {{ bookmark.prompt || $t('bookmark.none') }}
-          </div>
-          <div class="bookmark-negative" v-if="bookmark.negativePrompt">
-            <strong>{{ $t('bookmark.negativePrompt') }}:</strong> {{ bookmark.negativePrompt }}
-          </div>
+
+        <!-- Name (60px) -->
+        <div class="bookmark-name" :title="bookmark.name">
+          {{ bookmark.name }}
         </div>
-        <div class="bookmark-footer">
-          <span class="bookmark-date">{{ bookmark.createdAt }}</span>
+
+        <!-- Updated badge -->
+        <div v-if="bookmark.updatedAt" class="updated-badge" :title="bookmark.updatedAt">
+          ✏️
         </div>
       </div>
 
@@ -288,7 +435,7 @@ onMounted(() => {
               v-model="bookmarkPrompt"
               :placeholder="$t('bookmark.promptPlaceholder')"
               class="form-textarea"
-              rows="4"
+              rows="8"
             ></textarea>
           </div>
           <div class="form-group">
@@ -297,7 +444,7 @@ onMounted(() => {
               v-model="bookmarkNegativePrompt"
               :placeholder="$t('bookmark.negativePromptPlaceholder')"
               class="form-textarea"
-              rows="3"
+              rows="6"
             ></textarea>
           </div>
         </div>
@@ -305,6 +452,45 @@ onMounted(() => {
           <button class="cancel-btn" @click="closeDialog">{{ $t('common.cancel') }}</button>
           <button class="save-btn" @click="saveBookmark">
             {{ editingBookmark ? $t('common.edit') : $t('common.save') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thumbnail Picker Modal -->
+    <div v-if="showThumbnailPicker" class="dialog-overlay" @click="closeThumbnailPicker">
+      <div class="dialog thumbnail-picker-dialog" @click.stop>
+        <div class="dialog-header">
+          <h3>{{ $t('bookmark.selectThumbnail') }}</h3>
+          <button class="close-btn" @click="closeThumbnailPicker">✕</button>
+        </div>
+        <div class="dialog-content">
+          <p class="picker-hint">{{ $t('bookmark.selectThumbnailHint') }}</p>
+          <div class="history-grid">
+            <div
+              v-for="image in generatedImages"
+              :key="image.id"
+              class="history-thumbnail"
+              :class="{ selected: selectedImageForThumbnail?.id === image.id }"
+              @click="selectedImageForThumbnail = image"
+            >
+              <img :src="image.image" :alt="`Image ${image.id}`">
+            </div>
+          </div>
+          <div v-if="generatedImages.length === 0" class="no-images">
+            {{ $t('history.noImages') }}
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="cancel-btn" @click="closeThumbnailPicker">
+            {{ $t('common.cancel') }}
+          </button>
+          <button
+            class="save-btn"
+            @click="confirmThumbnailSelection"
+            :disabled="!selectedImageForThumbnail"
+          >
+            {{ $t('common.apply') }}
           </button>
         </div>
       </div>
@@ -383,6 +569,27 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.3);
 }
 
+.import-btn,
+.export-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.import-btn:hover,
+.export-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
 /* Search */
 .search-section {
   padding: 16px;
@@ -411,112 +618,137 @@ onMounted(() => {
   text-align: right;
 }
 
-/* Bookmarks List */
-.bookmarks-list {
+/* Bookmarks Grid */
+.bookmarks-grid {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 180px);
+  gap: 12px;
+  align-content: start;
+  justify-content: start;
 }
 
-.bookmark-item {
-  margin-bottom: 12px;
-  padding: 14px;
-  background: #f8f9fa;
+.bookmark-card {
+  background: white;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
+  overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
-.bookmark-item:hover {
-  background: #e8eaf6;
+.bookmark-card:hover {
   border-color: #667eea;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
-.bookmark-item.selected {
+.bookmark-card.selected {
   border-color: #667eea;
   border-width: 3px;
-  background: #e8eaf6;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
-.bookmark-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.bookmark-thumbnail {
+  width: 100%;
+  height: 180px;
+  background: #f0f0f0;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.bookmark-name {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
+.bookmark-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.bookmark-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.icon-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: white;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
+.no-thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 48px;
+  font-weight: 700;
 }
 
-.icon-btn:hover {
+.thumbnail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.bookmark-card:hover .thumbnail-overlay {
+  opacity: 1;
+}
+
+.overlay-btn {
+  width: 36px;
+  height: 36px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.overlay-btn:hover {
   transform: scale(1.1);
 }
 
-.edit-btn:hover {
+.overlay-btn.edit-btn:hover {
   background: #fff3cd;
 }
 
-.delete-btn:hover {
+.overlay-btn.delete-btn:hover {
   background: #f8d7da;
 }
 
-.bookmark-content {
-  font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 8px;
-}
-
-.bookmark-prompt,
-.bookmark-negative {
-  margin-bottom: 6px;
+.bookmark-name {
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  flex-shrink: 0;
 }
 
-.bookmark-prompt strong,
-.bookmark-negative strong {
-  color: #667eea;
-  font-size: 12px;
-}
-
-.bookmark-footer {
+.updated-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  background: rgba(245, 158, 11, 0.9);
+  border-radius: 50%;
   display: flex;
-  justify-content: flex-end;
-}
-
-.bookmark-date {
-  font-size: 11px;
-  color: #999;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .empty-state,
@@ -597,14 +829,14 @@ onMounted(() => {
 
 .dialog {
   width: 90%;
-  max-width: 600px;
+  max-width: 800px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   cursor: default;
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  max-height: 90vh;
 }
 
 .dialog-header {
@@ -625,31 +857,32 @@ onMounted(() => {
 
 .dialog-content {
   flex: 1;
-  padding: 24px;
+  padding: 32px 40px;
   overflow-y: auto;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-weight: 600;
   color: #333;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
+  line-height: 1.6;
 }
 
 .form-input:focus,
@@ -660,7 +893,7 @@ onMounted(() => {
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 120px;
 }
 
 .dialog-footer {
@@ -702,23 +935,23 @@ onMounted(() => {
 }
 
 /* Scrollbar */
-.bookmarks-list::-webkit-scrollbar,
+.bookmarks-grid::-webkit-scrollbar,
 .dialog-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.bookmarks-list::-webkit-scrollbar-track,
+.bookmarks-grid::-webkit-scrollbar-track,
 .dialog-content::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.bookmarks-list::-webkit-scrollbar-thumb,
+.bookmarks-grid::-webkit-scrollbar-thumb,
 .dialog-content::-webkit-scrollbar-thumb {
   background: #667eea;
   border-radius: 3px;
 }
 
-.bookmarks-list::-webkit-scrollbar-thumb:hover,
+.bookmarks-grid::-webkit-scrollbar-thumb:hover,
 .dialog-content::-webkit-scrollbar-thumb:hover {
   background: #764ba2;
 }
@@ -773,5 +1006,68 @@ onMounted(() => {
 .mode-divider {
   height: 1px;
   background: linear-gradient(90deg, #e0e0e0 0%, #e0e0e0 100%);
+}
+
+/* Thumbnail Picker Modal */
+.thumbnail-picker-dialog {
+  max-width: 800px;
+  max-height: 90vh;
+}
+
+.picker-hint {
+  margin-bottom: 16px;
+  color: #666;
+  font-size: 13px;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 120px);
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-thumbnail {
+  width: 120px;
+  height: 120px;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.history-thumbnail:hover {
+  border-color: #667eea;
+  transform: scale(1.05);
+}
+
+.history-thumbnail.selected {
+  border-color: #667eea;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.history-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-images {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-btn:disabled:hover {
+  transform: none;
 }
 </style>

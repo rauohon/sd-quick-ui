@@ -127,7 +127,27 @@ export default {
     applyMode: 'Apply Mode',
     applyModeReplace: 'Replace prompt',
     applyModePrepend: 'Prepend to prompt',
-    applyModeAppend: 'Append to prompt'
+    applyModeAppend: 'Append to prompt',
+    // Import/Export
+    import: 'Import Bookmarks',
+    export: 'Export Bookmarks',
+    exported: 'Exported {count} bookmarks',
+    imported: 'Imported {count} bookmarks',
+    importFailed: 'Failed to import bookmarks',
+    noBookmarksToExport: 'No bookmarks to export',
+    // Thumbnail
+    setThumbnail: 'Set Thumbnail',
+    selectThumbnail: 'Select Thumbnail',
+    selectThumbnailHint: 'Select an image from history',
+    thumbnailSet: 'Thumbnail has been set',
+    // Update/Save
+    promptModified: 'Prompt modified after applying bookmark',
+    updateBookmark: 'Update Bookmark',
+    updateTooltip: 'Overwrite existing bookmark with current prompt',
+    saveAsNew: 'Save as New',
+    saveAsNewTooltip: 'Save current prompt as a new bookmark',
+    bookmarkUpdated: 'Bookmark has been updated',
+    savedAsNew: 'Saved as new bookmark'
   },
 
   // History

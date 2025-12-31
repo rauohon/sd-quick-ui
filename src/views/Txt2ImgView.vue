@@ -5,6 +5,7 @@ import { useImageGeneration } from '../composables/useImageGeneration'
 import { useSlotManagement } from '../composables/useSlotManagement'
 import { useLocalStorage } from '../composables/useLocalStorage'
 import { useIndexedDB } from '../composables/useIndexedDB'
+import { useBookmarks } from '../composables/useBookmarks'
 import { notifyCompletion } from '../utils/notification'
 import {
   MAX_QUEUE_CONSECUTIVE_ERRORS,
@@ -49,6 +50,9 @@ import { useQueueProcessor } from '../composables/useQueueProcessor'
 
 // i18n
 const { t } = useI18n()
+
+// Bookmarks composable
+const { bookmarks, loadBookmarks, addBookmark, updateBookmarkContent } = useBookmarks()
 
 // Props
 const props = defineProps({
@@ -176,6 +180,10 @@ const negativePrompt = ref('')
 const steps = ref(20)
 const cfgScale = ref(7)
 const selectedModel = ref('')
+
+// Bookmark tracking
+const appliedBookmarkId = ref(null)
+const bookmarkPromptChanged = ref(false)
 
 // Txt2Img state - Advanced settings
 const samplerName = ref('Euler a')
@@ -324,7 +332,8 @@ const imageGeneration = useImageGeneration(
   },
   enabledADetailers,
   props.showToast,
-  t
+  t,
+  appliedBookmarkId
 )
 
 const {
@@ -430,6 +439,10 @@ function handleAddNegative(promptText) {
 
 // Bookmark Manager handlers
 function handleApplyBookmark(data) {
+  // Track applied bookmark ID
+  appliedBookmarkId.value = data.bookmarkId
+  bookmarkPromptChanged.value = false
+
   const mode = data.mode || 'replace'
 
   // Process positive prompt based on mode
@@ -456,6 +469,37 @@ function handleApplyBookmark(data) {
 // Image comparison handler
 function handleCompareImage(item) {
   props.openModal('comparison', item.image)
+}
+
+// Bookmark update handlers
+function handleUpdateBookmark() {
+  if (!appliedBookmarkId.value) return
+
+  const success = updateBookmarkContent(
+    appliedBookmarkId.value,
+    prompt.value,
+    negativePrompt.value
+  )
+
+  if (success) {
+    bookmarkPromptChanged.value = false
+    props.showToast(t('bookmark.bookmarkUpdated'), 'success')
+  }
+}
+
+function handleSaveAsNewBookmark() {
+  const bookmark = bookmarks.value.find(b => b.id === appliedBookmarkId.value)
+  const baseName = bookmark ? bookmark.name : 'Bookmark'
+
+  const newBookmark = addBookmark(
+    `${baseName} (Copy)`,
+    prompt.value,
+    negativePrompt.value
+  )
+
+  appliedBookmarkId.value = newBookmark.id
+  bookmarkPromptChanged.value = false
+  props.showToast(t('bookmark.savedAsNew'), 'success')
 }
 
 // Seed handlers
@@ -500,6 +544,22 @@ const {
   changeModel
 } = modelLoader
 
+
+// Watch for prompt changes after applying bookmark
+watch([prompt, negativePrompt], () => {
+  if (appliedBookmarkId.value) {
+    const bookmark = bookmarks.value.find(b => b.id === appliedBookmarkId.value)
+
+    if (bookmark) {
+      // Check if content differs from the applied bookmark
+      const hasChanged =
+        prompt.value !== bookmark.prompt ||
+        negativePrompt.value !== bookmark.negativePrompt
+
+      bookmarkPromptChanged.value = hasChanged
+    }
+  }
+})
 
 // Auto-save current slot when settings change (with debounce)
 // Watch text fields (prompt, etc.) with 1000ms debounce
@@ -614,6 +674,9 @@ watch(showParamsPanel, (newValue) => {
 
 // Lifecycle
 onMounted(async () => {
+  // Load bookmarks from localStorage
+  loadBookmarks()
+
   // Load panel visibility states from localStorage
   const savedHistoryPanel = window.localStorage.getItem('txt2img_showHistoryPanel')
   if (savedHistoryPanel !== null) {
@@ -804,6 +867,29 @@ onUnmounted(() => {
           :is-changed="negativePromptChanged"
           :is-negative="true"
         />
+
+        <!-- Bookmark Update Actions -->
+        <div v-if="appliedBookmarkId && bookmarkPromptChanged" class="bookmark-actions">
+          <div class="bookmark-actions-hint">
+            <span>{{ $t('bookmark.promptModified') }}</span>
+          </div>
+          <div class="bookmark-actions-buttons">
+            <button
+              class="action-btn update-btn"
+              @click="handleUpdateBookmark"
+              :title="$t('bookmark.updateTooltip')"
+            >
+              ✏️ {{ $t('bookmark.updateBookmark') }}
+            </button>
+            <button
+              class="action-btn save-new-btn"
+              @click="handleSaveAsNewBookmark"
+              :title="$t('bookmark.saveAsNewTooltip')"
+            >
+              ➕ {{ $t('bookmark.saveAsNew') }}
+            </button>
+          </div>
+        </div>
       </PromptPanel>
 
     </div>
@@ -1108,6 +1194,58 @@ onUnmounted(() => {
   font-size: 18px;
   font-weight: bold;
   color: #4f46e5;
+}
+
+/* Bookmark Actions */
+.bookmark-actions {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+}
+
+.bookmark-actions-hint {
+  font-size: 12px;
+  color: #92400e;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.bookmark-actions-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.update-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.update-btn:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+.save-new-btn {
+  background: #10b981;
+  color: white;
+}
+
+.save-new-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
 }
 
 </style>

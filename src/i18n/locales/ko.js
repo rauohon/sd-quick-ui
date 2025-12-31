@@ -127,7 +127,27 @@ export default {
     applyMode: '적용 모드',
     applyModeReplace: '프롬프트 바꾸기',
     applyModePrepend: '프롬프트 앞에 삽입',
-    applyModeAppend: '프롬프트 뒤에 추가'
+    applyModeAppend: '프롬프트 뒤에 추가',
+    // Import/Export
+    import: '북마크 가져오기',
+    export: '북마크 내보내기',
+    exported: '{count}개의 북마크를 내보냈습니다',
+    imported: '{count}개의 북마크를 가져왔습니다',
+    importFailed: '북마크 가져오기 실패',
+    noBookmarksToExport: '내보낼 북마크가 없습니다',
+    // Thumbnail
+    setThumbnail: '썸네일 설정',
+    selectThumbnail: '썸네일 선택',
+    selectThumbnailHint: '히스토리에서 이미지를 선택하세요',
+    thumbnailSet: '썸네일이 설정되었습니다',
+    // Update/Save
+    promptModified: '북마크 적용 후 프롬프트가 수정되었습니다',
+    updateBookmark: '북마크 업데이트',
+    updateTooltip: '현재 프롬프트로 기존 북마크 덮어쓰기',
+    saveAsNew: '새 북마크로 저장',
+    saveAsNewTooltip: '현재 프롬프트를 새 북마크로 저장',
+    bookmarkUpdated: '북마크가 업데이트되었습니다',
+    savedAsNew: '새 북마크로 저장되었습니다'
   },
 
   // 히스토리
