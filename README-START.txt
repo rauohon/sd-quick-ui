@@ -11,7 +11,7 @@
      → 자동으로 설치됩니다 (10-30분 소요)
 
   2. 모델 다운로드
-     → https://huggingface.co/runwayml/stable-diffusion-v1-5
+     → https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
      → v1-5-pruned-emaonly.safetensors 다운로드 (약 4GB)
      → stable-diffusion-webui\models\Stable-diffusion\ 폴더에 넣기
 

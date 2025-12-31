@@ -72,7 +72,7 @@ https://github.com/yourusername/sd-quick-ui/releases
 AI 이미지를 생성하려면 모델 파일이 필요합니다.
 
 **추천 모델**: Stable Diffusion v1.5
-- 다운로드: https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main
+- 다운로드: https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 - 파일: `v1-5-pruned-emaonly.safetensors` (약 4GB)
 
 다운로드한 파일을 이 폴더에 넣으세요:
@@ -234,7 +234,7 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 ### ❌ "모델을 찾을 수 없습니다"
 
 **해결책**:
-1. 모델 다운로드: https://huggingface.co/runwayml/stable-diffusion-v1-5
+1. 모델 다운로드: https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
 2. `.safetensors` 파일을 이 폴더에 넣기:
    ```
    stable-diffusion-webui\models\Stable-diffusion\

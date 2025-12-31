@@ -162,6 +162,18 @@ if not exist "%WEBUI_PATH%\modules\api\backup\api.py.original" (
     echo [✓] 백업 완료: %WEBUI_PATH%\modules\api\backup\
 )
 
+REM 패치 적용 여부 확인
+echo [확인] 패치 적용 여부 확인 중...
+
+REM get_loras 함수가 있는지 확인 (패치가 추가하는 함수)
+findstr /C:"def get_loras" "%WEBUI_PATH%\modules\api\api.py" >nul 2>&1
+
+if %ERRORLEVEL% EQU 0 (
+    echo [✓] 패치가 이미 적용되어 있습니다.
+    echo     건너뜁니다...
+    goto :patch_done
+)
+
 REM 패치 적용
 echo [패치] API 파일 패치 중...
 
@@ -176,20 +188,21 @@ if %ERRORLEVEL% EQU 0 (
     ) else (
         echo [X] 패치 적용 실패!
         echo     수동으로 패치를 적용해야 할 수 있습니다.
-        echo     자세한 내용은 docs/manual-patch-guide.md를 참고하세요.
+        echo     자세한 내용은 INSTALLATION-KR.md를 참고하세요.
     )
 ) else (
     echo [!] 패치를 적용할 수 없습니다.
     echo.
     echo 가능한 원인:
     echo  - WebUI 버전이 다름
-    echo  - 이미 패치가 적용됨
     echo  - 파일이 수정됨
     echo.
-    echo 계속 진행하시겠습니까? (이미 패치됐을 수 있습니다)
+    echo 계속 진행하시겠습니까?
     choice /C YN /M "계속"
     if errorlevel 2 exit /b
 )
+
+:patch_done
 
 cd "%CURRENT_DIR%"
 
@@ -215,7 +228,8 @@ if %MODEL_COUNT% GTR 0 (
     echo.
     echo [추천 모델]
     echo  - Stable Diffusion v1.5 (약 4GB)
-    echo  - https://huggingface.co/runwayml/stable-diffusion-v1-5
+    echo  - https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
+    echo  - 파일: v1-5-pruned-emaonly.safetensors
     echo.
     echo 다운로드한 .safetensors 파일을 이 폴더에 넣으세요:
     echo %WEBUI_PATH%\models\Stable-diffusion\
@@ -224,7 +238,7 @@ if %MODEL_COUNT% GTR 0 (
     choice /C YN /M "모델 다운로드 페이지를 여시겠습니까?"
     if errorlevel 1 (
         start explorer "%WEBUI_PATH%\models\Stable-diffusion"
-        start https://huggingface.co/runwayml/stable-diffusion-v1-5/tree/main
+        start https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5
         echo.
         echo 모델 다운로드 후 아무 키나 누르세요...
         pause >nul
