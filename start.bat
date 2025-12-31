@@ -71,7 +71,15 @@ if not exist "webui-api.bat" (
     echo [✓] webui-api.bat 생성 완료
 )
 
-start "SD WebUI API" cmd /k "cd /d "%WEBUI_PATH%" && webui-api.bat"
+REM 임시 배치 파일 생성
+(
+    echo @echo off
+    echo cd /d "%WEBUI_PATH%"
+    echo echo [API 서버 시작] WebUI API 실행 중...
+    echo call webui-api.bat
+) > "%TEMP%\start-webui-api.bat"
+
+start "SD WebUI API" cmd /k "%TEMP%\start-webui-api.bat"
 
 echo [✓] API 서버 시작됨
 echo.
@@ -102,7 +110,16 @@ if exist "dist\index.html" (
 
     echo [✓] Node.js 확인됨
     echo [서버] dist 폴더 서빙 중...
-    start "SD Quick UI" cmd /k "cd /d "%CURRENT_DIR%" && npx serve dist -l 5173"
+
+    REM 임시 배치 파일 생성
+    (
+        echo @echo off
+        echo cd /d "%CURRENT_DIR%"
+        echo echo [서버 시작] Vue UI 서버 실행 중...
+        echo npx serve dist -l 5173
+    ) > "%TEMP%\start-vue-ui.bat"
+
+    start "SD Quick UI" cmd /k "%TEMP%\start-vue-ui.bat"
 
 ) else (
     REM 개발 모드 (소스코드 있을 때)
@@ -137,7 +154,16 @@ if exist "dist\index.html" (
     )
 
     echo [✓] 의존성 확인됨
-    start "SD Quick UI" cmd /k "cd /d "%CURRENT_DIR%" && npm run dev"
+
+    REM 임시 배치 파일 생성
+    (
+        echo @echo off
+        echo cd /d "%CURRENT_DIR%"
+        echo echo [서버 시작] Vue 개발 서버 실행 중...
+        echo npm run dev
+    ) > "%TEMP%\start-vue-dev.bat"
+
+    start "SD Quick UI" cmd /k "%TEMP%\start-vue-dev.bat"
 )
 
 echo.
