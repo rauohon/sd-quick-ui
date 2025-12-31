@@ -1,0 +1,152 @@
+diff --git a/modules/api/api.py b/modules/api/api.py
+index 97ec7514e..af1e10c12 100644
+--- a/modules/api/api.py
++++ b/modules/api/api.py
+@@ -227,6 +227,8 @@ class Api:
+         self.add_api_route("/sdapi/v1/sd-models", self.get_sd_models, methods=["GET"], response_model=list[models.SDModelItem])
+         self.add_api_route("/sdapi/v1/sd-vae", self.get_sd_vaes, methods=["GET"], response_model=list[models.SDVaeItem])
+         self.add_api_route("/sdapi/v1/hypernetworks", self.get_hypernetworks, methods=["GET"], response_model=list[models.HypernetworkItem])
++        self.add_api_route("/sdapi/v1/loras", self.get_loras, methods=["GET"], response_model=list[models.LoraItem])
++        self.add_api_route("/sdapi/v1/loras/thumbnail", self.get_lora_thumbnail, methods=["GET"])
+         self.add_api_route("/sdapi/v1/face-restorers", self.get_face_restorers, methods=["GET"], response_model=list[models.FaceRestorerItem])
+         self.add_api_route("/sdapi/v1/realesrgan-models", self.get_realesrgan_models, methods=["GET"], response_model=list[models.RealesrganItem])
+         self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=list[models.PromptStyleItem])
+@@ -234,6 +236,7 @@ class Api:
+         self.add_api_route("/sdapi/v1/refresh-embeddings", self.refresh_embeddings, methods=["POST"])
+         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+         self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
++        self.add_api_route("/sdapi/v1/refresh-loras", self.refresh_loras, methods=["POST"])
+         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
+         self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
+         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=models.TrainResponse)
+@@ -734,6 +737,87 @@ class Api:
+     def get_hypernetworks(self):
+         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
+ 
++    def get_loras(self):
++        try:
++            import lora
++            import os
++            
++            result = []
++            for lora_item in lora.available_loras.values():
++                path, ext = os.path.splitext(lora_item.filename)
++                
++                # Check if preview exists
++                has_preview = False
++                for preview_ext in ['.preview.png', '.png', '.jpeg', '.jpg']:
++                    if os.path.exists(f"{path}{preview_ext}"):
++                        has_preview = True
++                        break
++                
++                # Extract only essential metadata
++                metadata = lora_item.metadata
++                essential_metadata = {}
++                if metadata:
++                    # Only include fields used by UI
++                    for key in ['ss_base_model_version', 'ss_resolution', 'modelspec.resolution', 'ss_tag_frequency']:
++                        if key in metadata:
++                            # Limit tag_frequency to reduce size
++                            if key == 'ss_tag_frequency':
++                                # Only include first 3 tags
++                                limited_tags = {}
++                                for cat, tags in list(metadata[key].items())[:1]:  # First category only
++                                    limited_tags[cat] = dict(list(tags.items())[:3])  # First 3 tags
++                                essential_metadata[key] = limited_tags
++                            else:
++                                essential_metadata[key] = metadata[key]
++                
++                item = {
++                    "name": lora_item.name,
++                    "alias": lora_item.alias,
++                    "path": lora_item.filename,
++                    "metadata": essential_metadata,
++                    "preview_url": f"/sdapi/v1/loras/thumbnail?lora_name={lora_item.name}" if has_preview else None,
++                    "hash": lora_item.hash or None
++                }
++                result.append(item)
++            
++            return result
++        except Exception as e:
++            errors.report(f"Failed to get loras: {e}", exc_info=True)
++            return []
++
++    def get_lora_thumbnail(self, lora_name: str):
++        import lora
++        import os
++        from fastapi.responses import FileResponse
++        
++        lora_item = lora.available_loras.get(lora_name)
++        if not lora_item:
++            raise HTTPException(status_code=404, detail="LoRA not found")
++        
++        path, ext = os.path.splitext(lora_item.filename)
++        preview_path = f"{path}.preview.png"
++        
++        # Try .preview.png first
++        if not os.path.exists(preview_path):
++            # Try .png
++            preview_path = f"{path}.png"
++        
++        if not os.path.exists(preview_path):
++            # Try .jpeg or .jpg
++            for ext_try in ['.jpeg', '.jpg']:
++                preview_path = f"{path}{ext_try}"
++                if os.path.exists(preview_path):
++                    break
++        
++        if not os.path.exists(preview_path):
++            raise HTTPException(status_code=404, detail="Preview not found")
++        
++        # Determine media type
++        img_ext = os.path.splitext(preview_path)[1].lower()
++        media_type = 'image/png' if img_ext == '.png' else 'image/jpeg'
++        
++        return FileResponse(preview_path, media_type=media_type)
++
+     def get_face_restorers(self):
+         return [{"name":x.name(), "cmd_dir": getattr(x, "cmd_dir", None)} for x in shared.face_restorers]
+ 
+@@ -780,6 +864,12 @@ class Api:
+         with self.queue_lock:
+             shared_items.refresh_vae_list()
+ 
++    def refresh_loras(self):
++        with self.queue_lock:
++            import lora
++            lora.list_available_loras()
++        return {}
++
+     def create_embedding(self, args: dict):
+         try:
+             shared.state.begin(job="create_embedding")
+@@ -911,7 +1001,9 @@ class Api:
+             timeout_keep_alive=shared.cmd_opts.timeout_keep_alive,
+             root_path=root_path,
+             ssl_keyfile=shared.cmd_opts.tls_keyfile,
+-            ssl_certfile=shared.cmd_opts.tls_certfile
++            ssl_certfile=shared.cmd_opts.tls_certfile,
++            log_level="warning",  # Only show warnings and errors
++            access_log=False  # Disable access log for each request
+         )
+ 
+     def kill_webui(self):
+diff --git a/modules/api/models.py b/modules/api/models.py
+index 79c4cbbbb..b228a845e 100644
+--- a/modules/api/models.py
++++ b/modules/api/models.py
+@@ -268,6 +268,14 @@ class HypernetworkItem(BaseModel):
+     name: str = Field(title="Name")
+     path: Optional[str] = Field(title="Path")
+ 
++class LoraItem(BaseModel):
++    name: str = Field(title="Name")
++    alias: str = Field(title="Alias")
++    path: str = Field(title="Path")
++    metadata: dict = Field(title="Metadata")
++    preview_url: Optional[str] = Field(title="Preview URL")
++    hash: Optional[str] = Field(title="SHA256 Hash")
++
+ class FaceRestorerItem(BaseModel):
+     name: str = Field(title="Name")
+     cmd_dir: Optional[str] = Field(title="Path")
