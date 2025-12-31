@@ -1,7 +1,7 @@
 /**
  * 이미지 생성 및 진행 상태 관리 composable
  */
-import { ref, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
 import { cloneADetailers } from '../utils/adetailer'
@@ -720,9 +720,28 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     }
   }
 
+  // Prevent page reload during image generation
+  const handleBeforeUnload = (e) => {
+    if (isGenerating.value) {
+      e.preventDefault()
+      e.returnValue = '' // Chrome requires returnValue to be set
+      return '' // For older browsers
+    }
+  }
+
+  // Watch isGenerating to add/remove beforeunload listener
+  watch(isGenerating, (generating) => {
+    if (generating) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    } else {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  })
+
   // Cleanup on component unmount to prevent memory leak
   onUnmounted(() => {
     stopProgressPolling()
+    window.removeEventListener('beforeunload', handleBeforeUnload)
   })
 
   return {
