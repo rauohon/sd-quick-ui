@@ -456,13 +456,9 @@ export function useImageGeneration(params, enabledADetailers, showToast, t) {
     // 숫자 입력 검증 및 자동 보정 (보정된 항목 추적)
     const corrections = []
 
-    const originalWidth = width.value
-    width.value = validateNumber(width.value, 64, 2048, 512, 64)
-    if (width.value !== originalWidth) corrections.push(`Width: ${originalWidth} → ${width.value}`)
-
-    const originalHeight = height.value
-    height.value = validateNumber(height.value, 64, 2048, 512, 64)
-    if (height.value !== originalHeight) corrections.push(`Height: ${originalHeight} → ${height.value}`)
+    // Width와 Height는 사용자가 입력한 값 그대로 사용 (8의 배수 검증은 입력 시점에 처리)
+    width.value = validateNumber(width.value, 64, 2048, 512)
+    height.value = validateNumber(height.value, 64, 2048, 512)
 
     const originalSteps = steps.value
     steps.value = validateNumber(steps.value, 1, 150, 20)
