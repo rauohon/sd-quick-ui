@@ -73,6 +73,7 @@ if not exist "webui-api.bat" (
 
 REM 임시 배치 파일 생성
 (
+    echo chcp 65001 ^>nul
     echo @echo off
     echo cd /d "%WEBUI_PATH%"
     echo echo [API 서버 시작] WebUI API 실행 중...
@@ -113,13 +114,25 @@ if exist "dist\index.html" (
 
     REM 임시 배치 파일 생성
     (
+        echo chcp 65001 ^>nul
         echo @echo off
         echo cd /d "%CURRENT_DIR%"
         echo echo [서버 시작] Vue UI 서버 실행 중...
         echo npx serve dist -l 5173
     ) > "%TEMP%\start-vue-ui.bat"
 
+    echo [실행] 새 창에서 Vue 서버 시작...
+    echo [경로] %TEMP%\start-vue-ui.bat
     start "SD Quick UI" cmd /k "%TEMP%\start-vue-ui.bat"
+
+    if %ERRORLEVEL% NEQ 0 (
+        echo [X] Vue 서버 창 열기 실패!
+        echo.
+        echo 수동 실행: %TEMP%\start-vue-ui.bat
+        pause
+    ) else (
+        echo [✓] Vue 서버 창 열림
+    )
 
 ) else (
     REM 개발 모드 (소스코드 있을 때)
@@ -157,6 +170,7 @@ if exist "dist\index.html" (
 
     REM 임시 배치 파일 생성
     (
+        echo chcp 65001 ^>nul
         echo @echo off
         echo cd /d "%CURRENT_DIR%"
         echo echo [서버 시작] Vue 개발 서버 실행 중...
