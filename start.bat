@@ -76,7 +76,7 @@ REM 임시 배치 파일 생성
     echo chcp 65001 ^>nul
     echo @echo off
     echo cd /d "%WEBUI_PATH%"
-    echo echo [API 서버 시작] WebUI API 실행 중...
+    echo echo *** WebUI API 실행 중...
     echo call webui-api.bat
 ) > "%TEMP%\start-webui-api.bat"
 
@@ -84,7 +84,7 @@ start "SD WebUI API" cmd /k "%TEMP%\start-webui-api.bat"
 
 echo [✓] API 서버 시작됨
 echo.
-echo [대기] API 서버 초기화 중... (약 30초)
+echo [대기] API 서버 초기화 중... ^(약 30초^)
 echo      처음 실행 시 더 오래 걸릴 수 있습니다.
 timeout /t 30 /nobreak >nul
 
@@ -94,10 +94,10 @@ cd "%CURRENT_DIR%"
 
 REM dist 폴더 확인 (배포 버전)
 if exist "dist\index.html" (
-    echo [모드] 프로덕션 빌드 사용 (dist/)
+    echo [모드] 프로덕션 빌드 사용 ^(dist/^)
 
     REM npx 확인
-    npx --version >nul 2>&1
+    call npx --version >nul 2>&1
     if %ERRORLEVEL% NEQ 0 (
         echo [X] Node.js/npx가 설치되어 있지 않습니다!
         echo.
@@ -116,8 +116,8 @@ if exist "dist\index.html" (
     (
         echo chcp 65001 ^>nul
         echo @echo off
-        echo cd /d "%CURRENT_DIR%"
-        echo echo [서버 시작] Vue UI 서버 실행 중...
+        echo cd /d ^"%CURRENT_DIR%^"
+        echo echo *** Vue UI 서버 실행 중...
         echo npx serve dist -l 5173
     ) > "%TEMP%\start-vue-ui.bat"
 
@@ -136,7 +136,7 @@ if exist "dist\index.html" (
 
 ) else (
     REM 개발 모드 (소스코드 있을 때)
-    echo [모드] 개발 모드 사용 (npm run dev)
+    echo [모드] 개발 모드 사용 ^(npm run dev^)
 
     REM npm 확인
     npm --version >nul 2>&1
@@ -156,7 +156,7 @@ if exist "dist\index.html" (
     REM node_modules 확인
     if not exist "node_modules\" (
         echo.
-        echo [설치] 의존성 패키지 설치 중... (최초 1회, 1-2분 소요)
+        echo [설치] 의존성 패키지 설치 중... ^(최초 1회, 1-2분 소요^)
         call npm install
         if %ERRORLEVEL% NEQ 0 (
             echo [X] npm install 실패!
@@ -172,8 +172,8 @@ if exist "dist\index.html" (
     (
         echo chcp 65001 ^>nul
         echo @echo off
-        echo cd /d "%CURRENT_DIR%"
-        echo echo [서버 시작] Vue 개발 서버 실행 중...
+        echo cd /d ^"%CURRENT_DIR%^"
+        echo echo *** Vue 개발 서버 실행 중...
         echo npm run dev
     ) > "%TEMP%\start-vue-dev.bat"
 
@@ -181,7 +181,7 @@ if exist "dist\index.html" (
 )
 
 echo.
-echo [대기] Vue 서버 시작 중... (약 5초)
+echo [대기] Vue 서버 시작 중... ^(약 5초^)
 timeout /t 5 /nobreak >nul
 
 echo.
