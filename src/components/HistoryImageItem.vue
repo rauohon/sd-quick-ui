@@ -11,7 +11,7 @@
     <img
       :src="item.image"
       :alt="'Generated ' + index"
-      @click="isSelectionMode ? $event.stopPropagation() : $emit('view-image', item.image)"
+      @click="isSelectionMode ? $event.stopPropagation() : $emit('compare-image', item)"
     >
 
     <div v-if="isSelectionMode" class="selection-checkbox" @click.stop="$emit('toggle-selection', item.id)">
@@ -61,7 +61,7 @@ defineProps({
   }
 })
 
-defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'view-image'])
+defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'compare-image'])
 
 // Format timestamp for display (supports both old and new formats)
 function formatTimestamp(timestamp) {

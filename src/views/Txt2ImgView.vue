@@ -453,6 +453,11 @@ function handleApplyBookmark(data) {
   negativePrompt.value = data.negativePrompt
 }
 
+// Image comparison handler
+function handleCompareImage(item) {
+  props.openModal('comparison', item.image)
+}
+
 // Seed handlers
 function randomizeSeed() {
   seed.value = -1
@@ -847,7 +852,7 @@ onUnmounted(() => {
           @delete="deleteImage"
           @load-params="loadParamsFromHistory"
           @toggle-selection="toggleImageSelection"
-          @view-image="openHistoryDetail(item)"
+          @compare-image="handleCompareImage"
         />
       </HistoryPanel>
     </div>
@@ -919,6 +924,8 @@ onUnmounted(() => {
       v-if="showHistoryDetail"
       :items="generatedImages"
       :initial-item="selectedHistoryItem"
+      :total-image-count="totalImageCount"
+      :current-image="currentImage"
       @close="closeHistoryDetail"
       @toggle-favorite="toggleImageFavorite"
       @delete="handleHistoryDelete"

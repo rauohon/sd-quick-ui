@@ -170,6 +170,7 @@ export default {
     imageCompare: '이미지 비교',
     currentImage: '현재 이미지',
     compareImage: '비교 이미지',
+    latestGenerated: '최근 생성',
     closeCompare: '비교 종료',
     previous: '이전',
     next: '다음',

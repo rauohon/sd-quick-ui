@@ -5,7 +5,7 @@
       <div class="modal-header">
         <div class="header-title">
           <h3>{{ $t('history.manage') }}</h3>
-          <span class="image-count-badge">{{ items.length }}/200</span>
+          <span class="image-count-badge">{{ totalImageCount }}/200</span>
         </div>
         <div class="header-actions">
           <input
@@ -214,7 +214,7 @@
       </div>
 
       <!-- Comparison View -->
-      <div v-if="compareImages.length > 0" class="comparison-overlay">
+      <div v-if="compareImages.length > 0" class="comparison-overlay" @click.self="closeCompare">
         <div class="comparison-content">
           <div class="comparison-header">
             <h3>{{ $t('history.imageCompare') }}</h3>
@@ -239,8 +239,8 @@
           <div class="comparison-images">
             <div class="compare-image-wrapper">
               <h4>{{ $t('history.currentImage') }}</h4>
-              <img :src="selectedItem.image" alt="Current" />
-              <div class="compare-info">{{ formatFullTimestamp(selectedItem.timestamp) }}</div>
+              <img :src="currentImage" alt="Current" />
+              <div class="compare-info">{{ $t('history.latestGenerated') }}</div>
             </div>
             <div class="compare-image-wrapper">
               <h4>{{ $t('history.compareImage') }}</h4>
@@ -269,6 +269,14 @@ const props = defineProps({
   initialItem: {
     type: Object,
     default: null
+  },
+  totalImageCount: {
+    type: Number,
+    default: 0
+  },
+  currentImage: {
+    type: String,
+    default: ''
   }
 })
 

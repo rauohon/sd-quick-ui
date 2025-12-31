@@ -170,6 +170,7 @@ export default {
     imageCompare: 'Image Comparison',
     currentImage: 'Current Image',
     compareImage: 'Compare Image',
+    latestGenerated: 'Latest Generated',
     closeCompare: 'Close Compare',
     previous: 'Previous',
     next: 'Next',
