@@ -83,37 +83,62 @@ echo.
 echo [2/2] Vue UI 서버 시작 중...
 cd "%CURRENT_DIR%"
 
-REM npm 확인
-npm --version >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo [X] Node.js/npm이 설치되어 있지 않습니다!
-    echo.
-    echo Node.js를 설치하세요:
-    echo https://nodejs.org/
-    echo.
-    start https://nodejs.org/
-    pause
-    exit /b 1
-)
+REM dist 폴더 확인 (배포 버전)
+if exist "dist\index.html" (
+    echo [모드] 프로덕션 빌드 사용 (dist/)
 
-echo [✓] Node.js 확인됨
-
-REM node_modules 확인
-if not exist "node_modules\" (
-    echo.
-    echo [설치] 의존성 패키지 설치 중... (최초 1회, 1-2분 소요)
-    call npm install
+    REM npx 확인
+    npx --version >nul 2>&1
     if %ERRORLEVEL% NEQ 0 (
-        echo [X] npm install 실패!
+        echo [X] Node.js/npx가 설치되어 있지 않습니다!
+        echo.
+        echo Node.js를 설치하세요:
+        echo https://nodejs.org/
+        echo.
+        start https://nodejs.org/
         pause
         exit /b 1
     )
-    echo [✓] 설치 완료
+
+    echo [✓] Node.js 확인됨
+    echo [서버] dist 폴더 서빙 중...
+    start "SD Quick UI" cmd /k npx serve dist -l 5173
+
+) else (
+    REM 개발 모드 (소스코드 있을 때)
+    echo [모드] 개발 모드 사용 (npm run dev)
+
+    REM npm 확인
+    npm --version >nul 2>&1
+    if %ERRORLEVEL% NEQ 0 (
+        echo [X] Node.js/npm이 설치되어 있지 않습니다!
+        echo.
+        echo Node.js를 설치하세요:
+        echo https://nodejs.org/
+        echo.
+        start https://nodejs.org/
+        pause
+        exit /b 1
+    )
+
+    echo [✓] Node.js 확인됨
+
+    REM node_modules 확인
+    if not exist "node_modules\" (
+        echo.
+        echo [설치] 의존성 패키지 설치 중... (최초 1회, 1-2분 소요)
+        call npm install
+        if %ERRORLEVEL% NEQ 0 (
+            echo [X] npm install 실패!
+            pause
+            exit /b 1
+        )
+        echo [✓] 설치 완료
+    )
+
+    echo [✓] 의존성 확인됨
+    start "SD Quick UI" cmd /k npm run dev
 )
-
-echo [✓] 의존성 확인됨
-
-start "SD Quick UI" cmd /k npm run dev
 
 echo.
 echo [대기] Vue 서버 시작 중... (약 5초)
