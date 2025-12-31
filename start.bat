@@ -71,7 +71,7 @@ if not exist "webui-api.bat" (
     echo [✓] webui-api.bat 생성 완료
 )
 
-start "SD WebUI API" cmd /k "webui-api.bat"
+start "SD WebUI API" cmd /k "cd /d "%WEBUI_PATH%" && webui-api.bat"
 
 echo [✓] API 서버 시작됨
 echo.
@@ -102,7 +102,7 @@ if exist "dist\index.html" (
 
     echo [✓] Node.js 확인됨
     echo [서버] dist 폴더 서빙 중...
-    start "SD Quick UI" cmd /k "npx serve dist -l 5173"
+    start "SD Quick UI" cmd /k "cd /d "%CURRENT_DIR%" && npx serve dist -l 5173"
 
 ) else (
     REM 개발 모드 (소스코드 있을 때)
@@ -137,7 +137,7 @@ if exist "dist\index.html" (
     )
 
     echo [✓] 의존성 확인됨
-    start "SD Quick UI" cmd /k "npm run dev"
+    start "SD Quick UI" cmd /k "cd /d "%CURRENT_DIR%" && npm run dev"
 )
 
 echo.
