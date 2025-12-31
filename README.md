@@ -1,8 +1,30 @@
 # ⚡ SD Quick UI
 
-A modern, fast, and feature-rich Vue 3 frontend for Stable Diffusion WebUI.
+> **Personal Project** | A lightweight Vue 3 alternative UI for Stable Diffusion WebUI
 
-Designed for rapid iteration and efficient workflow with the unique **Prompt Slots System** that lets you quickly switch between different generation settings.
+A simple, Korean-friendly frontend focused on rapid prompt iteration through the unique **Prompt Slots System**.
+
+**⚠️ This is a personal project built for my own workflow.** It's not meant to replace powerful tools like ComfyUI or Invoke AI. If you need advanced features like img2img, ControlNet, or complex workflows, use those instead.
+
+## 🎯 Who is this for?
+
+This project is specifically designed for:
+
+✅ **You might like this if:**
+- You primarily use **txt2img** and don't need img2img/inpainting
+- You want **Korean language support** with proper translations
+- You frequently switch between **multiple prompt sets** (portraits, landscapes, etc.)
+- You find ComfyUI/Invoke too complex and prefer a **simple, focused UI**
+- You're a **beginner** who wants an easy-to-use interface
+- You already use SD WebUI and just want a **cleaner frontend**
+
+❌ **This is NOT for you if:**
+- You need **img2img, inpainting, or ControlNet** (use official WebUI/ComfyUI)
+- You want **advanced node-based workflows** (use ComfyUI)
+- You need a **standalone application** (this requires WebUI backend)
+- You want **cutting-edge features** (this is a personal side project)
+
+**Target user**: Korean-speaking SD beginners who mainly do txt2img generation and value simplicity over features.
 
 ## ✨ Key Features
 
@@ -237,49 +259,83 @@ This project uses:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**Bug fixes and small improvements are welcome!** However, please understand:
+- This is a personal project with limited maintenance time
+- I may not respond quickly to issues/PRs
+- Large feature requests will likely be declined (keep it simple!)
+- For major features, consider forking instead
 
+If you want to contribute:
 1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create your feature branch (`git checkout -b fix/SomeBugFix`)
+3. Keep changes small and focused
+4. Submit a PR with clear description
 
-## 📝 Known Limitations
+**Better yet**: If you have big ideas, fork this project and make it your own! That's what open source is for.
 
-- **txt2img only** - img2img, inpainting, extras not yet implemented
-- **No ControlNet** - ControlNet integration planned for future
-- **Chrome/Edge recommended** - Best compatibility with modern browsers
-- **API dependency** - Requires WebUI backend running
+## ⚠️ Limitations & Trade-offs
 
-## 🗺️ Roadmap
+**This is intentionally a minimal, focused project.** Here's what's missing:
 
-- [ ] img2img support
-- [ ] Inpainting/Outpainting
-- [ ] ControlNet integration
-- [ ] Extension support
-- [ ] Multi-language support
-- [ ] Electron desktop app
-- [ ] Image-to-image workflow
-- [ ] Batch processing improvements
+### Not Implemented (and probably won't be)
+- ❌ **img2img / inpainting** - Use official WebUI for these
+- ❌ **ControlNet** - Too complex for this project's scope
+- ❌ **Batch processing UI** - Basic queue only
+- ❌ **Extension system** - Not planned
+- ❌ **Standalone app** - Requires WebUI backend running
+
+### Technical Limitations
+- 🔧 **Requires WebUI API patch** - Adds LoRA endpoints (3 files modified)
+- 🌐 **Chrome/Edge recommended** - Best compatibility
+- 💾 **LocalStorage only** - No cloud sync
+- 🖥️ **Windows-optimized** - Install scripts are Windows .bat files
+
+### Why these limitations exist
+This is a **personal side project** built for my specific use case (txt2img workflow with quick prompt switching). I'm not trying to build a ComfyUI competitor - that would take a full-time team. This is just a cleaner UI for basic txt2img work.
+
+## 🗺️ Roadmap (Maybe?)
+
+**Honest disclaimer**: This is a side project. I built it for myself and I'm sharing it in case it's useful to others. Don't expect regular updates or new features.
+
+**Possible improvements** (if I have time and motivation):
+- [ ] Bug fixes and stability improvements
+- [ ] Better error handling
+- [ ] Performance optimizations
+- [ ] Additional language support (if requested)
+- [ ] Documentation improvements
+
+**Unlikely to happen**:
+- ❌ img2img / inpainting (too much work, use official WebUI)
+- ❌ ControlNet (complex integration)
+- ❌ Mobile app (not my use case)
+- ❌ Cloud features (privacy concerns)
+
+If you want these features, I encourage you to fork the project or use more mature alternatives like ComfyUI.
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) - The amazing WebUI backend
-- [Stability AI](https://stability.ai/) - Stable Diffusion models
-- Vue.js team - Excellent frontend framework
-
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/sd-vue-ui/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/sd-vue-ui/discussions)
+**Please read the documentation first** (INSTALLATION-KR.md for Korean, README.md for English).
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/sd-vue-ui/issues) - For bugs only
+- **Questions**: Check existing issues first, or open a new one
+
+**Response time**: This is a side project, so responses may be slow or nonexistent. Sorry in advance!
 
 ---
 
-**Made with ❤️ for the Stable Diffusion community**
+## 🙏 Acknowledgments
 
-*Replace `yourusername` with your actual GitHub username when publishing*
+This project wouldn't exist without:
+- **[AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)** - The amazing backend that does all the real work
+- **[Stability AI](https://stability.ai/)** - For making Stable Diffusion open source
+- **Vue.js team** - For the excellent framework
+
+---
+
+**A personal side project shared in case it's useful to others** 🤷
+
+*Note: Replace `yourusername` with your actual GitHub username before publishing*
