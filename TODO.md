@@ -1,6 +1,15 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 10. Bookmarks: Enhance bookmark manager with advanced features (2025-12-31)
+  - Added import/export functionality (JSON format with merge strategy)
+  - Auto-link generated images as thumbnails with manual override option
+  - Show update/save-as-new buttons when prompts are modified after applying bookmark
+  - Replaced list view with card grid layout (180px cards, LoRA Selector style)
+  - Enlarged modal dialogs (800px width, larger textarea inputs: 8 rows/6 rows)
+  - Added thumbnail picker modal for selecting images from history
+  - Thumbnail placeholders show bookmark name initials when no image
+  - Added 17 new i18n translation keys (ko/en)
 - [x] 3. Preset: Fix display issues (2025-12-31)
   - Fixed undefined bug in preset summary display
   - Enhanced summary to show batch, hires fix, and ADetailer info
