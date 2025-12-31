@@ -43,7 +43,11 @@ export default {
     deleteHistoryWithFavorites: '히스토리를 삭제하시겠습니까?\n\n즐겨찾기 {count}개는 유지됩니다.',
     batchDelete: '이미지 일괄 삭제',
     batchDeleteConfirm: '{count}개의 이미지를 삭제하시겠습니까?',
-    noSelectedImages: '선택된 이미지가 없습니다'
+    noSelectedImages: '선택된 이미지가 없습니다',
+
+    // Settings
+    ok: '확인',
+    dontAskAgain: '다시 묻지 않기'
   },
 
   // 프롬프트 관련
@@ -119,7 +123,11 @@ export default {
     negativePrompt: '네거티브 프롬프트',
     negativePromptPlaceholder: '네거티브 프롬프트 입력...',
     none: '(없음)',
-    nameRequiredError: '북마크 이름을 입력해주세요'
+    nameRequiredError: '북마크 이름을 입력해주세요',
+    applyMode: '적용 모드',
+    applyModeReplace: '프롬프트 바꾸기',
+    applyModePrepend: '프롬프트 앞에 삽입',
+    applyModeAppend: '프롬프트 뒤에 추가'
   },
 
   // 히스토리
@@ -585,6 +593,24 @@ export default {
     pngInfo: 'PNG 정보',
     checkpoint: '체크포인트',
     settings: '설정'
+  },
+
+  // 시스템 설정
+  systemSettings: {
+    title: '시스템 설정',
+    expand: '시스템 설정 펼치기',
+    collapse: '시스템 설정 접기'
+  },
+
+  // 크기 자동 보정
+  dimensionValidation: {
+    title: '크기 자동 보정',
+    widthMessage: '가로 {original}을(를) {corrected}(8의 배수)로 자동 보정하시겠습니까?\n\n나중에 시스템 설정에서 변경할 수 있습니다.',
+    heightMessage: '세로 {original}을(를) {corrected}(8의 배수)로 자동 보정하시겠습니까?\n\n나중에 시스템 설정에서 변경할 수 있습니다.',
+    applyCorrection: '보정',
+    keepOriginal: '유지',
+    autoCorrect: '8의 배수로 자동 보정',
+    settingsHint: '설정을 변경하려면 시스템 설정을 확인하세요'
   }
 
   // Phase 3에서 extracted-texts.json을 기반으로 실제 텍스트로 채워질 예정

@@ -22,6 +22,9 @@ export function useAspectRatio(width, height, ASPECT_RATIOS) {
   function applyAspectRatio(index) {
     if (!index) return // If "Custom" selected, do nothing
 
+    // Update selected aspect ratio index
+    selectedAspectRatioIndex.value = index
+
     const ratioPreset = ASPECT_RATIOS[index]
     const [w, h] = ratioPreset.ratio
 

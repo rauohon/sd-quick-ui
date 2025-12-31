@@ -427,7 +427,26 @@ function handleAddNegative(promptText) {
 
 // Bookmark Manager handlers
 function handleApplyBookmark(data) {
-  prompt.value = data.prompt
+  const mode = data.mode || 'replace'
+
+  // Process positive prompt based on mode
+  switch (mode) {
+    case 'replace':
+      prompt.value = data.prompt
+      break
+    case 'prepend':
+      if (data.prompt) {
+        prompt.value = data.prompt + (prompt.value ? '\n' + prompt.value : '')
+      }
+      break
+    case 'append':
+      if (data.prompt) {
+        prompt.value = (prompt.value ? prompt.value + '\n' : '') + data.prompt
+      }
+      break
+  }
+
+  // Negative prompt always replaces (for simplicity)
   negativePrompt.value = data.negativePrompt
 }
 
@@ -678,6 +697,8 @@ onUnmounted(() => {
         :has-enabled-adetailers="hasEnabledADetailers"
         :enabled-adetailers="enabledADetailers"
         :adetailer-labels="ADETAILER_LABELS"
+        :show-confirm="showConfirm"
+        :show-toast="showToast"
         @toggle-panel="showAdvancedPanel = !showAdvancedPanel"
         @check-api="checkApiStatus"
         @update:selectedModel="selectedModel = $event"

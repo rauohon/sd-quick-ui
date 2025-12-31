@@ -43,7 +43,11 @@ export default {
     deleteHistoryWithFavorites: 'Delete history?\n\n{count} favorites will be kept.',
     batchDelete: 'Batch Delete Images',
     batchDeleteConfirm: 'Delete {count} images?',
-    noSelectedImages: 'No images selected'
+    noSelectedImages: 'No images selected',
+
+    // Settings
+    ok: 'OK',
+    dontAskAgain: "Don't ask again"
   },
 
   // Prompt related
@@ -119,7 +123,11 @@ export default {
     negativePrompt: 'Negative Prompt',
     negativePromptPlaceholder: 'Enter negative prompt...',
     none: '(none)',
-    nameRequiredError: 'Please enter bookmark name'
+    nameRequiredError: 'Please enter bookmark name',
+    applyMode: 'Apply Mode',
+    applyModeReplace: 'Replace prompt',
+    applyModePrepend: 'Prepend to prompt',
+    applyModeAppend: 'Append to prompt'
   },
 
   // History
@@ -585,5 +593,23 @@ export default {
     pngInfo: 'PNG Info',
     checkpoint: 'Checkpoint',
     settings: 'Settings'
+  },
+
+  // System Settings
+  systemSettings: {
+    title: 'System Settings',
+    expand: 'Expand system settings',
+    collapse: 'Collapse system settings'
+  },
+
+  // Dimension Validation
+  dimensionValidation: {
+    title: 'Auto-correct Dimensions',
+    widthMessage: 'Width {original} will be corrected to {corrected} (multiple of 8). Continue?\n\nYou can change this setting later in System Settings.',
+    heightMessage: 'Height {original} will be corrected to {corrected} (multiple of 8). Continue?\n\nYou can change this setting later in System Settings.',
+    applyCorrection: 'Apply Correction',
+    keepOriginal: 'Keep Original',
+    autoCorrect: 'Auto-correct to 8-multiple',
+    settingsHint: 'You can change this setting in System Settings'
   }
 }

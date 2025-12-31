@@ -10,7 +10,6 @@
       </button>
       <h3 class="panel-title">{{ $t('advancedPanel.title') }}</h3>
       <div class="header-right">
-        <LanguageSwitcher v-if="isExpanded" />
         <ApiStatusIndicator
           v-if="isExpanded"
           :connected="apiConnected"
@@ -90,8 +89,8 @@
         <label>Width</label>
         <input
           type="number"
-          :value="width"
-          @input="$emit('update:width', Number($event.target.value))"
+          :value="localWidth"
+          @input="updateWidth($event.target.value)"
           step="64"
           :disabled="isGenerating"
         >
@@ -101,8 +100,8 @@
         <label>Height</label>
         <input
           type="number"
-          :value="height"
-          @input="$emit('update:height', Number($event.target.value))"
+          :value="localHeight"
+          @input="updateHeight($event.target.value)"
           step="64"
           :disabled="isGenerating"
         >
@@ -214,6 +213,34 @@
       />
     </div>
 
+    <!-- System Settings Section -->
+    <div v-if="isExpanded" class="system-settings-section">
+      <div class="system-settings-header" @click="isSystemSettingsExpanded = !isSystemSettingsExpanded">
+        <span class="system-settings-title">⚙️ {{ $t('systemSettings.title') }}</span>
+        <span class="toggle-icon">{{ isSystemSettingsExpanded ? '▲' : '▼' }}</span>
+      </div>
+
+      <transition name="expand">
+        <div v-if="isSystemSettingsExpanded" class="system-settings-content">
+          <div class="setting-group">
+            <label class="setting-label">{{ $t('settings.language') }}</label>
+            <LanguageSwitcher />
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label checkbox-label">
+              <input
+                type="checkbox"
+                v-model="autoCorrectDimensions"
+                @change="saveAutoCorrectSetting"
+              >
+              <span>{{ $t('dimensionValidation.autoCorrect') }}</span>
+            </label>
+          </div>
+        </div>
+      </transition>
+    </div>
+
     <div v-if="isExpanded" class="panel-footer">
       <span class="footer-title">⚡ SD Quick UI</span>
       <button
@@ -230,11 +257,19 @@
 </template>
 
 <script setup>
+import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ApiStatusIndicator from './ApiStatusIndicator.vue'
 import LastParamsSection from './LastParamsSection.vue'
 import LanguageSwitcher from './LanguageSwitcher.vue'
 
-defineProps({
+const { t } = useI18n()
+
+// State
+const isSystemSettingsExpanded = ref(false)
+const autoCorrectDimensions = ref(false) // Default: unchecked (will ask user)
+
+const props = defineProps({
   isExpanded: {
     type: Boolean,
     default: true
@@ -334,10 +369,18 @@ defineProps({
   adetailerLabels: {
     type: Array,
     default: () => []
+  },
+  showConfirm: {
+    type: Function,
+    required: true
+  },
+  showToast: {
+    type: Function,
+    required: true
   }
 })
 
-defineEmits([
+const emit = defineEmits([
   'toggle-panel',
   'check-api',
   'update:selectedModel',
@@ -356,6 +399,162 @@ defineEmits([
   'test-notification',
   'update:notificationVolume'
 ])
+
+// Local state for debounced width/height
+const localWidth = ref(props.width)
+const localHeight = ref(props.height)
+
+// Debounce timers
+let widthDebounceTimer = null
+let heightDebounceTimer = null
+
+// Watch props to sync local state when changed externally
+watch(() => props.width, (newWidth) => {
+  localWidth.value = newWidth
+})
+
+watch(() => props.height, (newHeight) => {
+  localHeight.value = newHeight
+})
+
+// Debounced update functions with validation
+async function updateWidth(value) {
+  localWidth.value = value
+
+  if (widthDebounceTimer) {
+    clearTimeout(widthDebounceTimer)
+  }
+
+  widthDebounceTimer = setTimeout(async () => {
+    const numValue = Number(value)
+
+    // Check if value is multiple of 8
+    if (numValue % 8 !== 0) {
+      const correctedValue = Math.round(numValue / 8) * 8
+      const setting = localStorage.getItem('sd-auto-correct-dimensions')
+
+      if (setting === null) {
+        // No preference set - ask user
+        const result = await props.showConfirm({
+          title: t('dimensionValidation.title'),
+          message: t('dimensionValidation.widthMessage', { original: numValue, corrected: correctedValue }),
+          confirmText: t('dimensionValidation.applyCorrection'),
+          cancelText: t('dimensionValidation.keepOriginal'),
+          showDontAskAgain: true,
+          dontAskAgainText: t('common.dontAskAgain')
+        })
+
+        if (result.confirmed) {
+          // User chose to auto-correct
+          localWidth.value = correctedValue
+          emit('update:width', correctedValue)
+
+          if (result.dontAskAgain) {
+            localStorage.setItem('sd-auto-correct-dimensions', 'true')
+            autoCorrectDimensions.value = true
+            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
+          }
+        } else {
+          // User chose not to auto-correct
+          emit('update:width', numValue)
+
+          if (result.dontAskAgain) {
+            localStorage.setItem('sd-auto-correct-dimensions', 'false')
+            autoCorrectDimensions.value = false
+            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
+          }
+        }
+      } else if (setting === 'true') {
+        // Auto-correct enabled - apply correction without asking
+        localWidth.value = correctedValue
+        emit('update:width', correctedValue)
+      } else {
+        // Auto-correct disabled - keep original value without asking
+        emit('update:width', numValue)
+      }
+    } else {
+      // Value is already valid
+      emit('update:width', numValue)
+    }
+  }, 300)
+}
+
+async function updateHeight(value) {
+  localHeight.value = value
+
+  if (heightDebounceTimer) {
+    clearTimeout(heightDebounceTimer)
+  }
+
+  heightDebounceTimer = setTimeout(async () => {
+    const numValue = Number(value)
+
+    // Check if value is multiple of 8
+    if (numValue % 8 !== 0) {
+      const correctedValue = Math.round(numValue / 8) * 8
+      const setting = localStorage.getItem('sd-auto-correct-dimensions')
+
+      if (setting === null) {
+        // No preference set - ask user
+        const result = await props.showConfirm({
+          title: t('dimensionValidation.title'),
+          message: t('dimensionValidation.heightMessage', { original: numValue, corrected: correctedValue }),
+          confirmText: t('dimensionValidation.applyCorrection'),
+          cancelText: t('dimensionValidation.keepOriginal'),
+          showDontAskAgain: true,
+          dontAskAgainText: t('common.dontAskAgain')
+        })
+
+        if (result.confirmed) {
+          // User chose to auto-correct
+          localHeight.value = correctedValue
+          emit('update:height', correctedValue)
+
+          if (result.dontAskAgain) {
+            localStorage.setItem('sd-auto-correct-dimensions', 'true')
+            autoCorrectDimensions.value = true
+            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
+          }
+        } else {
+          // User chose not to auto-correct
+          emit('update:height', numValue)
+
+          if (result.dontAskAgain) {
+            localStorage.setItem('sd-auto-correct-dimensions', 'false')
+            autoCorrectDimensions.value = false
+            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
+          }
+        }
+      } else if (setting === 'true') {
+        // Auto-correct enabled - apply correction without asking
+        localHeight.value = correctedValue
+        emit('update:height', correctedValue)
+      } else {
+        // Auto-correct disabled - keep original value without asking
+        emit('update:height', numValue)
+      }
+    } else {
+      // Value is already valid
+      emit('update:height', numValue)
+    }
+  }, 300)
+}
+
+// Save auto-correct setting to localStorage
+function saveAutoCorrectSetting() {
+  localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
+}
+
+// Load auto-correct setting from localStorage on mount
+onMounted(() => {
+  const saved = localStorage.getItem('sd-auto-correct-dimensions')
+  if (saved === 'true') {
+    autoCorrectDimensions.value = true
+  } else if (saved === 'false') {
+    autoCorrectDimensions.value = false
+  }
+  // If saved is null, keep default (false) and will ask user
+})
 </script>
 
 <style scoped>
@@ -544,5 +743,115 @@ defineEmits([
 .footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* System Settings Section */
+.system-settings-section {
+  flex-shrink: 0;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.system-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.system-settings-header:hover {
+  background: #eff1f3;
+}
+
+.system-settings-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  color: #999;
+}
+
+.system-settings-content {
+  padding: 12px;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+}
+
+.setting-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-group + .setting-group {
+  margin-top: 12px;
+}
+
+.setting-label {
+  flex: 0 0 80px;
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.setting-label.checkbox-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.setting-label.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.setting-label.checkbox-label span {
+  font-size: 13px;
+  color: #555;
+}
+
+/* Transition Animation */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* LanguageSwitcher override for light background */
+.system-settings-content :deep(.language-switcher .lang-btn) {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.system-settings-content :deep(.language-switcher .lang-btn:hover) {
+  background: #e5e7eb;
+}
+
+.system-settings-content :deep(.language-switcher .lang-btn.active) {
+  background: #6366f1;
+  color: #fff;
+  border-color: #4f46e5;
 }
 </style>

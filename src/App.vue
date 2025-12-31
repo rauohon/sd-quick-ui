@@ -73,6 +73,8 @@ function showConfirm(options) {
     message,
     confirmText = '확인',
     cancelText = '취소',
+    showDontAskAgain = false,
+    dontAskAgainText = null,
     onConfirm,
     onCancel
   } = options
@@ -88,14 +90,16 @@ function showConfirm(options) {
       message,
       confirmText,
       cancelText,
-      onConfirm: () => {
-        resolve(true)
-        onConfirm?.()
+      showDontAskAgain,
+      dontAskAgainText,
+      onConfirm: (dontAskAgain) => {
+        resolve({ confirmed: true, dontAskAgain })
+        onConfirm?.(dontAskAgain)
         cleanup()
       },
-      onCancel: () => {
-        resolve(false)
-        onCancel?.()
+      onCancel: (dontAskAgain) => {
+        resolve({ confirmed: false, dontAskAgain })
+        onCancel?.(dontAskAgain)
         cleanup()
       }
     })

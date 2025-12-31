@@ -19,6 +19,7 @@ const searchQuery = ref('')
 const selectedBookmark = ref(null)
 const showAddDialog = ref(false)
 const editingBookmark = ref(null)
+const applyMode = ref('replace') // 'replace' | 'prepend' | 'append'
 
 // Form state
 const bookmarkName = ref('')
@@ -99,6 +100,7 @@ function applyBookmark() {
   emit('applyBookmark', {
     prompt: selectedBookmark.value.prompt,
     negativePrompt: selectedBookmark.value.negativePrompt,
+    mode: applyMode.value,
   })
   props.showToast?.(t('bookmark.applied', { name: selectedBookmark.value.name }), 'success')
 }
@@ -161,6 +163,43 @@ onMounted(() => {
         {{ filteredBookmarks.length }} / {{ bookmarks.length }} {{ $t('bookmark.bookmarks') }}
       </div>
     </div>
+
+    <!-- Apply Mode Selector -->
+    <div class="apply-mode-section">
+      <div class="mode-label">{{ $t('bookmark.applyMode') }}</div>
+      <div class="mode-options">
+        <label class="mode-option">
+          <input
+            type="radio"
+            :value="'replace'"
+            v-model="applyMode"
+            :disabled="!selectedBookmark"
+          >
+          <span>{{ $t('bookmark.applyModeReplace') }}</span>
+        </label>
+        <label class="mode-option">
+          <input
+            type="radio"
+            :value="'prepend'"
+            v-model="applyMode"
+            :disabled="!selectedBookmark"
+          >
+          <span>{{ $t('bookmark.applyModePrepend') }}</span>
+        </label>
+        <label class="mode-option">
+          <input
+            type="radio"
+            :value="'append'"
+            v-model="applyMode"
+            :disabled="!selectedBookmark"
+          >
+          <span>{{ $t('bookmark.applyModeAppend') }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="mode-divider"></div>
 
     <!-- Bookmarks List -->
     <div class="bookmarks-list">
@@ -682,5 +721,57 @@ onMounted(() => {
 .bookmarks-list::-webkit-scrollbar-thumb:hover,
 .dialog-content::-webkit-scrollbar-thumb:hover {
   background: #764ba2;
+}
+
+/* Apply Mode Selector */
+.apply-mode-section {
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.mode-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.mode-options {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  user-select: none;
+}
+
+.mode-option input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.mode-option input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.mode-option span {
+  font-weight: 500;
+}
+
+.mode-divider {
+  height: 1px;
+  background: linear-gradient(90deg, #e0e0e0 0%, #e0e0e0 100%);
 }
 </style>

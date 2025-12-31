@@ -6,11 +6,19 @@
           <div v-if="isVisible" class="confirm-dialog" @click.stop>
             <div class="confirm-header">
               <span class="confirm-icon">⚠️</span>
-              <h3 class="confirm-title">{{ displayTitle }}</h3>
+              <h3 class="confirm-title">{{ title }}</h3>
             </div>
 
             <div class="confirm-body">
               <p class="confirm-message">{{ message }}</p>
+
+              <label v-if="showDontAskAgain" class="dont-ask-again">
+                <input
+                  type="checkbox"
+                  v-model="dontAskAgainChecked"
+                >
+                <span>{{ dontAskAgainText }}</span>
+              </label>
             </div>
 
             <div class="confirm-actions">
@@ -19,14 +27,14 @@
                 @click="handleCancel"
                 ref="cancelBtn"
               >
-                {{ displayCancelText }}
+                {{ cancelText }}
               </button>
               <button
                 class="confirm-btn confirm-btn-confirm"
                 @click="handleConfirm"
                 ref="confirmBtn"
               >
-                {{ displayConfirmText }}
+                {{ confirmText }}
               </button>
             </div>
           </div>
@@ -37,15 +45,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   title: {
     type: String,
-    default: null
+    default: '확인'
   },
   message: {
     type: String,
@@ -53,11 +58,19 @@ const props = defineProps({
   },
   confirmText: {
     type: String,
-    default: null
+    default: '확인'
   },
   cancelText: {
     type: String,
-    default: null
+    default: '취소'
+  },
+  showDontAskAgain: {
+    type: Boolean,
+    default: false
+  },
+  dontAskAgainText: {
+    type: String,
+    default: '다시 묻지 않기'
   },
   onConfirm: {
     type: Function,
@@ -69,26 +82,22 @@ const props = defineProps({
   }
 })
 
-// Use i18n defaults when props are not provided
-const displayTitle = computed(() => props.title || t('common.confirm'))
-const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
-const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
-
 const isVisible = ref(false)
 const confirmBtn = ref(null)
 const cancelBtn = ref(null)
+const dontAskAgainChecked = ref(false)
 
 function handleConfirm() {
   isVisible.value = false
   setTimeout(() => {
-    props.onConfirm()
+    props.onConfirm(dontAskAgainChecked.value)
   }, 150)
 }
 
 function handleCancel() {
   isVisible.value = false
   setTimeout(() => {
-    props.onCancel()
+    props.onCancel(dontAskAgainChecked.value)
   }, 150)
 }
 
@@ -169,6 +178,36 @@ onUnmounted(() => {
   line-height: 1.6;
   color: #4b5563;
   white-space: pre-wrap;
+}
+
+.dont-ask-again {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.dont-ask-again:hover {
+  background: #f3f4f6;
+}
+
+.dont-ask-again input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.dont-ask-again span {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .confirm-actions {
