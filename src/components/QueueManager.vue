@@ -36,8 +36,7 @@ const {
 } = useQueue()
 
 // State
-const showAddDialog = ref(false)
-const showEditDialog = ref(false)
+const dialogMode = ref(null) // null, 'add', 'edit'
 const showClearConfirm = ref(false)
 const editingItem = ref(null)
 const highlightedItemId = ref(null)
@@ -47,6 +46,10 @@ const queueListRef = ref(null)
 const queuePrompt = ref('')
 const queueNegativePrompt = ref('')
 const queueBatchCount = ref(1)
+
+// Dialog computed
+const isDialogOpen = computed(() => dialogMode.value !== null)
+const isEditMode = computed(() => dialogMode.value === 'edit')
 
 // Computed
 const stats = computed(() => getStats())
@@ -77,34 +80,8 @@ function openAddDialog() {
   queuePrompt.value = props.currentPrompt || ''
   queueNegativePrompt.value = props.currentNegativePrompt || ''
   queueBatchCount.value = 1
-  showAddDialog.value = true
-}
-
-function closeAddDialog() {
-  showAddDialog.value = false
-}
-
-function handleAddToQueue() {
-  if (!queuePrompt.value.trim()) {
-    props.showToast?.(t('queue.promptRequiredError'), 'error')
-    return
-  }
-
-  if (!props.currentParams) {
-    props.showToast?.(t('queue.noSettings'), 'error')
-    return
-  }
-
-  const newItem = addToQueue(
-    queuePrompt.value,
-    queueNegativePrompt.value,
-    props.currentParams,
-    queueBatchCount.value
-  )
-
-  props.showToast?.(t('queue.added'), 'success')
-  closeAddDialog()
-  scrollToNewItem(newItem.id)
+  editingItem.value = null
+  dialogMode.value = 'add'
 }
 
 function openEditDialog(item) {
@@ -112,28 +89,46 @@ function openEditDialog(item) {
   queuePrompt.value = item.prompt
   queueNegativePrompt.value = item.negativePrompt
   queueBatchCount.value = item.batchCount
-  showEditDialog.value = true
+  dialogMode.value = 'edit'
 }
 
-function closeEditDialog() {
-  showEditDialog.value = false
+function closeDialog() {
+  dialogMode.value = null
   editingItem.value = null
 }
 
-function handleUpdateItem() {
+function handleDialogSubmit() {
   if (!queuePrompt.value.trim()) {
     props.showToast?.(t('queue.promptRequiredError'), 'error')
     return
   }
 
-  updateQueueItem(editingItem.value.id, {
-    prompt: queuePrompt.value,
-    negativePrompt: queueNegativePrompt.value,
-    batchCount: queueBatchCount.value,
-  })
+  if (isEditMode.value) {
+    // Edit mode
+    updateQueueItem(editingItem.value.id, {
+      prompt: queuePrompt.value,
+      negativePrompt: queueNegativePrompt.value,
+      batchCount: queueBatchCount.value,
+    })
+    props.showToast?.(t('queue.updated'), 'success')
+    closeDialog()
+  } else {
+    // Add mode
+    if (!props.currentParams) {
+      props.showToast?.(t('queue.noSettings'), 'error')
+      return
+    }
 
-  props.showToast?.(t('queue.updated'), 'success')
-  closeEditDialog()
+    const newItem = addToQueue(
+      queuePrompt.value,
+      queueNegativePrompt.value,
+      props.currentParams,
+      queueBatchCount.value
+    )
+    props.showToast?.(t('queue.added'), 'success')
+    closeDialog()
+    scrollToNewItem(newItem.id)
+  }
 }
 
 function handleRemove(id) {
@@ -421,15 +416,15 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Add Dialog -->
-    <div v-if="showAddDialog" class="dialog-overlay" @click="closeAddDialog">
+    <!-- Add/Edit Dialog (Unified) -->
+    <div v-if="isDialogOpen" class="dialog-overlay" @click="closeDialog">
       <div class="dialog" @click.stop>
-        <h3>{{ $t('queue.addToQueue') }}</h3>
+        <h3>{{ isEditMode ? $t('queue.editItem') : $t('queue.addToQueue') }}</h3>
         <div class="form-group">
           <label>{{ $t('queue.promptRequired') }}</label>
           <textarea
             v-model="queuePrompt"
-            placeholder="Enter prompt..."
+            :placeholder="isEditMode ? '' : 'Enter prompt...'"
             rows="18"
           ></textarea>
         </div>
@@ -437,7 +432,7 @@ onMounted(() => {
           <label>{{ $t('queue.negativePrompt') }}</label>
           <textarea
             v-model="queueNegativePrompt"
-            placeholder="Enter negative prompt..."
+            :placeholder="isEditMode ? '' : 'Enter negative prompt...'"
             rows="6"
           ></textarea>
         </div>
@@ -451,42 +446,10 @@ onMounted(() => {
           >
         </div>
         <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeAddDialog">{{ $t('common.cancel') }}</button>
-          <button class="confirm-btn" @click="handleAddToQueue">{{ $t('queue.add') }}</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Edit Dialog -->
-    <div v-if="showEditDialog" class="dialog-overlay" @click="closeEditDialog">
-      <div class="dialog" @click.stop>
-        <h3>{{ $t('queue.editItem') }}</h3>
-        <div class="form-group">
-          <label>{{ $t('queue.promptRequired') }}</label>
-          <textarea
-            v-model="queuePrompt"
-            rows="18"
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label>{{ $t('queue.negativePrompt') }}</label>
-          <textarea
-            v-model="queueNegativePrompt"
-            rows="6"
-          ></textarea>
-        </div>
-        <div class="form-group">
-          <label>{{ $t('queue.batchCount') }}</label>
-          <input
-            type="number"
-            v-model.number="queueBatchCount"
-            min="1"
-            max="100"
-          >
-        </div>
-        <div class="dialog-actions">
-          <button class="cancel-btn" @click="closeEditDialog">{{ $t('common.cancel') }}</button>
-          <button class="confirm-btn" @click="handleUpdateItem">{{ $t('common.edit') }}</button>
+          <button class="cancel-btn" @click="closeDialog">{{ $t('common.cancel') }}</button>
+          <button class="confirm-btn" @click="handleDialogSubmit">
+            {{ isEditMode ? $t('common.edit') : $t('queue.add') }}
+          </button>
         </div>
       </div>
     </div>

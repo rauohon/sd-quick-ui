@@ -16,11 +16,13 @@ const QUEUE_KEY = 'sd-generation-queue'
 //   createdAt: string,
 // }
 
+// Singleton state - shared across all useQueue() calls
+const queue = ref([])
+const isRunning = ref(false)
+const isPaused = ref(false)
+const currentIndex = ref(-1)
+
 export function useQueue() {
-  const queue = ref([])
-  const isRunning = ref(false)
-  const isPaused = ref(false)
-  const currentIndex = ref(-1)
 
   // Load queue from localStorage
   function loadQueue() {

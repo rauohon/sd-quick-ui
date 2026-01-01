@@ -120,6 +120,16 @@
   - Auto-save watchers: Documented and kept in place (20+ refs dependency)
   - UI: Moved bookmark update actions between positive/negative prompts
   - Final: Txt2ImgView.vue 1397 → 1168 lines (-229 lines, 16% reduction)
+- [x] 9. App.vue CSS refactoring (2026-01-01)
+  - Moved 1270+ lines of global CSS from App.vue to style.css
+  - App.vue: 1703 → 430 lines (-75%)
+  - Scoped styles remain in App.vue (modal, toast components)
+  - Global component styles now in style.css for better maintainability
+- [x] 10. AdvancedSettingsPanel.vue refactoring (2026-01-01)
+  - Unified updateWidth/updateHeight into single updateDimension function
+  - Removed ~60 lines of duplicate code
+  - Fixed horizontal scroll issue (padding 12px → 10px)
+  - AdvancedSettingsPanel.vue: 931 → 873 lines (-6%)
 
 ## In Progress
 - [ ]
@@ -136,8 +146,10 @@
 ### Code Quality
 - [x] 4. Error handling consolidation ✅ Completed (2026-01-01)
 - [x] 5. Component refactoring ✅ Completed (2026-01-01)
-  - Phase 1~4: Created 3 new composables + constants extraction
   - Txt2ImgView.vue: 1397 → 1168 lines (-16%)
+  - App.vue: 1703 → 430 lines (-75%, CSS → style.css)
+  - AdvancedSettingsPanel.vue: 931 → 873 lines (-6%, 중복 제거)
+  - Created 3 new composables + constants extraction
 
 ## Backlog
 - [ ]
