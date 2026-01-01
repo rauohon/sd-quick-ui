@@ -51,32 +51,37 @@
       <!-- Body: List + Detail -->
       <div class="modal-body">
         <!-- Left: Image Grid -->
-        <div class="image-list">
+        <div ref="imageListRef" class="image-list">
           <div v-if="filteredItems.length === 0" class="empty-state">
             <p>{{ searchQuery ? $t('history.noSearchResults') : $t('history.noImages') }}</p>
           </div>
-          <div
-            v-for="item in sortedItems"
-            :key="item.id"
-            class="grid-item"
-            :class="{
-              'is-selected': selectedItem?.id === item.id,
-              'is-checked': selectedIds.has(item.id),
-              'is-favorite': item.favorite,
-              'is-interrupted': item.interrupted
-            }"
-            @click="selectItem(item)"
-          >
-            <div class="checkbox-overlay" @click.stop="toggleSelection(item.id)">
-              <input type="checkbox" :checked="selectedIds.has(item.id)" @click.stop>
-              <span class="checkmark">{{ selectedIds.has(item.id) ? '✓' : '' }}</span>
-            </div>
-            <img :src="item.image" :alt="'Image ' + item.id" />
-            <div class="item-overlay">
-              <div class="item-time">{{ formatTimestamp(item.timestamp) }}</div>
-              <div class="item-badges">
-                <span v-if="item.favorite" class="badge favorite">⭐</span>
-                <span v-if="item.interrupted" class="badge interrupted">⚠️</span>
+          <!-- Virtual scroll spacer -->
+          <div v-else class="virtual-scroll-spacer" :style="{ height: totalHeight + 'px' }">
+            <div class="virtual-scroll-content" :style="{ transform: `translateY(${offsetY}px)` }">
+              <div
+                v-for="item in visibleItems"
+                :key="item.id"
+                class="grid-item"
+                :class="{
+                  'is-selected': selectedItem?.id === item.id,
+                  'is-checked': selectedIds.has(item.id),
+                  'is-favorite': item.favorite,
+                  'is-interrupted': item.interrupted
+                }"
+                @click="selectItem(item)"
+              >
+                <div class="checkbox-overlay" @click.stop="toggleSelection(item.id)">
+                  <input type="checkbox" :checked="selectedIds.has(item.id)" @click.stop>
+                  <span class="checkmark">{{ selectedIds.has(item.id) ? '✓' : '' }}</span>
+                </div>
+                <img :src="item.image" :alt="'Image ' + item.id" />
+                <div class="item-overlay">
+                  <div class="item-time">{{ formatTimestamp(item.timestamp) }}</div>
+                  <div class="item-badges">
+                    <span v-if="item.favorite" class="badge favorite">⭐</span>
+                    <span v-if="item.interrupted" class="badge interrupted">⚠️</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -258,6 +263,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useVirtualScroll } from '../composables/useVirtualScroll'
 
 const { t } = useI18n()
 
@@ -333,6 +339,21 @@ const sortedItems = computed(() => {
     default:
       return items
   }
+})
+
+// Virtual scroll for image grid
+const imageListRef = ref(null)
+const {
+  visibleItems,
+  totalHeight,
+  offsetY
+} = useVirtualScroll({
+  items: sortedItems,
+  containerRef: imageListRef,
+  itemHeight: 180, // aspect-ratio: 1 with min 180px width
+  itemMinWidth: 180, // matches CSS minmax(180px, 1fr)
+  buffer: 2,
+  gap: 16
 })
 
 // Current index
@@ -774,16 +795,24 @@ function highlightText(text) {
   overflow-y: auto;
   padding: 20px;
   background: var(--color-bg-tertiary);
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  grid-auto-rows: max-content;
   border-right: 2px solid var(--color-border-primary);
   min-height: 0;
 }
 
+/* Virtual scroll container */
+.virtual-scroll-spacer {
+  position: relative;
+  width: 100%;
+}
+
+.virtual-scroll-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  grid-auto-rows: max-content;
+}
+
 .empty-state {
-  grid-column: 1 / -1;
   padding: 60px 20px;
   text-align: center;
   color: var(--color-text-tertiary);

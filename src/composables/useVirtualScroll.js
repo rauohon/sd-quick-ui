@@ -8,7 +8,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
  * @param {Ref<Array>} options.items - All items array
  * @param {Ref<HTMLElement>} options.containerRef - Scroll container element ref
  * @param {number} options.itemHeight - Height of each item (including gap)
- * @param {number} options.columns - Number of columns in grid (default: 3)
+ * @param {number} options.columns - Number of columns in grid (default: 3, ignored if itemMinWidth is set)
+ * @param {number} options.itemMinWidth - Min width for auto-fill columns (e.g., 180 for minmax(180px, 1fr))
  * @param {number} options.buffer - Number of extra rows to render above/below viewport (default: 2)
  * @param {number} options.gap - Gap between items (default: 16)
  */
@@ -17,7 +18,8 @@ export function useVirtualScroll(options) {
     items,
     containerRef,
     itemHeight = 120,
-    columns = 3,
+    columns: fixedColumns = 3,
+    itemMinWidth = 0,
     buffer = 2,
     gap = 16
   } = options
@@ -25,12 +27,24 @@ export function useVirtualScroll(options) {
   // Scroll state
   const scrollTop = ref(0)
   const containerHeight = ref(0)
+  const containerWidth = ref(0)
+
+  // Dynamic column calculation (for auto-fill grids)
+  const columns = computed(() => {
+    if (itemMinWidth > 0 && containerWidth.value > 0) {
+      // Calculate columns like CSS auto-fill does
+      // Account for padding (20px on each side in modal)
+      const availableWidth = containerWidth.value
+      return Math.max(1, Math.floor((availableWidth + gap) / (itemMinWidth + gap)))
+    }
+    return fixedColumns
+  })
 
   // Calculate row height (item height + gap)
   const rowHeight = computed(() => itemHeight + gap)
 
   // Total number of rows
-  const totalRows = computed(() => Math.ceil(items.value.length / columns))
+  const totalRows = computed(() => Math.ceil(items.value.length / columns.value))
 
   // Total height of all items (for scroll container)
   const totalHeight = computed(() => {
@@ -52,12 +66,12 @@ export function useVirtualScroll(options) {
   })
 
   // Start index in items array
-  const startIndex = computed(() => startRow.value * columns)
+  const startIndex = computed(() => startRow.value * columns.value)
 
   // End index in items array
   const endIndex = computed(() => Math.min(
     items.value.length,
-    (endRow.value + 1) * columns
+    (endRow.value + 1) * columns.value
   ))
 
   // Visible items (only these are rendered)
@@ -77,10 +91,11 @@ export function useVirtualScroll(options) {
     scrollTop.value = event.target.scrollTop
   }
 
-  // Update container height on resize
-  function updateContainerHeight() {
+  // Update container dimensions on resize
+  function updateContainerDimensions() {
     if (containerRef.value) {
       containerHeight.value = containerRef.value.clientHeight
+      containerWidth.value = containerRef.value.clientWidth
     }
   }
 
@@ -90,10 +105,10 @@ export function useVirtualScroll(options) {
   onMounted(() => {
     if (containerRef.value) {
       containerRef.value.addEventListener('scroll', handleScroll)
-      updateContainerHeight()
+      updateContainerDimensions()
 
       // Watch for container resize
-      resizeObserver = new ResizeObserver(updateContainerHeight)
+      resizeObserver = new ResizeObserver(updateContainerDimensions)
       resizeObserver.observe(containerRef.value)
     }
   })
@@ -114,12 +129,12 @@ export function useVirtualScroll(options) {
     }
     if (newContainer) {
       newContainer.addEventListener('scroll', handleScroll)
-      updateContainerHeight()
+      updateContainerDimensions()
 
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
-      resizeObserver = new ResizeObserver(updateContainerHeight)
+      resizeObserver = new ResizeObserver(updateContainerDimensions)
       resizeObserver.observe(newContainer)
     }
   })
@@ -138,7 +153,7 @@ export function useVirtualScroll(options) {
   // Scroll to specific item
   function scrollToItem(index) {
     if (!containerRef.value) return
-    const row = Math.floor(index / columns)
+    const row = Math.floor(index / columns.value)
     containerRef.value.scrollTop = row * rowHeight.value
   }
 
@@ -164,6 +179,8 @@ export function useVirtualScroll(options) {
     _debug: computed(() => ({
       scrollTop: scrollTop.value,
       containerHeight: containerHeight.value,
+      containerWidth: containerWidth.value,
+      columns: columns.value,
       totalRows: totalRows.value,
       startRow: startRow.value,
       endRow: endRow.value,
