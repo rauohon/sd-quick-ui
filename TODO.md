@@ -79,18 +79,20 @@
   - Drag counter for nested element handling
   - Full-screen blue overlay with 📁 icon and instructional text
   - i18n support for drop zone messages (ko/en)
+- [x] 3. Dark mode (2026-01-01)
+  - Created useDarkMode composable for theme management (light/dark/system)
+  - Added CSS custom properties for theming (--color-bg-*, --color-text-*, --color-border-*)
+  - Theme toggle in System Settings with 3 options (Light/Dark/System)
+  - Persist theme preference in localStorage
+  - System theme follows OS preference with matchMedia listener
+  - Updated all components to use CSS variables (21 files modified)
+  - Fixed LoraSelector to respect VITE_MOCK_API environment variable
+  - i18n support for theme settings (ko/en)
 
 ## In Progress
 - [ ]
 
 ## Planned
-
-### UI/UX Improvements
-- [ ] 6. Dark mode
-  - Theme toggle in System Settings
-  - Persist theme preference in localStorage
-  - CSS custom properties for theming
-  - Smooth theme transition
 
 ### Performance Optimization
 - [ ] 3. Image loading optimization
