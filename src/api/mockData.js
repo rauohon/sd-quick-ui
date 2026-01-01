@@ -203,20 +203,26 @@ export const mockResponses = {
       startMockProgress()
 
       const batchSize = body.batch_size || 1
-      const images = Array(batchSize).fill(null).map(() => generateMockImage())
+      const nIter = body.n_iter || 1
+      const totalImages = batchSize * nIter
+      const images = Array(totalImages).fill(null).map(() => generateMockImage())
+
+      // Generate seeds for each image (WebUI increments seed for each image)
+      const baseSeed = body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed
+      const allSeeds = Array(totalImages).fill(null).map((_, i) => baseSeed + i)
 
       return {
         images,
         parameters: body,
         info: JSON.stringify({
           prompt: body.prompt,
-          all_prompts: Array(batchSize).fill(body.prompt),
+          all_prompts: Array(totalImages).fill(body.prompt),
           negative_prompt: body.negative_prompt,
-          all_negative_prompts: Array(batchSize).fill(body.negative_prompt),
-          seed: body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed,
-          all_seeds: Array(batchSize).fill(body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed),
+          all_negative_prompts: Array(totalImages).fill(body.negative_prompt),
+          seed: baseSeed,
+          all_seeds: allSeeds,
           subseed: -1,
-          all_subseeds: Array(batchSize).fill(-1),
+          all_subseeds: Array(totalImages).fill(-1),
           subseed_strength: 0,
           width: body.width,
           height: body.height,
@@ -232,7 +238,7 @@ export const mockResponses = {
           denoising_strength: body.denoising_strength || null,
           extra_generation_params: {},
           index_of_first_image: 0,
-          infotexts: Array(batchSize).fill(`${body.prompt}\nNegative prompt: ${body.negative_prompt}\nSteps: ${body.steps}, Sampler: ${body.sampler_name}, CFG scale: ${body.cfg_scale}, Seed: ${body.seed}, Size: ${body.width}x${body.height}`),
+          infotexts: Array(totalImages).fill(`${body.prompt}\nNegative prompt: ${body.negative_prompt}\nSteps: ${body.steps}, Sampler: ${body.sampler_name}, CFG scale: ${body.cfg_scale}, Seed: ${body.seed}, Size: ${body.width}x${body.height}`),
           styles: [],
           job_timestamp: new Date().toISOString(),
           clip_skip: 1,

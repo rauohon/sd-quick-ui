@@ -583,81 +583,106 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       const data = await response.json()
 
       if (data.images && data.images.length > 0) {
-        // Parse info to get actual seed used
+        // Parse info to get actual values used (seeds, prompts for batch)
         let actualSeed = usedParams.seed
+        let allSeeds = []
+        let allPrompts = []
+        let allNegativePrompts = []
         try {
           const info = JSON.parse(data.info)
           if (info.seed !== undefined) {
             actualSeed = info.seed
           }
+          if (info.all_seeds && Array.isArray(info.all_seeds)) {
+            allSeeds = info.all_seeds
+          }
+          if (info.all_prompts && Array.isArray(info.all_prompts)) {
+            allPrompts = info.all_prompts
+          }
+          if (info.all_negative_prompts && Array.isArray(info.all_negative_prompts)) {
+            allNegativePrompts = info.all_negative_prompts
+          }
         } catch (e) {
           // Failed to parse info
         }
 
-        // Add actual seed to params
-        const paramsWithActualSeed = {
-          ...usedParams,
-          actual_seed: actualSeed
-        }
+        // Process all images from batch
+        const newImages = []
+        let totalDeletedCount = 0
 
-        const newImage = {
-          image: `data:image/png;base64,${data.images[0]}`,
-          info: data.info,
-          params: paramsWithActualSeed,
-          timestamp: new Date().toISOString(), // ISO 형식: "2025-12-28T15:30:45.123Z"
-          favorite: false, // 즐겨찾기 기본값
-          interrupted: wasInterrupted.value // 스킵/중단 여부
-        }
+        for (let i = 0; i < data.images.length; i++) {
+          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
 
-        // Save to IndexedDB first to get ID (WebP 압축으로 용량 걱정 없음)
-        try {
-          const result = await saveImage(newImage)
-          newImage.id = result.id  // IndexedDB ID 추가
+          // Add actual values to params for this image
+          const paramsWithActualSeed = {
+            ...usedParams,
+            actual_seed: imageSeed,
+            prompt: allPrompts[i] || usedParams.prompt,
+            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
+          }
 
-          // Auto-link thumbnail if bookmark was applied
-          if (appliedBookmarkId && appliedBookmarkId.value) {
-            try {
-              const { setBookmarkThumbnail } = useBookmarks()
-              setBookmarkThumbnail(appliedBookmarkId.value, result.id)
-            } catch (error) {
-              storage(error, { context: 'autoLinkThumbnail', silent: true })
+          const newImage = {
+            image: `data:image/png;base64,${data.images[i]}`,
+            info: data.info,
+            params: paramsWithActualSeed,
+            timestamp: new Date().toISOString(),
+            favorite: false,
+            interrupted: wasInterrupted.value
+          }
+
+          // Save to IndexedDB
+          try {
+            const result = await saveImage(newImage)
+            newImage.id = result.id
+
+            // Auto-link thumbnail if bookmark was applied (only for first image)
+            if (i === 0 && appliedBookmarkId && appliedBookmarkId.value) {
+              try {
+                const { setBookmarkThumbnail } = useBookmarks()
+                setBookmarkThumbnail(appliedBookmarkId.value, result.id)
+              } catch (error) {
+                storage(error, { context: 'autoLinkThumbnail', silent: true })
+              }
             }
+
+            if (result.deletedCount > 0) {
+              totalDeletedCount += result.deletedCount
+            }
+          } catch (error) {
+            storage(error, { context: 'saveImage', silent: true })
           }
 
-          // 200장 초과로 삭제된 이미지가 있으면 알림
-          if (result.deletedCount > 0) {
-            showToast(t('generation.autoDeleted', { count: result.deletedCount }), 'info')
-          }
-        } catch (error) {
-          // 저장 실패해도 생성은 계속 진행
-          storage(error, { context: 'saveImage', silent: true })
+          newImages.push(newImage)
+        }
+
+        // 200장 초과로 삭제된 이미지가 있으면 알림
+        if (totalDeletedCount > 0) {
+          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
         }
 
         // 중단 플래그 리셋
         wasInterrupted.value = false
 
-        // Add to memory (UI will update immediately)
-        generatedImages.value.unshift(newImage)
+        // Add all images to memory (newest first)
+        // Use new array assignment to ensure reactivity
+        const combined = [...newImages, ...generatedImages.value]
+        generatedImages.value = combined.slice(0, MAX_IMAGES)
 
-        // Keep only last N images in memory (for performance and memory optimization)
-        if (generatedImages.value.length > MAX_IMAGES) {
-          generatedImages.value = generatedImages.value.slice(0, MAX_IMAGES)
-        }
-
-        // 최종 이미지 설정 (이후 progress polling에서 덮어쓰지 않도록 플래그 설정)
+        // 최종 이미지 설정 (첫 번째 이미지를 미리보기로)
         finalImageReceived.value = true
         currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = paramsWithActualSeed
+        lastUsedParams.value = newImages[0].params
 
         // 성공 시 에러 카운터 리셋
         consecutiveErrors.value = 0
 
         // 생성 완료 알림 (중단되지 않은 경우만)
-        if (!newImage.interrupted && params.notificationType?.value) {
+        if (!newImages[0].interrupted && params.notificationType?.value) {
           notifyCompletion(params.notificationType.value, {
             volume: params.notificationVolume?.value || 0.5,
             imageInfo: {
-              size: `${paramsWithActualSeed.width}x${paramsWithActualSeed.height}`
+              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
+              count: data.images.length
             }
           })
         }

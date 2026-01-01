@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { cloneADetailers } from '../utils/adetailer'
 import { useSampleImage } from './useSampleImage'
 import { useErrorHandler } from './useErrorHandler'
@@ -59,6 +59,14 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       return generatedImages.value.filter(img => img.favorite)
     }
     return generatedImages.value
+  })
+
+  // Watch for generatedImages changes to update totalImageCount
+  watch(() => generatedImages.value.length, async (newLength, oldLength) => {
+    if (newLength > oldLength) {
+      // Images added - update count from IndexedDB
+      totalImageCount.value = await indexedDB.getImageCount()
+    }
   })
 
   /**
