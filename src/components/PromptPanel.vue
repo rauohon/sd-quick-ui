@@ -197,9 +197,9 @@ defineEmits([
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -209,15 +209,15 @@ defineEmits([
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .panel-title {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .header-buttons {
@@ -263,8 +263,8 @@ defineEmits([
 }
 
 .generate-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
   padding: 8px 24px;
   border: none;
   border-radius: 6px;
@@ -286,14 +286,14 @@ defineEmits([
 .generate-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: #9ca3af;
+  background: var(--color-text-secondary);
 }
 
 .progress-container {
   flex-shrink: 0;
   padding: 12px 16px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .progress-container.infinite-mode {
@@ -303,7 +303,7 @@ defineEmits([
 
 .progress-bar {
   height: 8px;
-  background: #e5e7eb;
+  background: var(--color-bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -311,7 +311,7 @@ defineEmits([
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   transition: width 0.3s ease;
   border-radius: 4px;
 }
@@ -325,22 +325,22 @@ defineEmits([
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .progress-state {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .progress-percent {
   font-weight: 600;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .infinite-indicator {
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--color-warning);
   animation: pulse 2s infinite;
 }
 
@@ -359,40 +359,40 @@ defineEmits([
 }
 
 .interrupt-btn {
-  background: #ef4444;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-text-inverse);
 }
 
 .interrupt-btn:hover {
-  background: #dc2626;
+  background: var(--color-error-dark);
   transform: scale(1.02);
 }
 
 .pause-btn {
-  background: #f59e0b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
 }
 
 .pause-btn:hover {
-  background: #d97706;
+  background: var(--color-warning-dark);
   transform: scale(1.02);
 }
 
 .skip-btn {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-info);
+  color: var(--color-text-inverse);
 }
 
 .skip-btn:hover {
-  background: #2563eb;
+  background: var(--color-info-dark);
   transform: scale(1.02);
 }
 
 .toolbar {
   flex-shrink: 0;
   padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .toolbar-section {
@@ -403,26 +403,26 @@ defineEmits([
 
 .tool-btn {
   padding: 8px 14px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .tool-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
   transform: translateY(-1px);
 }
 
 .tool-btn.active {
-  background: #dbeafe;
-  border-color: #3b82f6;
-  color: #1e40af;
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   font-weight: 600;
 }
 

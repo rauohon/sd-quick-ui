@@ -165,7 +165,7 @@ defineEmits([
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -173,7 +173,7 @@ defineEmits([
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -181,7 +181,7 @@ defineEmits([
 
 .selection-count {
   margin-left: 8px;
-  color: #4f46e5;
+  color: var(--color-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -189,8 +189,8 @@ defineEmits([
 .toggle-content-btn,
 .toggle-panel-btn {
   padding: 4px 8px;
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -198,37 +198,37 @@ defineEmits([
 }
 
 .toggle-content-btn {
-  background: #dbeafe;
-  border-color: #93c5fd;
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
   color: #1e40af;
 }
 
 .toggle-content-btn:hover {
-  background: #bfdbfe;
+  background: var(--color-bg-hover);
 }
 
 .filter-favorite-btn,
 .batch-btn,
 .clear-btn {
   padding: 5px 13px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   transition: all 0.2s;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .toggle-panel-btn:hover {
-  background: #d1d5db;
+  background: var(--color-bg-hover);
 }
 
 .filter-favorite-btn:hover,
 .batch-btn:hover,
 .clear-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-bg-elevated);
   transform: scale(1.02);
 }
 
@@ -245,18 +245,18 @@ defineEmits([
 
 .batch-download-btn {
   padding: 6px 12px;
-  background: #4f46e5;
+  background: var(--color-primary);
   border: 1px solid #4338ca;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  color: white;
+  color: var(--color-text-inverse);
   transition: all 0.2s;
 }
 
 .batch-download-btn:hover:not(:disabled) {
-  background: #4338ca;
+  background: var(--color-primary-dark);
   transform: scale(1.02);
 }
 
@@ -292,22 +292,22 @@ defineEmits([
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   padding: 12px;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
 }
 
 .history-empty {
   grid-column: 1 / -1;
   padding: 40px 20px;
   text-align: center;
-  color: #888;
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }
 
 .sample-btn {
   margin-top: 12px;
   padding: 8px 16px;
-  background: #4f46e5;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -316,7 +316,7 @@ defineEmits([
 }
 
 .sample-btn:hover {
-  background: #4338ca;
+  background: var(--color-primary-dark);
   transform: translateY(-1px);
 }
 
@@ -326,7 +326,7 @@ defineEmits([
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-top: 1px solid #e0e0e0;
 }
 
@@ -337,14 +337,14 @@ defineEmits([
 
 .image-count {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .footer-btn {
   padding: 4px 10px;
-  background: #4f46e5;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -354,7 +354,7 @@ defineEmits([
 }
 
 .footer-btn:hover {
-  background: #4338ca;
+  background: var(--color-primary-dark);
   transform: scale(1.05);
 }
 </style>

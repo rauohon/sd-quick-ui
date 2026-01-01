@@ -364,6 +364,14 @@ export default {
     resetConfirm: '모든 설정을 초기화하시겠습니까?'
   },
 
+  // 테마
+  theme: {
+    title: '테마',
+    light: '라이트',
+    dark: '다크',
+    system: '시스템 설정 따르기'
+  },
+
   // 메시지
   message: {
     success: {

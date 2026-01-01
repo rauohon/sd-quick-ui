@@ -526,7 +526,7 @@ function highlightText(text) {
 }
 
 .modal-content {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   width: 100%;
   max-width: 1600px;
@@ -539,7 +539,7 @@ function highlightText(text) {
 /* Header */
 .modal-header {
   padding: 20px 24px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--color-border-primary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -560,12 +560,12 @@ function highlightText(text) {
 
 .image-count-badge {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .header-actions {
@@ -576,18 +576,22 @@ function highlightText(text) {
 
 .search-input {
   padding: 8px 16px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   width: 300px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .sort-select {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .selection-count-badge {
@@ -601,17 +605,18 @@ function highlightText(text) {
 
 .select-btn {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .select-btn:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 .select-btn:disabled {
@@ -666,17 +671,18 @@ function highlightText(text) {
 
 .close-btn {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 18px;
   font-weight: bold;
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 /* Selection Actions */
@@ -767,12 +773,12 @@ function highlightText(text) {
 .image-list {
   overflow-y: auto;
   padding: 20px;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   grid-auto-rows: max-content;
-  border-right: 2px solid #e0e0e0;
+  border-right: 2px solid var(--color-border-primary);
   min-height: 0;
 }
 
@@ -780,7 +786,7 @@ function highlightText(text) {
   grid-column: 1 / -1;
   padding: 60px 20px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-size: 15px;
 }
 
@@ -792,7 +798,7 @@ function highlightText(text) {
   aspect-ratio: 1;
   border: 3px solid transparent;
   transition: all 0.2s;
-  background: white;
+  background: var(--color-bg-elevated);
 }
 
 .grid-item:hover {
@@ -831,8 +837,8 @@ function highlightText(text) {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: white;
-  border: 2px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -877,7 +883,7 @@ function highlightText(text) {
 /* Detail Panel */
 .detail-panel {
   overflow-y: auto;
-  background: white;
+  background: var(--color-bg-elevated);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -891,13 +897,13 @@ function highlightText(text) {
 
 .empty-detail {
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-tertiary);
   font-size: 15px;
 }
 
 .detail-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -918,16 +924,17 @@ function highlightText(text) {
 
 .nav-btn {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 .nav-btn:disabled {
@@ -937,7 +944,7 @@ function highlightText(text) {
 
 .image-counter {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
   min-width: 70px;
   text-align: center;
@@ -951,7 +958,7 @@ function highlightText(text) {
 }
 
 .detail-image-wrapper {
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -976,15 +983,15 @@ function highlightText(text) {
 
 .action-buttons .action-btn {
   padding: 10px 16px;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
   text-align: left;
   font-weight: 500;
 }
 
 .action-buttons .action-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 .action-buttons .action-btn.favorite {
@@ -1024,13 +1031,13 @@ function highlightText(text) {
   flex-direction: column;
   gap: 4px;
   padding: 10px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
 }
 
 .info-item strong {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1042,7 +1049,7 @@ function highlightText(text) {
 
 .params-section {
   padding: 12px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
 }
@@ -1050,7 +1057,7 @@ function highlightText(text) {
 .params-section strong {
   display: block;
   margin-bottom: 8px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1069,12 +1076,12 @@ function highlightText(text) {
 
 .param-label {
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 11px;
 }
 
 .param-value {
-  color: #374151;
+  color: var(--color-text-primary);
   word-wrap: break-word;
   line-height: 1.4;
 }
@@ -1108,7 +1115,7 @@ function highlightText(text) {
 }
 
 .compare-content {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   padding: 24px;
   max-width: 1200px;
@@ -1167,12 +1174,13 @@ function highlightText(text) {
 
 .cancel-compare-btn {
   padding: 10px 24px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 /* Comparison Overlay */
@@ -1191,7 +1199,7 @@ function highlightText(text) {
 }
 
 .comparison-content {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   padding: 24px;
   width: 100%;
@@ -1207,7 +1215,7 @@ function highlightText(text) {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 16px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--color-border-primary);
 }
 
 .comparison-header h3 {
@@ -1245,7 +1253,7 @@ function highlightText(text) {
 
 .compare-counter {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
   min-width: 80px;
   text-align: center;
@@ -1277,13 +1285,13 @@ function highlightText(text) {
   height: 100%;
   object-fit: contain;
   border-radius: 8px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
 }
 
 .compare-info {
   text-align: center;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .close-compare-btn {

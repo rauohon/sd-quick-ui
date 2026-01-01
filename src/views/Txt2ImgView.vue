@@ -69,6 +69,14 @@ const props = defineProps({
   showConfirm: {
     type: Function,
     required: true
+  },
+  isDark: {
+    type: Boolean,
+    default: false
+  },
+  toggleTheme: {
+    type: Function,
+    required: true
   }
 })
 
@@ -770,6 +778,8 @@ onUnmounted(() => {
         :is-generating="isGenerating"
         :api-connected="apiConnected"
         :api-checking="apiChecking"
+        :is-dark="isDark"
+        :toggle-theme="toggleTheme"
         :selected-model="selectedModel"
         :available-models="availableModels"
         :sampler-name="samplerName"

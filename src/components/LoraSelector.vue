@@ -5,7 +5,7 @@ import { mockLoras } from '../mocks/lorasMock'
 
 const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
-const USE_MOCK_DATA = false // 개발 모드에서는 Mock 사용
+const USE_MOCK_DATA = import.meta.env.VITE_MOCK_API === 'true'
 const CIVITAI_API_URL = 'https://civitai.com/api/v1'
 const CIVITAI_CACHE_KEY = 'civitai_trigger_cache'
 const CIVITAI_CACHE_DAYS = 7 // 캐시 유효기간 (일)
@@ -482,7 +482,7 @@ onMounted(() => {
 
 <style scoped>
 .lora-selector-panel {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex !important;
@@ -507,7 +507,7 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .header-actions {
@@ -519,9 +519,9 @@ onMounted(() => {
 .refresh-btn {
   height: 32px;
   padding: 0 14px;
-  border: 2px solid white;
+  border: 2px solid var(--color-text-inverse);
   background: transparent;
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -533,7 +533,7 @@ onMounted(() => {
 }
 
 .refresh-btn:hover:not(:disabled) {
-  background: white;
+  background: var(--color-bg-elevated);
   color: #667eea;
 }
 
@@ -545,9 +545,9 @@ onMounted(() => {
 .close-btn {
   width: 32px;
   height: 32px;
-  border: 2px solid white;
+  border: 2px solid var(--color-text-inverse);
   background: transparent;
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
@@ -558,29 +558,31 @@ onMounted(() => {
 }
 
 .close-btn:hover {
-  background: white;
+  background: var(--color-bg-elevated);
   color: #667eea;
 }
 
 .search-section {
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   flex-shrink: 0;
 }
 
 .lora-count {
   margin-top: 8px;
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .search-input {
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .search-input:focus {
@@ -597,9 +599,9 @@ onMounted(() => {
 
 .category-chip {
   padding: 6px 14px;
-  border: 2px solid #e0e0e0;
-  background: white;
-  color: #555;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -617,7 +619,7 @@ onMounted(() => {
 .category-chip.active {
   border-color: #667eea;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .lora-grid {
@@ -632,8 +634,8 @@ onMounted(() => {
 }
 
 .lora-card {
-  background: white;
-  border: 2px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-border-primary);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -658,7 +660,7 @@ onMounted(() => {
 .lora-thumbnail {
   width: 100%;
   height: 180px;
-  background: #f0f0f0;
+  background: var(--color-bg-tertiary);
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
@@ -676,7 +678,7 @@ onMounted(() => {
   right: 6px;
   padding: 3px 8px;
   background: rgba(102, 126, 234, 0.9);
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
@@ -690,8 +692,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f0f0;
-  color: #999;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
   font-size: 14px;
   font-weight: 500;
 }
@@ -700,7 +702,7 @@ onMounted(() => {
   padding: 10px;
   font-size: 12px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -714,28 +716,28 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .no-results {
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 16px;
 }
 
 .selection-panel {
   flex-shrink: 0;
   padding: 16px;
-  border-top: 2px solid #e0e0e0;
-  background: #f8f9fa;
+  border-top: 2px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
 }
 
 .selection-info {
   margin-bottom: 12px;
   font-size: 13px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .selected-name {
@@ -750,7 +752,7 @@ onMounted(() => {
 .metadata-item {
   margin: 4px 0;
   font-size: 12px;
-  color: #555;
+  color: var(--color-text-secondary);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -781,7 +783,7 @@ onMounted(() => {
   background: rgba(102, 126, 234, 0.9);
   border: none;
   border-radius: 50%;
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
@@ -816,7 +818,7 @@ onMounted(() => {
   margin-bottom: 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .weight-slider {
@@ -836,7 +838,7 @@ onMounted(() => {
   height: 28px;
   padding: 0 12px;
   border: 2px solid #667eea;
-  background: white;
+  background: var(--color-bg-elevated);
   color: #667eea;
   border-radius: 6px;
   font-size: 11px;
@@ -850,7 +852,7 @@ onMounted(() => {
 
 .preset-btn:hover {
   background: #667eea;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .confirm-btn {
@@ -858,7 +860,7 @@ onMounted(() => {
   height: 36px;
   padding: 0 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 14px;

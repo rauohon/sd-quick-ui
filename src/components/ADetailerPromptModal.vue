@@ -114,7 +114,7 @@ onUnmounted(() => {
 .ad-prompt-modal {
   width: 90%;
   max-width: 600px;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -174,25 +174,26 @@ onUnmounted(() => {
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .ad-prompt-section textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.5;
   resize: vertical;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .ad-prompt-section textarea:focus {
   outline: none;
   border-color: #f59e0b;
-  background: white;
+  background: var(--color-bg-elevated);
 }
 
 .ad-prompt-hint {
@@ -209,8 +210,8 @@ onUnmounted(() => {
   flex-shrink: 0;
   display: flex;
   padding: 16px 20px;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .ad-prompt-done-btn {

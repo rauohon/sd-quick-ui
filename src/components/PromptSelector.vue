@@ -188,9 +188,9 @@ function close() {
 /* Prompt Selector Panel */
 .prompt-selector-panel {
   height: 100%;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border-primary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -237,15 +237,17 @@ function close() {
 /* Search Section */
 .search-section {
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .search-input {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 8px;
   font-size: 14px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
   transition: border-color 0.2s;
 }
 
@@ -260,15 +262,15 @@ function close() {
   flex-wrap: wrap;
   gap: 8px;
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   overflow-x: auto;
 }
 
 .category-tab {
   padding: 6px 12px;
-  border: 1px solid #e0e0e0;
-  background: white;
-  color: #666;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
   border-radius: 16px;
   font-size: 12px;
   cursor: pointer;
@@ -316,8 +318,8 @@ function close() {
 
 .prompt-item {
   padding: 12px;
-  background: #f8f9fa;
-  border: 2px solid #e0e0e0;
+  background: var(--color-bg-tertiary);
+  border: 2px solid var(--color-border-primary);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -360,7 +362,7 @@ function close() {
 
 .prompt-category {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .prompt-label {
@@ -371,14 +373,14 @@ function close() {
 
 .prompt-text {
   font-size: 13px;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
 .no-prompts {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }
 
@@ -386,14 +388,14 @@ function close() {
 .action-panel {
   flex-shrink: 0;
   padding: 20px;
-  border-top: 2px solid #e0e0e0;
-  background: #fafafa;
+  border-top: 2px solid var(--color-border-primary);
+  background: var(--color-bg-tertiary);
 }
 
 .selected-info {
   margin-bottom: 16px;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .selected-info strong {
@@ -445,7 +447,7 @@ function close() {
 }
 
 .prompts-grid::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--color-bg-tertiary);
 }
 
 .prompts-grid::-webkit-scrollbar-thumb {

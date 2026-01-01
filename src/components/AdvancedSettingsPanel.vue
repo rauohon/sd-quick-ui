@@ -228,6 +228,28 @@
           </div>
 
           <div class="setting-group">
+            <label class="setting-label">{{ $t('theme.title') }}</label>
+            <div class="theme-toggle">
+              <button
+                class="theme-btn"
+                :class="{ active: !isDark }"
+                @click="toggleTheme"
+                :title="$t('theme.light')"
+              >
+                ☀️ {{ $t('theme.light') }}
+              </button>
+              <button
+                class="theme-btn"
+                :class="{ active: isDark }"
+                @click="toggleTheme"
+                :title="$t('theme.dark')"
+              >
+                🌙 {{ $t('theme.dark') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-group">
             <label class="setting-label checkbox-label">
               <input
                 type="checkbox"
@@ -285,6 +307,14 @@ const props = defineProps({
   apiChecking: {
     type: Boolean,
     default: false
+  },
+  isDark: {
+    type: Boolean,
+    default: false
+  },
+  toggleTheme: {
+    type: Function,
+    required: true
   },
   selectedModel: {
     type: String,
@@ -576,8 +606,8 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .header-right {
@@ -589,8 +619,8 @@ onMounted(() => {
 
 .toggle-advanced-btn {
   padding: 4px 8px;
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -598,14 +628,14 @@ onMounted(() => {
 }
 
 .toggle-advanced-btn:hover {
-  background: #d1d5db;
+  background: var(--color-bg-hover);
 }
 
 .panel-title {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   flex: 1;
 }
 
@@ -613,7 +643,7 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-  background: white;
+  background: var(--color-bg-secondary);
 }
 
 .form-group {
@@ -629,7 +659,7 @@ onMounted(() => {
 .form-group.horizontal label {
   flex: 0 0 80px;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -638,9 +668,11 @@ onMounted(() => {
 .form-group.horizontal select {
   flex: 1;
   padding: 6px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-secondary);
   border-radius: 4px;
   font-size: 13px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .form-group.horizontal input[type="range"] {
@@ -650,14 +682,14 @@ onMounted(() => {
 .volume-display {
   flex: 0 0 40px;
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-align: right;
 }
 
 .swap-btn {
   padding: 8px 12px;
-  background: #6366f1;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -668,7 +700,7 @@ onMounted(() => {
 }
 
 .swap-btn:hover:not(:disabled) {
-  background: #4f46e5;
+  background: var(--color-primary-dark);
   transform: scale(1.05);
 }
 
@@ -680,8 +712,8 @@ onMounted(() => {
 .seed-random-btn,
 .test-notification-btn {
   padding: 6px 10px;
-  background: #10b981;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -691,7 +723,7 @@ onMounted(() => {
 
 .seed-random-btn:hover:not(:disabled),
 .test-notification-btn:hover:not(:disabled) {
-  background: #059669;
+  background: var(--color-success-dark);
   transform: scale(1.05);
 }
 
@@ -703,7 +735,7 @@ onMounted(() => {
 
 .section-divider {
   height: 1px;
-  background: #e0e0e0;
+  background: var(--color-border-primary);
   margin: 16px 0;
 }
 
@@ -713,20 +745,20 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .footer-title {
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .footer-btn {
   padding: 4px 10px;
-  background: #4f46e5;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -736,7 +768,7 @@ onMounted(() => {
 }
 
 .footer-btn:hover:not(:disabled) {
-  background: #4338ca;
+  background: var(--color-primary-dark);
   transform: scale(1.05);
 }
 
@@ -748,8 +780,8 @@ onMounted(() => {
 /* System Settings Section */
 .system-settings-section {
   flex-shrink: 0;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
+  border-top: 1px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
 }
 
 .system-settings-header {
@@ -763,13 +795,13 @@ onMounted(() => {
 }
 
 .system-settings-header:hover {
-  background: #eff1f3;
+  background: var(--color-bg-hover);
 }
 
 .system-settings-title {
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -777,13 +809,13 @@ onMounted(() => {
 
 .toggle-icon {
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .system-settings-content {
   padding: 12px;
-  background: white;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .setting-group {
@@ -799,7 +831,7 @@ onMounted(() => {
 .setting-label {
   flex: 0 0 80px;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -816,12 +848,12 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #6366f1;
+  accent-color: var(--color-primary);
 }
 
 .setting-label.checkbox-label span {
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-primary);
 }
 
 /* Transition Animation */
@@ -838,20 +870,62 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* LanguageSwitcher override for light background */
+/* LanguageSwitcher override */
 .system-settings-content :deep(.language-switcher .lang-btn) {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #d1d5db;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-primary);
 }
 
 .system-settings-content :deep(.language-switcher .lang-btn:hover) {
-  background: #e5e7eb;
+  background: var(--color-bg-hover);
 }
 
 .system-settings-content :deep(.language-switcher .lang-btn.active) {
-  background: #6366f1;
-  color: #fff;
-  border-color: #4f46e5;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary-dark);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.theme-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-bg-hover);
+  transform: translateY(-1px);
+}
+
+.theme-btn.active {
+  border-color: var(--color-primary);
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.theme-btn.active:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
 }
 </style>

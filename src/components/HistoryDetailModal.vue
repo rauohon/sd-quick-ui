@@ -310,7 +310,7 @@ function formatFullTimestamp(timestamp) {
 }
 
 .modal-content {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   max-width: 1400px;
   width: 100%;
@@ -322,7 +322,7 @@ function formatFullTimestamp(timestamp) {
 
 .modal-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -342,25 +342,28 @@ function formatFullTimestamp(timestamp) {
 
 .search-input {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   width: 250px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .close-btn {
   padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 18px;
   font-weight: bold;
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .close-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 .modal-body {
@@ -379,7 +382,7 @@ function formatFullTimestamp(timestamp) {
 }
 
 .image-wrapper {
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -425,7 +428,7 @@ function formatFullTimestamp(timestamp) {
 
 .image-counter {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
   min-width: 80px;
   text-align: center;
@@ -445,18 +448,19 @@ function formatFullTimestamp(timestamp) {
 
 .action-btn {
   padding: 10px 16px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   text-align: left;
+  color: var(--color-text-primary);
   transition: all 0.2s;
 }
 
 .action-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
   transform: translateX(2px);
 }
 
@@ -484,7 +488,7 @@ function formatFullTimestamp(timestamp) {
 
 .info-item {
   padding: 10px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
 }
@@ -492,7 +496,7 @@ function formatFullTimestamp(timestamp) {
 .info-item strong {
   display: block;
   margin-bottom: 4px;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .info-item.warning {
@@ -502,7 +506,7 @@ function formatFullTimestamp(timestamp) {
 
 .params-section {
   padding: 12px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
 }
@@ -510,7 +514,7 @@ function formatFullTimestamp(timestamp) {
 .params-section strong {
   display: block;
   margin-bottom: 8px;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .params-content {
@@ -527,12 +531,12 @@ function formatFullTimestamp(timestamp) {
 
 .param-label {
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-size: 12px;
 }
 
 .param-value {
-  color: #374151;
+  color: var(--color-text-primary);
   word-wrap: break-word;
 }
 
@@ -556,7 +560,7 @@ function formatFullTimestamp(timestamp) {
   left: 24px;
   right: 24px;
   bottom: 24px;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   padding: 20px;
   overflow-y: auto;
@@ -611,12 +615,13 @@ function formatFullTimestamp(timestamp) {
 
 .cancel-compare-btn {
   padding: 10px 20px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 /* Comparison View */
@@ -626,7 +631,7 @@ function formatFullTimestamp(timestamp) {
   left: 24px;
   right: 24px;
   bottom: 24px;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -661,7 +666,7 @@ function formatFullTimestamp(timestamp) {
   height: 100%;
   object-fit: contain;
   border-radius: 8px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
 }
 
 .close-compare-btn {

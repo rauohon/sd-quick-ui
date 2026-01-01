@@ -3,6 +3,10 @@ import { ref, onMounted, onUnmounted, h, render } from 'vue'
 import Txt2ImgView from './views/Txt2ImgView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
+import { useDarkMode } from './composables/useDarkMode'
+
+// Dark mode initialization
+const { isDark, toggleTheme } = useDarkMode()
 
 // Modal state
 const showModal = ref(false)
@@ -151,6 +155,8 @@ onUnmounted(() => {
       :showToast="showToast"
       :openModal="openModal"
       :showConfirm="showConfirm"
+      :isDark="isDark"
+      :toggleTheme="toggleTheme"
       @updateCurrentImage="currentImage = $event"
     />
 
@@ -210,7 +216,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--color-bg-primary);
 }
 
 /* Universal Modal */
@@ -233,7 +239,7 @@ onUnmounted(() => {
   width: 90%;
   max-width: 1600px;
   height: 90%;
-  background: #fff;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -276,7 +282,7 @@ onUnmounted(() => {
 .comparison-side {
   display: flex;
   flex-direction: column;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -284,8 +290,8 @@ onUnmounted(() => {
 .comparison-label {
   flex-shrink: 0;
   padding: 12px;
-  background: #667eea;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   text-align: center;
   font-weight: 600;
   font-size: 14px;
@@ -296,7 +302,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
 }
 
 /* Image Viewer Mode */
@@ -307,7 +313,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -340,16 +346,16 @@ onUnmounted(() => {
   min-width: 300px;
   max-width: 500px;
   padding: 16px;
-  background: white;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   gap: 12px;
   pointer-events: auto;
   cursor: pointer;
   animation: slideIn 0.3s ease-out;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--color-primary);
 }
 
 @keyframes slideIn {
@@ -379,43 +385,43 @@ onUnmounted(() => {
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .toast-success {
-  border-left-color: #10b981;
+  border-left-color: var(--color-success);
 }
 
 .toast-success .toast-icon {
-  background: #10b981;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
 }
 
 .toast-error {
-  border-left-color: #ef4444;
+  border-left-color: var(--color-error);
 }
 
 .toast-error .toast-icon {
-  background: #ef4444;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-text-inverse);
 }
 
 .toast-warning {
-  border-left-color: #f59e0b;
+  border-left-color: var(--color-warning);
 }
 
 .toast-warning .toast-icon {
-  background: #f59e0b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
 }
 
 .toast-info {
-  border-left-color: #667eea;
+  border-left-color: var(--color-primary);
 }
 
 .toast-info .toast-icon {
-  background: #667eea;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .toast:hover {
@@ -456,10 +462,10 @@ onUnmounted(() => {
 .prompt-panel,
 .preview-panel,
 .history-panel {
-  background: white;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -473,7 +479,7 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 2px solid #667eea;
+  border-bottom: 2px solid var(--color-primary);
   height: 50px;
 }
 
@@ -481,7 +487,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   line-height: 1.2;
   display: flex;
   align-items: center;
@@ -493,8 +499,8 @@ onUnmounted(() => {
 .image-count {
   font-size: 12px;
   font-weight: 500;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
   padding: 2px 8px;
   border-radius: 12px;
   margin-left: auto;
@@ -507,8 +513,8 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-primary);
   height: 50px;
 }
 
@@ -528,7 +534,7 @@ onUnmounted(() => {
 .footer-label {
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .footer-buttons {
@@ -540,8 +546,8 @@ onUnmounted(() => {
   height: 32px;
   padding: 0 16px;
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -570,8 +576,8 @@ onUnmounted(() => {
   height: 32px;
   padding: 0;
   border: none;
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  color: white;
+  background: var(--gradient-info);
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 16px;
   font-weight: 700;
@@ -588,7 +594,7 @@ onUnmounted(() => {
 }
 
 .infinite-btn-header.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--gradient-success);
   animation: pulse-infinite 2s ease-in-out infinite;
 }
 
@@ -621,26 +627,26 @@ onUnmounted(() => {
 .param-item label {
   display: block;
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 
 .param-item .value {
   font-size: 14px;
   font-weight: 600;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .section-title {
   margin: 12px 0 8px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #667eea;
+  color: var(--color-primary);
 }
 
 .section-divider {
   height: 1px;
-  background: #e0e0e0;
+  background: var(--color-border-primary);
   margin: 16px 0 12px 0;
 }
 
@@ -659,7 +665,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   width: 85px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 12px;
   margin: 0;
 }
@@ -673,7 +679,7 @@ onUnmounted(() => {
   display: block;
   margin-bottom: 4px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 13px;
 }
 
@@ -683,8 +689,8 @@ onUnmounted(() => {
   height: 28px;
   padding: 0;
   border: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: var(--gradient-success);
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
@@ -711,8 +717,8 @@ onUnmounted(() => {
   height: 28px;
   padding: 0 12px;
   border: none;
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-  color: white;
+  background: var(--gradient-warning);
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -736,8 +742,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
   gap: 16px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -772,7 +778,7 @@ onUnmounted(() => {
 .toolbar-label {
   font-size: 12px;
   font-weight: 500;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 
@@ -793,8 +799,8 @@ onUnmounted(() => {
 }
 
 .tool-btn.lora-btn {
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-  color: white;
+  background: var(--gradient-warning);
+  color: var(--color-text-inverse);
 }
 
 .tool-btn.lora-btn:hover {
@@ -804,8 +810,8 @@ onUnmounted(() => {
 }
 
 .tool-btn.prompt-helper-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
 }
 
 .tool-btn.prompt-helper-btn:hover {
@@ -820,8 +826,8 @@ onUnmounted(() => {
 }
 
 .tool-btn.bookmark-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: var(--gradient-success);
+  color: var(--color-text-inverse);
 }
 
 .tool-btn.bookmark-btn:hover {
@@ -836,8 +842,8 @@ onUnmounted(() => {
 }
 
 .tool-btn.preset-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: var(--gradient-success);
+  color: var(--color-text-inverse);
 }
 
 .tool-btn.preset-btn:hover {
@@ -852,8 +858,8 @@ onUnmounted(() => {
 }
 
 .tool-btn.queue-btn {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
+  background: var(--gradient-warning);
+  color: var(--color-text-inverse);
 }
 
 .tool-btn.queue-btn:hover {
@@ -872,11 +878,12 @@ onUnmounted(() => {
 .form-group select {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-secondary);
   border-radius: 6px;
   font-size: 12px;
   font-family: inherit;
-  background: white;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .form-group textarea {
@@ -913,7 +920,7 @@ onUnmounted(() => {
   user-select: none;
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -930,8 +937,8 @@ onUnmounted(() => {
 .load-btn,
 .lora-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -954,7 +961,7 @@ onUnmounted(() => {
 }
 
 .lora-btn {
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  background: var(--gradient-warning);
 }
 
 /* Page Buttons (for slot pagination) */
@@ -962,9 +969,9 @@ onUnmounted(() => {
   min-width: 40px;
   height: 32px;
   padding: 0 12px;
-  border: 2px solid #e0e0e0;
-  background: white;
-  color: #666;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -976,16 +983,16 @@ onUnmounted(() => {
 }
 
 .page-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background: #f0f0ff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-bg-hover);
   transform: translateY(-1px);
 }
 
 .page-btn.has-data {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  border-color: var(--color-primary);
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
 }
 
 .page-btn.has-data:hover {
@@ -1005,8 +1012,8 @@ onUnmounted(() => {
 /* Last Params Section */
 .last-params-section {
   padding: 12px 16px;
-  background: #f0f4ff;
-  border-bottom: 1px solid #d0d8f0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
   flex-shrink: 0;
   transition: padding 0.2s ease;
 }
@@ -1018,10 +1025,10 @@ onUnmounted(() => {
 .params-section-title {
   font-size: 13px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--color-primary);
   margin-bottom: 12px;
   padding: 8px 0;
-  border-bottom: 2px solid #667eea;
+  border-bottom: 2px solid var(--color-primary);
   cursor: pointer;
   user-select: none;
   transition: all 0.2s;
@@ -1038,8 +1045,8 @@ onUnmounted(() => {
 }
 
 .params-section-title:hover {
-  color: #5568d3;
-  background: rgba(102, 126, 234, 0.05);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
 }
 
 .params-section-content {
@@ -1057,13 +1064,13 @@ onUnmounted(() => {
 .params-group-label {
   font-size: 12px;
   font-weight: 800;
-  color: #667eea;
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 8px;
   text-align: center;
   padding: 4px 0;
-  background: rgba(102, 126, 234, 0.08);
+  background: var(--color-primary-light);
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
@@ -1075,7 +1082,7 @@ onUnmounted(() => {
 }
 
 .params-group-label:hover {
-  background: rgba(102, 126, 234, 0.15);
+  background: var(--color-bg-hover);
   transform: translateY(-1px);
 }
 
@@ -1103,18 +1110,18 @@ onUnmounted(() => {
 }
 
 .param-label {
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .param-value {
-  color: #667eea;
+  color: var(--color-primary);
   font-weight: 700;
   font-family: 'Consolas', 'Monaco', monospace;
 }
 
 .adetailer-row .param-value {
-  color: #f59e0b;
+  color: var(--color-warning);
   font-size: 11px;
 }
 
@@ -1144,14 +1151,14 @@ onUnmounted(() => {
 .progress-bar {
   width: 100%;
   height: 20px;
-  background: #f0f0f0;
+  background: var(--color-bg-tertiary);
   border-radius: 10px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   transition: width 0.3s;
 }
 
@@ -1159,7 +1166,7 @@ onUnmounted(() => {
   text-align: center;
   margin-top: 4px;
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1167,18 +1174,18 @@ onUnmounted(() => {
 }
 
 .progress-state {
-  color: #667eea;
+  color: var(--color-primary);
   font-weight: 600;
   font-size: 12px;
 }
 
 .progress-percent {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .infinite-indicator {
-  color: #667eea;
+  color: var(--color-primary);
   font-weight: 600;
   font-size: 12px;
 }
@@ -1210,43 +1217,43 @@ onUnmounted(() => {
 }
 
 .control-btn.interrupt-btn {
-  background: #ef4444;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-text-inverse);
 }
 
 .control-btn.interrupt-btn:hover:not(:disabled) {
-  background: #dc2626;
+  background: var(--color-error-dark);
 }
 
 .control-btn.skip-btn {
-  background: #f59e0b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
 }
 
 .control-btn.skip-btn:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--color-warning-dark);
 }
 
 .control-btn.pause-btn {
-  background: #06b6d4;
-  color: white;
+  background: var(--color-info);
+  color: var(--color-text-inverse);
 }
 
 .control-btn.pause-btn:hover:not(:disabled) {
-  background: #0891b2;
+  background: var(--color-info-dark);
 }
 
 .control-btn.infinite-btn {
-  background: #667eea;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .control-btn.infinite-btn:hover:not(:disabled) {
-  background: #5568d3;
+  background: var(--color-primary-dark);
 }
 
 .control-btn.infinite-btn.active {
-  background: #10b981;
+  background: var(--color-success);
   animation: pulse-infinite 2s ease-in-out infinite;
 }
 
@@ -1274,7 +1281,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
   position: relative;
   transition: all 0.3s;
 }
@@ -1302,7 +1309,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }
 
@@ -1314,11 +1321,11 @@ onUnmounted(() => {
 
 .drop-hint {
   font-size: 12px;
-  color: #667eea;
+  color: var(--color-primary);
   padding: 8px 16px;
-  background: rgba(102, 126, 234, 0.1);
+  background: var(--color-primary-light);
   border-radius: 6px;
-  border: 1px dashed #667eea;
+  border: 1px dashed var(--color-primary);
 }
 
 @keyframes pulse {
@@ -1485,7 +1492,7 @@ onUnmounted(() => {
 .history-empty {
   grid-column: 1 / -1;
   text-align: center;
-  color: #999;
+  color: var(--color-text-tertiary);
   padding: 40px 12px;
   font-size: 13px;
   display: flex;
@@ -1496,8 +1503,8 @@ onUnmounted(() => {
 
 .filter-favorite-btn {
   padding: 5px 10px;
-  background: white;
-  color: #ffd700;
+  background: var(--color-bg-secondary);
+  color: var(--color-gold);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 4px;
   font-size: 16px;
@@ -1513,16 +1520,16 @@ onUnmounted(() => {
 }
 
 .filter-favorite-btn.active {
-  background: #ffd700;
-  color: white;
-  border-color: #ffd700;
+  background: var(--color-gold);
+  color: var(--color-text-inverse);
+  border-color: var(--color-gold);
   box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
 }
 
 .clear-btn {
   padding: 5px 12px;
-  background: #ff6b6b;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   font-size: 13px;
@@ -1536,8 +1543,8 @@ onUnmounted(() => {
 
 .sample-btn {
   padding: 8px 16px;
-  background: #667eea;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 12px;

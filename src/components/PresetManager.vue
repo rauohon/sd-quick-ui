@@ -410,7 +410,7 @@ onMounted(() => {
 
 <style scoped>
 .preset-manager-panel {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -436,7 +436,7 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .header-actions {
@@ -447,7 +447,7 @@ onMounted(() => {
 .add-btn {
   height: 32px;
   padding: 0 14px;
-  background: white;
+  background: var(--color-bg-elevated);
   color: #10b981;
   border: none;
   border-radius: 6px;
@@ -465,9 +465,9 @@ onMounted(() => {
 .close-btn {
   width: 32px;
   height: 32px;
-  border: 2px solid white;
+  border: 2px solid var(--color-text-inverse);
   background: transparent;
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
@@ -478,23 +478,25 @@ onMounted(() => {
 }
 
 .close-btn:hover {
-  background: white;
+  background: var(--color-bg-elevated);
   color: #10b981;
 }
 
 .search-section {
   padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   flex-shrink: 0;
 }
 
 .search-input {
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .search-input:focus {
@@ -505,7 +507,7 @@ onMounted(() => {
 .preset-count {
   margin-top: 8px;
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .preset-list {
@@ -516,7 +518,7 @@ onMounted(() => {
 
 .preset-item {
   padding: 14px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   margin-bottom: 12px;
   border: 2px solid transparent;
@@ -525,7 +527,7 @@ onMounted(() => {
 
 .preset-item:hover {
   border-color: #10b981;
-  background: #f0fdf4;
+  background: var(--color-bg-hover);
 }
 
 .preset-header {
@@ -538,7 +540,7 @@ onMounted(() => {
 .preset-name {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .preset-actions {
@@ -561,7 +563,7 @@ onMounted(() => {
 
 .apply-btn {
   background: #10b981;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .apply-btn:hover {
@@ -570,7 +572,7 @@ onMounted(() => {
 
 .edit-btn {
   background: #f59e0b;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .edit-btn:hover {
@@ -579,7 +581,7 @@ onMounted(() => {
 
 .delete-btn {
   background: #ef4444;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .delete-btn:hover {
@@ -588,7 +590,7 @@ onMounted(() => {
 
 .preset-summary {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 6px;
   font-family: monospace;
   cursor: pointer;
@@ -606,30 +608,30 @@ onMounted(() => {
   position: absolute;
   right: 0;
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-tertiary);
   transition: transform 0.2s;
 }
 
 .preset-description {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-secondary);
   margin-bottom: 6px;
   font-style: italic;
 }
 
 .preset-date {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .preset-details {
   margin-top: 8px;
   margin-bottom: 8px;
   padding: 12px;
-  background: white;
+  background: var(--color-bg-secondary);
   border-radius: 6px;
   font-size: 11px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border-primary);
 }
 
 .detail-row {
@@ -644,12 +646,12 @@ onMounted(() => {
 }
 
 .detail-label {
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 600;
 }
 
 .detail-value {
-  color: #333;
+  color: var(--color-text-primary);
   font-family: monospace;
   font-size: 11px;
 }
@@ -657,7 +659,7 @@ onMounted(() => {
 .detail-section {
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 2px solid #e0e0e0;
+  border-top: 2px solid var(--color-border-primary);
 }
 
 .detail-section-title {
@@ -670,7 +672,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .empty-state p {
@@ -681,7 +683,7 @@ onMounted(() => {
 .add-preset-btn {
   padding: 10px 20px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -709,7 +711,7 @@ onMounted(() => {
 }
 
 .dialog {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   padding: 24px;
   width: 90%;
@@ -724,7 +726,7 @@ onMounted(() => {
 .dialog h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .form-group {
@@ -736,18 +738,20 @@ onMounted(() => {
   margin-bottom: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .form-group input:focus,
@@ -777,17 +781,17 @@ onMounted(() => {
 }
 
 .cancel-btn {
-  background: #e5e7eb;
-  color: #555;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .cancel-btn:hover {
-  background: #d1d5db;
+  background: var(--color-bg-hover);
 }
 
 .confirm-btn {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .confirm-btn:hover {
@@ -806,16 +810,16 @@ onMounted(() => {
 .confirm-dialog p {
   margin-bottom: 20px;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 /* Save Preview Section */
 .save-preview-section {
-  background: #f8f9fa;
+  background: var(--color-bg-tertiary);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 20px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
 }
 
 .preview-header {
@@ -824,7 +828,7 @@ onMounted(() => {
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--color-border-primary);
 }
 
 .preview-icon {
@@ -838,7 +842,7 @@ onMounted(() => {
 }
 
 .preview-content {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 6px;
   padding: 12px;
 }
@@ -846,12 +850,16 @@ onMounted(() => {
 .preview-summary {
   font-size: 12px;
   font-family: monospace;
-  color: #666;
+  color: var(--color-text-secondary);
   padding: 8px;
   background: #f0fdf4;
   border-radius: 4px;
   margin-bottom: 12px;
   border-left: 3px solid #10b981;
+}
+
+[data-theme="dark"] .preview-summary {
+  background: rgba(16, 185, 129, 0.15);
 }
 
 .preview-details {

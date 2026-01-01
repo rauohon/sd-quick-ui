@@ -104,7 +104,7 @@ async function handleDrop(e) {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -112,24 +112,24 @@ async function handleDrop(e) {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .toggle-panel-btn {
   padding: 4px 10px;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   font-weight: bold;
   transition: all 0.2s;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .toggle-panel-btn:hover {
-  background: #e0e0e0;
-  border-color: #ccc;
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
 }
 
 .preview-main {
@@ -137,19 +137,19 @@ async function handleDrop(e) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fafafa;
+  background: var(--color-bg-tertiary);
   overflow: hidden;
   position: relative;
   transition: all 0.2s;
 }
 
 .preview-main.drag-over {
-  background: #e3f2fd;
-  border: 2px dashed #2196F3;
+  background: var(--color-primary-light);
+  border: 2px dashed var(--color-primary);
 }
 
 .preview-main.loading-png {
-  background: #fff3cd;
+  background: var(--color-bg-elevated);
 }
 
 .preview-image {
@@ -166,7 +166,7 @@ async function handleDrop(e) {
 
 .preview-placeholder {
   text-align: center;
-  color: #888;
+  color: var(--color-text-tertiary);
   padding: 20px;
 }
 
@@ -177,11 +177,11 @@ async function handleDrop(e) {
 
 .drop-hint {
   font-size: 12px;
-  color: #2196F3;
+  color: var(--color-primary);
 }
 
 .preview-placeholder.loading {
-  color: #f59e0b;
+  color: var(--color-warning);
   font-weight: 500;
 }
 </style>

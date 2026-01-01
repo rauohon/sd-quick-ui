@@ -502,7 +502,7 @@ onMounted(async () => {
 /* Panel */
 .bookmark-manager-panel {
   height: 100%;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   display: flex;
@@ -526,7 +526,7 @@ onMounted(async () => {
 .panel-header h3 {
   margin: 0;
   font-size: 18px;
-  color: white;
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
@@ -539,7 +539,7 @@ onMounted(async () => {
 .add-btn {
   padding: 6px 14px;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--color-text-inverse);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   font-size: 13px;
@@ -557,7 +557,7 @@ onMounted(async () => {
   height: 32px;
   border: none;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
@@ -575,7 +575,7 @@ onMounted(async () => {
   height: 32px;
   padding: 0;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--color-text-inverse);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   font-size: 16px;
@@ -593,18 +593,20 @@ onMounted(async () => {
 /* Search */
 .search-section {
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-primary);
   flex-shrink: 0;
 }
 
 .search-input {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.2s;
   margin-bottom: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .search-input:focus {
@@ -614,7 +616,7 @@ onMounted(async () => {
 
 .bookmark-count {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-align: right;
 }
 
@@ -631,7 +633,7 @@ onMounted(async () => {
 }
 
 .bookmark-card {
-  background: white;
+  background: var(--color-bg-elevated);
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
@@ -658,7 +660,7 @@ onMounted(async () => {
 .bookmark-thumbnail {
   width: 100%;
   height: 180px;
-  background: #f0f0f0;
+  background: var(--color-bg-tertiary);
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
@@ -677,7 +679,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 48px;
   font-weight: 700;
 }
@@ -704,7 +706,7 @@ onMounted(async () => {
 .overlay-btn {
   width: 36px;
   height: 36px;
-  background: white;
+  background: var(--color-bg-elevated);
   border: none;
   border-radius: 50%;
   font-size: 16px;
@@ -728,7 +730,7 @@ onMounted(async () => {
   padding: 10px;
   font-size: 12px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -755,14 +757,14 @@ onMounted(async () => {
 .no-results {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .add-first-btn {
   margin-top: 16px;
   padding: 10px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -780,13 +782,13 @@ onMounted(async () => {
   flex-shrink: 0;
   padding: 16px 20px;
   border-top: 2px solid #e0e0e0;
-  background: #fafafa;
+  background: var(--color-bg-elevated);
 }
 
 .selected-info {
   margin-bottom: 12px;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .selected-info strong {
@@ -797,7 +799,7 @@ onMounted(async () => {
   width: 100%;
   padding: 12px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -830,7 +832,7 @@ onMounted(async () => {
 .dialog {
   width: 90%;
   max-width: 800px;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   cursor: default;
@@ -851,7 +853,7 @@ onMounted(async () => {
 
 .dialog-header h3 {
   margin: 0;
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 18px;
 }
 
@@ -869,7 +871,7 @@ onMounted(async () => {
   display: block;
   margin-bottom: 10px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 15px;
 }
 
@@ -877,12 +879,14 @@ onMounted(async () => {
 .form-textarea {
   width: 100%;
   padding: 12px 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
   line-height: 1.6;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .form-input:focus,
@@ -901,7 +905,7 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 12px;
   padding: 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .cancel-btn,
@@ -917,16 +921,16 @@ onMounted(async () => {
 
 .cancel-btn {
   background: #e0e0e0;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .cancel-btn:hover {
-  background: #d0d0d0;
+  background: var(--color-bg-hover);
 }
 
 .save-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .save-btn:hover {
@@ -959,7 +963,7 @@ onMounted(async () => {
 /* Apply Mode Selector */
 .apply-mode-section {
   padding: 12px 16px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
 }
@@ -967,7 +971,7 @@ onMounted(async () => {
 .mode-label {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   margin-bottom: 10px;
 }
 
@@ -983,7 +987,7 @@ onMounted(async () => {
   gap: 6px;
   cursor: pointer;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-secondary);
   user-select: none;
 }
 
@@ -1005,7 +1009,7 @@ onMounted(async () => {
 
 .mode-divider {
   height: 1px;
-  background: linear-gradient(90deg, #e0e0e0 0%, #e0e0e0 100%);
+  background: linear-gradient(90deg, var(--color-border-primary) 0%, var(--color-border-primary) 100%);
 }
 
 /* Thumbnail Picker Modal */
@@ -1016,7 +1020,7 @@ onMounted(async () => {
 
 .picker-hint {
   margin-bottom: 16px;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
@@ -1032,7 +1036,7 @@ onMounted(async () => {
   width: 120px;
   height: 120px;
   cursor: pointer;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   overflow: hidden;
   transition: all 0.2s;
@@ -1058,7 +1062,7 @@ onMounted(async () => {
 .no-images {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }
 

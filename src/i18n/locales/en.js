@@ -364,6 +364,14 @@ export default {
     resetConfirm: 'Reset all settings?'
   },
 
+  // Theme
+  theme: {
+    title: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'Follow System'
+  },
+
   // Messages
   message: {
     success: {

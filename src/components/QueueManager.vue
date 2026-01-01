@@ -507,7 +507,7 @@ onMounted(() => {
 
 <style scoped>
 .queue-manager-panel {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -533,7 +533,7 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .header-actions {
@@ -544,7 +544,7 @@ onMounted(() => {
 .add-btn {
   height: 32px;
   padding: 0 14px;
-  background: white;
+  background: var(--color-bg-elevated);
   color: #f59e0b;
   border: none;
   border-radius: 6px;
@@ -567,9 +567,9 @@ onMounted(() => {
 .close-btn {
   width: 32px;
   height: 32px;
-  border: 2px solid white;
+  border: 2px solid var(--color-text-inverse);
   background: transparent;
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
@@ -580,7 +580,7 @@ onMounted(() => {
 }
 
 .close-btn:hover {
-  background: white;
+  background: var(--color-bg-elevated);
   color: #f59e0b;
 }
 
@@ -607,13 +607,13 @@ onMounted(() => {
 
 .stat-label {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .stat-value {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .stat-value.pending {
@@ -651,7 +651,7 @@ onMounted(() => {
 .progress-text {
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
   min-width: 40px;
   text-align: right;
 }
@@ -659,8 +659,8 @@ onMounted(() => {
 /* Controls Section */
 .controls-section {
   padding: 12px 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -685,7 +685,7 @@ onMounted(() => {
 
 .start-btn {
   background: #10b981;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .start-btn:hover:not(:disabled) {
@@ -694,7 +694,7 @@ onMounted(() => {
 
 .pause-btn {
   background: #f59e0b;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .pause-btn:hover:not(:disabled) {
@@ -703,7 +703,7 @@ onMounted(() => {
 
 .stop-btn {
   background: #ef4444;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .stop-btn:hover:not(:disabled) {
@@ -723,8 +723,8 @@ onMounted(() => {
 .utility-btn {
   width: 32px;
   height: 32px;
-  border: 2px solid #e0e0e0;
-  background: white;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
@@ -758,7 +758,7 @@ onMounted(() => {
 
 .queue-item {
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   margin-bottom: 10px;
   border: 2px solid transparent;
@@ -770,7 +770,7 @@ onMounted(() => {
 
 .queue-item:hover {
   border-color: #f59e0b;
-  background: #fffbeb;
+  background: var(--color-bg-hover);
 }
 
 .queue-item.active {
@@ -837,7 +837,7 @@ onMounted(() => {
 
 .item-number {
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 600;
 }
 
@@ -858,7 +858,7 @@ onMounted(() => {
 .item-prompt {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -867,7 +867,7 @@ onMounted(() => {
 
 .item-params {
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-secondary);
   font-family: monospace;
 }
 
@@ -887,7 +887,7 @@ onMounted(() => {
   width: 26px;
   height: 26px;
   border: none;
-  background: #e5e7eb;
+  background: var(--color-bg-tertiary);
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
@@ -917,7 +917,7 @@ onMounted(() => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .empty-state p {
@@ -928,7 +928,7 @@ onMounted(() => {
 .add-queue-btn {
   padding: 10px 20px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -961,7 +961,7 @@ onMounted(() => {
 }
 
 .dialog {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   padding: 24px;
   width: 500px;
@@ -975,7 +975,7 @@ onMounted(() => {
 .dialog h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .form-group {
@@ -987,16 +987,18 @@ onMounted(() => {
   margin-bottom: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-secondary);
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--color-border-primary);
   border-radius: 6px;
   font-size: 14px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
   font-family: inherit;
   transition: border-color 0.2s;
 }
@@ -1028,17 +1030,17 @@ onMounted(() => {
 }
 
 .cancel-btn {
-  background: #e5e7eb;
-  color: #555;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .cancel-btn:hover {
-  background: #d1d5db;
+  background: var(--color-bg-hover);
 }
 
 .confirm-btn {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .confirm-btn:hover {
@@ -1047,7 +1049,7 @@ onMounted(() => {
 
 .delete-confirm-btn {
   background: #ef4444;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .delete-confirm-btn:hover {
@@ -1057,6 +1059,6 @@ onMounted(() => {
 .confirm-dialog p {
   margin-bottom: 20px;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 </style>

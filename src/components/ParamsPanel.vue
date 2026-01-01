@@ -334,14 +334,14 @@ defineEmits([
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .toggle-advanced-btn {
   padding: 4px 8px;
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
@@ -349,14 +349,14 @@ defineEmits([
 }
 
 .toggle-advanced-btn:hover {
-  background: #d1d5db;
+  background: var(--color-bg-hover);
 }
 
 .panel-title {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   flex: 1;
 }
 
@@ -364,7 +364,7 @@ defineEmits([
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-  background: white;
+  background: var(--color-bg-secondary);
 }
 
 .form-group {
@@ -380,7 +380,7 @@ defineEmits([
 .form-group.horizontal label {
   flex: 0 0 80px;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -388,9 +388,11 @@ defineEmits([
 .form-group.horizontal select {
   flex: 1;
   padding: 6px 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-secondary);
   border-radius: 4px;
   font-size: 13px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .checkbox-label {
@@ -408,7 +410,7 @@ defineEmits([
 
 .section-divider {
   height: 1px;
-  background: #e0e0e0;
+  background: var(--color-border-primary);
   margin: 16px 0;
 }
 
@@ -416,14 +418,14 @@ defineEmits([
   margin: 0 0 12px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .ad-prompt-btn {
   flex: 1;
   padding: 6px 12px;
-  background: #f59e0b;
-  color: white;
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -433,7 +435,7 @@ defineEmits([
 }
 
 .ad-prompt-btn:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--color-warning-dark);
 }
 
 .ad-prompt-btn:disabled {
@@ -447,13 +449,13 @@ defineEmits([
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .footer-label {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -466,38 +468,38 @@ defineEmits([
   min-width: 32px;
   height: 28px;
   padding: 0 8px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .page-btn:hover {
-  background: #e5e7eb;
+  background: var(--color-bg-hover);
   transform: scale(1.05);
 }
 
 .page-btn.active {
-  background: #4f46e5;
-  border-color: #4338ca;
-  color: white;
+  background: var(--color-primary);
+  border-color: var(--color-primary-dark);
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 
 .page-btn.has-data {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1e40af;
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .page-btn.has-data.active {
-  background: #4f46e5;
-  border-color: #4338ca;
-  color: white;
+  background: var(--color-primary);
+  border-color: var(--color-primary-dark);
+  color: var(--color-text-inverse);
 }
 
 .form-group.horizontal .checkbox-label {

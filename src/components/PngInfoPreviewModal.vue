@@ -140,7 +140,7 @@ onUnmounted(() => {
   width: 90%;
   max-width: 700px;
   max-height: 80vh;
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -206,11 +206,11 @@ onUnmounted(() => {
 
 .png-text-preview {
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.6;
-  color: #333;
+  color: var(--color-text-primary);
   white-space: pre-wrap;
   max-height: 150px;
   overflow-y: auto;
@@ -224,7 +224,7 @@ onUnmounted(() => {
 
 .png-param-item {
   padding: 10px 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   font-size: 13px;
   display: flex;
@@ -233,12 +233,12 @@ onUnmounted(() => {
 }
 
 .png-param-label {
-  color: #666;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .png-param-value {
-  color: #333;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
@@ -247,8 +247,8 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  background: #f8f9fa;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .png-cancel-btn,
@@ -264,12 +264,12 @@ onUnmounted(() => {
 }
 
 .png-cancel-btn {
-  background: #e0e0e0;
-  color: #666;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .png-cancel-btn:hover {
-  background: #d0d0d0;
+  background: var(--color-border-primary);
 }
 
 .png-apply-btn {

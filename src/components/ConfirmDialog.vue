@@ -140,7 +140,7 @@ onUnmounted(() => {
 }
 
 .confirm-dialog {
-  background: white;
+  background: var(--color-bg-elevated);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   min-width: 320px;
@@ -153,7 +153,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .confirm-icon {
@@ -165,7 +165,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .confirm-body {
@@ -176,7 +176,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   white-space: pre-wrap;
 }
 
@@ -186,7 +186,7 @@ onUnmounted(() => {
   gap: 8px;
   margin-top: 16px;
   padding: 12px;
-  background: #f9fafb;
+  background: var(--color-bg-tertiary);
   border-radius: 6px;
   cursor: pointer;
   user-select: none;
@@ -194,7 +194,7 @@ onUnmounted(() => {
 }
 
 .dont-ask-again:hover {
-  background: #f3f4f6;
+  background: var(--color-border-primary);
 }
 
 .dont-ask-again input[type="checkbox"] {
@@ -206,7 +206,7 @@ onUnmounted(() => {
 
 .dont-ask-again span {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -229,16 +229,16 @@ onUnmounted(() => {
 }
 
 .confirm-btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
 }
 
 .confirm-btn-cancel:hover {
-  background: #e5e7eb;
+  background: var(--color-border-primary);
 }
 
 .confirm-btn-cancel:active {
-  background: #d1d5db;
+  background: var(--color-border-secondary);
 }
 
 .confirm-btn-confirm {
