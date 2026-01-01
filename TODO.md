@@ -116,7 +116,9 @@
   - Phase 1: Moved constants to constants.js (ASPECT_RATIOS, ADETAILER_*, SLOT_COUNT, etc.)
   - Phase 2: Created usePanelVisibility composable (5 panel states + localStorage persistence)
   - Phase 3: Created useGenerationState composable (20+ generation params + computed + helpers)
-  - Reduced Txt2ImgView.vue from 1397 to 1240 lines (-157 lines, 11% reduction)
+  - Phase 4: Created useBookmarkTracking composable (bookmark apply/update/save handlers)
+  - UI: Moved bookmark update actions between positive/negative prompts
+  - Reduced Txt2ImgView.vue from 1397 to 1187 lines (-210 lines, 15% reduction)
 
 ## In Progress
 - [ ]

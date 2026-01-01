@@ -49,6 +49,7 @@ import { useDragAndDrop } from '../composables/useDragAndDrop'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
 import { usePanelVisibility } from '../composables/usePanelVisibility'
 import { useGenerationState } from '../composables/useGenerationState'
+import { useBookmarkTracking } from '../composables/useBookmarkTracking'
 
 // i18n
 const { t } = useI18n()
@@ -181,9 +182,20 @@ const {
   randomizeSeed
 } = generationState
 
-// Bookmark tracking
-const appliedBookmarkId = ref(null)
-const bookmarkPromptChanged = ref(false)
+// Bookmark tracking composable
+const bookmarkTracking = useBookmarkTracking(
+  { prompt, negativePrompt },
+  { bookmarks, addBookmark, updateBookmarkContent },
+  { showToast: props.showToast, t }
+)
+const {
+  appliedBookmarkId,
+  bookmarkPromptChanged,
+  handleApplyBookmark,
+  handleUpdateBookmark,
+  handleSaveAsNewBookmark,
+  initBookmarkTracking
+} = bookmarkTracking
 
 // Initialize composables (after all refs are declared)
 // 1. Aspect Ratio composable
@@ -367,69 +379,9 @@ function handleAddNegative(promptText) {
   appendTextToPrompt(negativePrompt, promptText)
 }
 
-// Bookmark Manager handlers
-function handleApplyBookmark(data) {
-  // Track applied bookmark ID
-  appliedBookmarkId.value = data.bookmarkId
-  bookmarkPromptChanged.value = false
-
-  const mode = data.mode || 'replace'
-
-  // Process positive prompt based on mode
-  switch (mode) {
-    case 'replace':
-      prompt.value = data.prompt
-      break
-    case 'prepend':
-      if (data.prompt) {
-        prompt.value = data.prompt + (prompt.value ? '\n' + prompt.value : '')
-      }
-      break
-    case 'append':
-      if (data.prompt) {
-        prompt.value = (prompt.value ? prompt.value + '\n' : '') + data.prompt
-      }
-      break
-  }
-
-  // Negative prompt always replaces (for simplicity)
-  negativePrompt.value = data.negativePrompt
-}
-
 // Image comparison handler
 function handleCompareImage(item) {
   props.openModal('comparison', item.image)
-}
-
-// Bookmark update handlers
-function handleUpdateBookmark() {
-  if (!appliedBookmarkId.value) return
-
-  const success = updateBookmarkContent(
-    appliedBookmarkId.value,
-    prompt.value,
-    negativePrompt.value
-  )
-
-  if (success) {
-    bookmarkPromptChanged.value = false
-    props.showToast(t('bookmark.bookmarkUpdated'), 'success')
-  }
-}
-
-function handleSaveAsNewBookmark() {
-  const bookmark = bookmarks.value.find(b => b.id === appliedBookmarkId.value)
-  const baseName = bookmark ? bookmark.name : 'Bookmark'
-
-  const newBookmark = addBookmark(
-    `${baseName} (Copy)`,
-    prompt.value,
-    negativePrompt.value
-  )
-
-  appliedBookmarkId.value = newBookmark.id
-  bookmarkPromptChanged.value = false
-  props.showToast(t('bookmark.savedAsNew'), 'success')
 }
 
 // Notification handlers
@@ -488,22 +440,6 @@ useKeyboardShortcuts({
 
 // Initialize Drag and Drop
 const { isDragging } = useDragAndDrop(handleLoadPngInfo)
-
-// Watch for prompt changes after applying bookmark
-watch([prompt, negativePrompt], () => {
-  if (appliedBookmarkId.value) {
-    const bookmark = bookmarks.value.find(b => b.id === appliedBookmarkId.value)
-
-    if (bookmark) {
-      // Check if content differs from the applied bookmark
-      const hasChanged =
-        prompt.value !== bookmark.prompt ||
-        negativePrompt.value !== bookmark.negativePrompt
-
-      bookmarkPromptChanged.value = hasChanged
-    }
-  }
-})
 
 // Auto-save current slot when settings change (with debounce)
 // Watch text fields (prompt, etc.) with 1000ms debounce
@@ -602,6 +538,9 @@ onMounted(async () => {
 
   // Initialize panel visibility (load from localStorage + setup watchers)
   initPanelVisibility()
+
+  // Initialize bookmark tracking (setup prompt change watcher)
+  initBookmarkTracking()
 
   // Check API connection first
   await checkApiStatus()
@@ -762,16 +701,7 @@ onUnmounted(() => {
           :is-negative="false"
         />
 
-        <PromptTextarea
-          v-model="negativePrompt"
-          :label="$t('prompt.negative')"
-          placeholder="ugly, blurry, low quality..."
-          :is-generating="isGenerating"
-          :is-changed="negativePromptChanged"
-          :is-negative="true"
-        />
-
-        <!-- Bookmark Update Actions -->
+        <!-- Bookmark Update Actions (between prompts) -->
         <div v-if="appliedBookmarkId && bookmarkPromptChanged" class="bookmark-actions">
           <div class="bookmark-actions-hint">
             <span>{{ $t('bookmark.promptModified') }}</span>
@@ -793,6 +723,15 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+
+        <PromptTextarea
+          v-model="negativePrompt"
+          :label="$t('prompt.negative')"
+          placeholder="ugly, blurry, low quality..."
+          :is-generating="isGenerating"
+          :is-changed="negativePromptChanged"
+          :is-negative="true"
+        />
       </PromptPanel>
 
     </div>
@@ -1187,7 +1126,8 @@ onUnmounted(() => {
 
 /* Bookmark Actions */
 .bookmark-actions {
-  margin-top: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
   padding: 12px;
   background: #fef3c7;
   border: 1px solid #fde68a;

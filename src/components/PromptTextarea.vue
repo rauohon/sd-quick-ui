@@ -1,5 +1,5 @@
 <template>
-  <div class="form-group">
+  <div class="form-group" style="margin-bottom: 0;">
     <label>
       {{ label }}
       <span class="weight-hint">{{ $t('prompt.weightHint') }}</span>
