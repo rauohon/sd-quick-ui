@@ -1,6 +1,6 @@
 import { ref } from 'vue'
+import { get, post } from '../api/client'
 
-const API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:7860' : ''
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 /**
@@ -42,10 +42,10 @@ export function useModelLoader(selectedModel, showToast) {
 
       // Load from API
       const [modelsRes, samplersRes, schedulersRes, upscalersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/sdapi/v1/sd-models`),
-        fetch(`${API_BASE_URL}/sdapi/v1/samplers`),
-        fetch(`${API_BASE_URL}/sdapi/v1/schedulers`),
-        fetch(`${API_BASE_URL}/sdapi/v1/upscalers`)
+        get('/sdapi/v1/sd-models'),
+        get('/sdapi/v1/samplers'),
+        get('/sdapi/v1/schedulers'),
+        get('/sdapi/v1/upscalers')
       ])
 
       if (modelsRes.ok && samplersRes.ok && schedulersRes.ok && upscalersRes.ok) {
@@ -81,14 +81,8 @@ export function useModelLoader(selectedModel, showToast) {
    */
   async function changeModel(modelTitle) {
     try {
-      const response = await fetch(`${API_BASE_URL}/sdapi/v1/options`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sd_model_checkpoint: modelTitle
-        })
+      const response = await post('/sdapi/v1/options', {
+        sd_model_checkpoint: modelTitle
       })
 
       if (response.ok) {

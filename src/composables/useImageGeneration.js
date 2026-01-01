@@ -6,6 +6,7 @@ import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
+import { get, post } from '../api/client'
 import {
   SEED_MAX,
   MAX_CONSECUTIVE_ERRORS,
@@ -16,8 +17,6 @@ import {
   MAX_IMAGES,
   PARAM_RANGES
 } from '../config/constants'
-
-const API_URL = import.meta.env.DEV ? 'http://127.0.0.1:7860' : ''
 
 // Number validation helper
 function validateNumber(value, min, max, defaultValue, step = null) {
@@ -72,7 +71,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
    */
   async function checkOngoingGeneration() {
     try {
-      const response = await fetch(`${API_URL}/sdapi/v1/progress`)
+      const response = await get('/sdapi/v1/progress')
       if (response.ok) {
         const data = await response.json()
         const progressPercentage = data.progress * 100
@@ -109,7 +108,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
 
     progressInterval.value = setInterval(async () => {
       try {
-        const response = await fetch(`${API_URL}/sdapi/v1/progress`)
+        const response = await get('/sdapi/v1/progress')
         if (response.ok) {
           const data = await response.json()
           const progressPercentage = data.progress * 100
@@ -214,12 +213,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         isInfiniteLoopRunning = false
       }
 
-      const response = await fetch(`${API_URL}/sdapi/v1/interrupt`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await post('/sdapi/v1/interrupt')
 
       if (!response.ok) {
         // API가 실패해도 계속 진행 (프론트엔드 상태는 정리)
@@ -280,9 +274,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       // 스킵 플래그 설정
       wasInterrupted.value = true
 
-      await fetch(`${API_URL}/sdapi/v1/skip`, {
-        method: 'POST',
-      })
+      await post('/sdapi/v1/skip')
       showToast(t('generation.skipCurrent'), 'info')
     } catch (error) {
       console.error(t('generation.skipFailed'), error)
@@ -575,13 +567,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         }
       }
 
-      const response = await fetch(`${API_URL}/sdapi/v1/txt2img`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      })
+      const response = await post('/sdapi/v1/txt2img', payload)
 
       if (!response.ok) {
         throw new Error(t('message.error.apiErrorWithStatus', { status: response.status }))

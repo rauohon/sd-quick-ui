@@ -1,6 +1,5 @@
 import { ref } from 'vue'
-
-const API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:7860' : ''
+import { get } from '../api/client'
 
 /**
  * API 연결 상태 관리 composable
@@ -20,7 +19,7 @@ export function useApiStatus(showToast) {
   async function checkApiStatus() {
     apiChecking.value = true
     try {
-      const response = await fetch(`${API_BASE_URL}/sdapi/v1/sd-models`)
+      const response = await get('/sdapi/v1/sd-models')
       apiConnected.value = response.ok
       if (response.ok) {
         showToast?.('API 연결 성공', 'success')
