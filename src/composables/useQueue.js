@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { logError } from './useErrorHandler'
 
 const QUEUE_KEY = 'sd-generation-queue'
 
@@ -34,7 +35,7 @@ export function useQueue() {
         currentIndex.value = -1
       }
     } catch (error) {
-      console.error('Failed to load queue:', error)
+      logError(error, 'loadQueue')
     }
   }
 
@@ -45,7 +46,7 @@ export function useQueue() {
         queue: queue.value,
       }))
     } catch (error) {
-      console.error('Failed to save queue:', error)
+      logError(error, 'saveQueue')
     }
   }
 

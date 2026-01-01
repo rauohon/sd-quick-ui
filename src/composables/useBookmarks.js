@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { logError } from './useErrorHandler'
 
 const BOOKMARKS_KEY = 'sd-prompt-bookmarks'
 
@@ -36,7 +37,7 @@ export function useBookmarks() {
         }
       }
     } catch (error) {
-      console.error('Failed to load bookmarks:', error)
+      logError(error, 'loadBookmarks')
     }
   }
 
@@ -45,7 +46,7 @@ export function useBookmarks() {
     try {
       localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks.value))
     } catch (error) {
-      console.error('Failed to save bookmarks:', error)
+      logError(error, 'saveBookmarks')
     }
   }
 
@@ -198,7 +199,7 @@ export function useBookmarks() {
       const image = images.find(img => img.id === bookmark.thumbnailId)
       return image ? image.image : null
     } catch (error) {
-      console.error('Failed to load bookmark thumbnail:', error)
+      logError(error, 'getBookmarkThumbnail')
       return null
     }
   }

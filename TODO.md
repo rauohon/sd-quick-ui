@@ -119,11 +119,13 @@
   - Consider progressive loading for large images (optional, low priority)
 
 ### Code Quality
-- [ ] 4. Error handling consolidation
-  - Create global error handler composable
-  - Standardize error messages and toast patterns
-  - Replace scattered try/catch blocks
-  - Add error boundary for critical failures
+- [x] 4. Error handling consolidation ✅ Completed (2026-01-01)
+  - Created useErrorHandler composable with category-based handlers (network, storage, validation, generation, file, general)
+  - Added logError function for composables without toast dependencies
+  - Migrated 10+ composables: useHistory, useImageGeneration, useIndexedDB, useLocalStorage, useBookmarks, usePresets, useQueue, useQueueProcessor, usePngInfo, useModelLoader, useSampleImage
+  - Migrated components: BookmarkManager, LoraSelector
+  - Standardized error logging with context prefix
+  - i18n support for error messages
 - [ ] 5. Component refactoring
   - Split Txt2ImgView.vue (800+ lines is too large)
   - Extract repeated logic into composables

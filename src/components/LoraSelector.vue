@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mockLoras } from '../mocks/lorasMock'
+import { logError } from '../composables/useErrorHandler'
 import LazyImage from './LazyImage.vue'
 
 const { t } = useI18n()
@@ -99,7 +100,7 @@ async function fetchLoras(force = false) {
 
     hasLoaded.value = true
   } catch (error) {
-    console.error('Failed to fetch LoRAs:', error)
+    logError(error, 'fetchLoras')
     props.showToast?.(t('lora.loadFailed'), 'error')
   } finally {
     loading.value = false
@@ -132,7 +133,7 @@ function getCivitaiCache(hash) {
 
     return cached.words
   } catch (error) {
-    console.error('Failed to read Civitai cache:', error)
+    logError(error, 'getCachedCivitaiWords')
     return null
   }
 }
@@ -152,7 +153,7 @@ function setCivitaiCache(hash, words) {
 
     localStorage.setItem(CIVITAI_CACHE_KEY, JSON.stringify(cache))
   } catch (error) {
-    console.error('Failed to save Civitai cache:', error)
+    logError(error, 'saveCivitaiCache')
   }
 }
 
@@ -188,7 +189,7 @@ async function fetchCivitaiTriggerWords(lora) {
 
     return words
   } catch (error) {
-    console.error(`Failed to fetch Civitai data for ${lora.name}:`, error)
+    logError(error, `fetchCivitaiInfo:${lora.name}`)
     return null
   }
 }
@@ -211,7 +212,7 @@ async function refreshLoras() {
     await fetchLoras(true)
     props.showToast?.(t('lora.refreshed'), 'success')
   } catch (error) {
-    console.error('Failed to refresh LoRAs:', error)
+    logError(error, 'refreshLoras')
     props.showToast?.(t('lora.refreshFailed'), 'error')
   } finally {
     loading.value = false

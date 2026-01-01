@@ -4,6 +4,7 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
+import { useErrorHandler, ErrorCategory } from './useErrorHandler'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { get, post } from '../api/client'
@@ -59,6 +60,9 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
   // IndexedDB 초기화
   const { saveImage } = useIndexedDB()
 
+  // Error handler 초기화
+  const { network, storage, generation } = useErrorHandler({ showToast, t })
+
   // 연속 에러 카운터
   const consecutiveErrors = ref(0)
 
@@ -86,7 +90,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         }
       }
     } catch (error) {
-      // 에러가 나도 무시 (API가 없을 수 있음)
+      // API가 없을 수 있음 - silent 처리
+      network(error, { context: 'checkOngoingGeneration', silent: true })
     }
   }
 
@@ -176,7 +181,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
           }
         }
       } catch (error) {
-        console.error(t('generation.progressFetchFailed'), error)
+        network(error, { context: 'progressPolling', silent: true })
       }
     }, PROGRESS_POLL_INTERVAL)
   }
@@ -270,15 +275,17 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
    * 현재 이미지 스킵 (배치 생성 중)
    */
   async function skipCurrentImage() {
-    try {
-      // 스킵 플래그 설정
-      wasInterrupted.value = true
+    // 스킵 플래그 설정
+    wasInterrupted.value = true
 
+    try {
       await post('/sdapi/v1/skip')
       showToast(t('generation.skipCurrent'), 'info')
     } catch (error) {
-      console.error(t('generation.skipFailed'), error)
-      showToast(t('generation.skipFailed'), 'error')
+      generation(error, {
+        context: 'skipCurrentImage',
+        i18nKey: 'generation.skipFailed'
+      })
     }
   }
 
@@ -613,7 +620,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
               const { setBookmarkThumbnail } = useBookmarks()
               setBookmarkThumbnail(appliedBookmarkId.value, result.id)
             } catch (error) {
-              console.error('Failed to auto-link thumbnail:', error)
+              storage(error, { context: 'autoLinkThumbnail', silent: true })
             }
           }
 
@@ -622,8 +629,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
             showToast(t('generation.autoDeleted', { count: result.deletedCount }), 'info')
           }
         } catch (error) {
-          console.error('IndexedDB 저장 실패 (무시):', error)
           // 저장 실패해도 생성은 계속 진행
+          storage(error, { context: 'saveImage', silent: true })
         }
 
         // 중단 플래그 리셋

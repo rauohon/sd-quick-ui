@@ -1,4 +1,5 @@
 import { cloneADetailers } from '../utils/adetailer'
+import { logError } from './useErrorHandler'
 
 /**
  * 샘플 이미지 생성 composable
@@ -76,7 +77,7 @@ export function useSampleImage(refs, indexedDB) {
       const result = await indexedDB.saveImage(newImage)
       newImage.id = result.id
     } catch (error) {
-      console.error('샘플 이미지 IndexedDB 저장 실패:', error)
+      logError(error, 'addSampleImage:saveToIndexedDB')
     }
 
     generatedImages.value.unshift(newImage)

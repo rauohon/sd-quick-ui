@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { get, post } from '../api/client'
+import { logError } from './useErrorHandler'
 
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
@@ -70,7 +71,7 @@ export function useModelLoader(selectedModel, showToast) {
         throw new Error('API 응답 오류')
       }
     } catch (error) {
-      console.error('모델 목록 로드 실패:', error)
+      logError(error, 'loadModels')
       showToast?.('모델 목록 로드 실패', 'error')
     }
   }
@@ -91,7 +92,7 @@ export function useModelLoader(selectedModel, showToast) {
         throw new Error('모델 변경 실패')
       }
     } catch (error) {
-      console.error('모델 변경 실패:', error)
+      logError(error, 'changeModel')
       showToast?.('모델 변경 실패', 'error')
     }
   }
@@ -118,7 +119,7 @@ export function useModelLoader(selectedModel, showToast) {
         return null
       }
     } catch (error) {
-      console.error(`Cache load error for ${key}:`, error)
+      logError(error, `loadFromCache:${key}`)
       return null
     }
   }
@@ -136,7 +137,7 @@ export function useModelLoader(selectedModel, showToast) {
       }
       window.localStorage.setItem(key, JSON.stringify(cacheData))
     } catch (error) {
-      console.error(`Cache save error for ${key}:`, error)
+      logError(error, `saveToCache:${key}`)
     }
   }
 

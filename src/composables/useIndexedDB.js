@@ -7,6 +7,7 @@ import {
   THUMBNAIL_COMPRESSION_QUALITY,
   THUMBNAIL_MAX_SIZE
 } from '../config/constants'
+import { logError } from './useErrorHandler'
 
 const DB_NAME = 'sd-image-history'
 const DB_VERSION = 1
@@ -109,7 +110,7 @@ async function initDB() {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
 
     request.onerror = () => {
-      console.error('IndexedDB 열기 실패:', request.error)
+      logError(request.error, 'IndexedDB:open')
       reject(request.error)
     }
 
@@ -203,12 +204,12 @@ async function saveImage(imageData) {
       }
 
       request.onerror = () => {
-        console.error('이미지 저장 실패:', request.error)
+        logError(request.error, 'saveImage:store.add')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('saveImage 실패:', error)
+    logError(error, 'saveImage')
     throw error
   }
 }
@@ -265,12 +266,12 @@ async function getRecentImages(limit = 50, offset = 0) {
       }
 
       request.onerror = () => {
-        console.error('이미지 로드 실패:', request.error)
+        logError(request.error, 'getRecentImages:cursor')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('getRecentImages 실패:', error)
+    logError(error, 'getRecentImages')
     return []
   }
 }
@@ -292,12 +293,12 @@ async function getImageCount() {
       }
 
       request.onerror = () => {
-        console.error('이미지 개수 조회 실패:', request.error)
+        logError(request.error, 'getImageCount:count')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('getImageCount 실패:', error)
+    logError(error, 'getImageCount')
     return 0
   }
 }
@@ -319,12 +320,12 @@ async function deleteImage(id) {
       }
 
       request.onerror = () => {
-        console.error('이미지 삭제 실패:', request.error)
+        logError(request.error, 'deleteImage:delete')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('deleteImage 실패:', error)
+    logError(error, 'deleteImage')
     throw error
   }
 }
@@ -369,12 +370,12 @@ async function deleteOldestImages(count) {
       }
 
       request.onerror = () => {
-        console.error('오래된 이미지 삭제 실패:', request.error)
+        logError(request.error, 'deleteOldestImages:cursor')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('deleteOldestImages 실패:', error)
+    logError(error, 'deleteOldestImages')
     throw error
   }
 }
@@ -397,12 +398,12 @@ async function clearAllImages() {
       }
 
       request.onerror = () => {
-        console.error('이미지 전체 삭제 실패:', request.error)
+        logError(request.error, 'clearAllImages:clear')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('clearAllImages 실패:', error)
+    logError(error, 'clearAllImages')
     throw error
   }
 }
@@ -441,12 +442,12 @@ async function clearNonFavoriteImages() {
       }
 
       request.onerror = () => {
-        console.error('이미지 삭제 실패:', request.error)
+        logError(request.error, 'clearNonFavoriteImages:cursor')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('clearNonFavoriteImages 실패:', error)
+    logError(error, 'clearNonFavoriteImages')
     throw error
   }
 }
@@ -468,12 +469,12 @@ async function saveSlots(slots) {
       }
 
       request.onerror = () => {
-        console.error('슬롯 저장 실패:', request.error)
+        logError(request.error, 'saveSlots:put')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('saveSlots 실패:', error)
+    logError(error, 'saveSlots')
     throw error
   }
 }
@@ -499,12 +500,12 @@ async function loadSlots() {
       }
 
       request.onerror = () => {
-        console.error('슬롯 로드 실패:', request.error)
+        logError(request.error, 'loadSlots:get')
         reject(request.error)
       }
     })
   } catch (error) {
-    console.error('loadSlots 실패:', error)
+    logError(error, 'loadSlots')
     return [null, null, null]
   }
 }
@@ -532,7 +533,7 @@ async function toggleFavorite(id) {
           }
 
           updateRequest.onerror = () => {
-            console.error('즐겨찾기 업데이트 실패:', updateRequest.error)
+            logError(updateRequest.error, 'toggleFavorite:put')
             reject(updateRequest.error)
           }
         } else {
@@ -541,12 +542,12 @@ async function toggleFavorite(id) {
       }
 
       getRequest.onerror = () => {
-        console.error('이미지 조회 실패:', getRequest.error)
+        logError(getRequest.error, 'toggleFavorite:get')
         reject(getRequest.error)
       }
     })
   } catch (error) {
-    console.error('toggleFavorite 실패:', error)
+    logError(error, 'toggleFavorite')
     throw error
   }
 }

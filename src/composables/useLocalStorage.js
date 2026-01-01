@@ -2,6 +2,7 @@
  * localStorage 관리 composable
  */
 import { MAX_HISTORY_SIZE, MAX_STORAGE_SIZE_MB } from '../config/constants'
+import { logError } from './useErrorHandler'
 
 export function useLocalStorage() {
   /**
@@ -36,7 +37,7 @@ export function useLocalStorage() {
 
       localStorage.setItem('sd-history', data)
     } catch (error) {
-      console.error('localStorage 저장 실패:', error)
+      logError(error, 'saveToLocalStorage')
 
       if (error.name === 'QuotaExceededError') {
         // 용량 초과 시: localStorage 완전 클리어 후 최소한만 저장
@@ -56,13 +57,13 @@ export function useLocalStorage() {
 
           showToast?.('⚠️ 저장 공간 부족: 히스토리가 초기화되고 최신 1개만 보관됩니다', 'warning')
         } catch (retryError) {
-          console.error('히스토리 최소 저장도 실패:', retryError)
+          logError(retryError, 'saveToLocalStorage:retry')
           // 완전 실패 - localStorage 전체 클리어
           try {
             localStorage.clear()
             showToast?.('❌ 저장 공간 부족: localStorage가 초기화되었습니다', 'error')
           } catch (clearError) {
-            console.error('localStorage 클리어 실패:', clearError)
+            logError(clearError, 'saveToLocalStorage:clear')
           }
         }
       } else {
@@ -81,7 +82,7 @@ export function useLocalStorage() {
         return JSON.parse(saved)
       }
     } catch (error) {
-      console.error('localStorage 로드 실패:', error)
+      logError(error, 'loadFromLocalStorage')
     }
     return []
   }
@@ -93,7 +94,7 @@ export function useLocalStorage() {
     try {
       localStorage.setItem('sd-slots', JSON.stringify(slots.value))
     } catch (error) {
-      console.error('슬롯 저장 실패:', error)
+      logError(error, 'saveSlots')
     }
   }
 
@@ -107,7 +108,7 @@ export function useLocalStorage() {
         return JSON.parse(saved)
       }
     } catch (error) {
-      console.error('슬롯 로드 실패:', error)
+      logError(error, 'loadSlots')
     }
     return [null, null, null]
   }

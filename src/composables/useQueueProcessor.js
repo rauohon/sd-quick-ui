@@ -5,6 +5,7 @@ import {
   QUEUE_SUCCESS_DELAY,
   QUEUE_FAILURE_DELAY
 } from '../config/constants'
+import { logError } from './useErrorHandler'
 
 /**
  * 큐 실행 로직 composable
@@ -106,7 +107,7 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
 
     } catch (error) {
       // Failure
-      console.error(`큐 아이템 실패: ${item.id}`, error)
+      logError(error, `generateQueueItem:${item.id}`)
 
       updateQueueItem(item.id, {
         status: 'failed',

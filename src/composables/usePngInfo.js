@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { logError } from './useErrorHandler'
 
 const API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:7860' : ''
 
@@ -75,7 +76,7 @@ export function usePngInfo(showToast, applyParams) {
         showToast?.('No metadata found in image', 'warning')
       }
     } catch (error) {
-      console.error('Failed to load PNG info:', error)
+      logError(error, 'loadPngInfo')
       showToast?.('Failed to read image metadata', 'error')
     } finally {
       isLoadingPngInfo.value = false

@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { logError } from './useErrorHandler'
 
 const PRESETS_KEY = 'sd-generation-presets'
 
@@ -27,7 +28,7 @@ export function usePresets() {
         presets.value = JSON.parse(saved)
       }
     } catch (error) {
-      console.error('Failed to load presets:', error)
+      logError(error, 'loadPresets')
     }
   }
 
@@ -36,7 +37,7 @@ export function usePresets() {
     try {
       localStorage.setItem(PRESETS_KEY, JSON.stringify(presets.value))
     } catch (error) {
-      console.error('Failed to save presets:', error)
+      logError(error, 'savePresets')
     }
   }
 

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBookmarks } from '../composables/useBookmarks'
 import { useIndexedDB } from '../composables/useIndexedDB'
+import { logError } from '../composables/useErrorHandler'
 import LazyImage from './LazyImage.vue'
 
 const { t } = useI18n()
@@ -176,7 +177,7 @@ async function handleFileSelected(event) {
     // Reset file input
     event.target.value = ''
   } catch (error) {
-    console.error('Import failed:', error)
+    logError(error, 'importBookmarks')
     props.showToast?.(t('bookmark.importFailed'), 'error')
   }
 }
@@ -236,7 +237,7 @@ onMounted(async () => {
   try {
     generatedImages.value = await indexedDB.getRecentImages(200)
   } catch (error) {
-    console.error('Failed to load generated images:', error)
+    logError(error, 'loadGeneratedImages')
   }
 
   // Load thumbnails

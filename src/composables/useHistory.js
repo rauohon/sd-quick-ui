@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { cloneADetailers } from '../utils/adetailer'
 import { useSampleImage } from './useSampleImage'
+import { useErrorHandler } from './useErrorHandler'
 
 // JSZip is loaded via CDN in index.html
 const JSZip = window.JSZip
@@ -37,6 +38,9 @@ export function useHistory(refs, composables, callbacks, constants, t) {
   const { showToast, showConfirm } = callbacks
   const { INITIAL_LOAD_COUNT, LOAD_MORE_COUNT, SLOT_COUNT } = constants
 
+  // Initialize error handler
+  const { storage, file, general } = useErrorHandler({ showToast, t })
+
   // Initialize SampleImage composable
   const sampleImageRefs = { generatedImages, currentImage, lastUsedParams, adetailers }
   const { addSampleImage } = useSampleImage(sampleImageRefs, indexedDB)
@@ -61,11 +65,11 @@ export function useHistory(refs, composables, callbacks, constants, t) {
    * 즐겨찾기 토글
    */
   async function toggleImageFavorite(item, index) {
-    try {
-      // Toggle in memory first for instant feedback
-      item.favorite = !item.favorite
-      const isFavorite = item.favorite
+    // Toggle in memory first for instant feedback
+    item.favorite = !item.favorite
+    const isFavorite = item.favorite
 
+    try {
       // Update IndexedDB
       if (item.id) {
         await indexedDB.toggleFavorite(item.id)
@@ -75,10 +79,12 @@ export function useHistory(refs, composables, callbacks, constants, t) {
         )
       }
     } catch (error) {
-      console.error('즐겨찾기 토글 실패:', error)
       // Revert on error
       item.favorite = !item.favorite
-      showToast?.(t('history.favoriteUpdateFailed'), 'error')
+      storage(error, {
+        context: 'toggleImageFavorite',
+        i18nKey: 'history.favoriteUpdateFailed'
+      })
     }
   }
 
@@ -86,14 +92,14 @@ export function useHistory(refs, composables, callbacks, constants, t) {
    * 단일 이미지 삭제
    */
   async function deleteImage(item, index) {
-    const confirmed = await showConfirm?.({
+    const result = await showConfirm?.({
       title: t('common.deleteImage'),
       message: t('common.deleteImageConfirm'),
       confirmText: t('common.delete'),
       cancelText: t('common.cancel')
     })
 
-    if (!confirmed) {
+    if (!result?.confirmed) {
       return
     }
 
@@ -114,8 +120,10 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
       showToast?.(t('history.imageDeleted'), 'success')
     } catch (error) {
-      console.error('이미지 삭제 실패:', error)
-      showToast?.(t('history.deleteFailed'), 'error')
+      storage(error, {
+        context: 'deleteImage',
+        i18nKey: 'history.deleteFailed'
+      })
     }
   }
 
@@ -130,14 +138,14 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       confirmMessage = t('common.deleteHistoryWithFavorites', { count: favoriteCount })
     }
 
-    const confirmed = await showConfirm?.({
+    const result = await showConfirm?.({
       title: t('common.deleteHistory'),
       message: confirmMessage,
       confirmText: t('common.delete'),
       cancelText: t('common.cancel')
     })
 
-    if (!confirmed) {
+    if (!result?.confirmed) {
       return
     }
 
@@ -164,8 +172,10 @@ export function useHistory(refs, composables, callbacks, constants, t) {
         showToast?.(t('history.deletedCount', { count: deletedCount }), 'success')
       }
     } catch (error) {
-      console.error('히스토리 삭제 실패:', error)
-      showToast?.(t('history.deleteFailed'), 'error')
+      storage(error, {
+        context: 'clearHistory',
+        i18nKey: 'history.deleteFailed'
+      })
     }
   }
 
@@ -173,22 +183,24 @@ export function useHistory(refs, composables, callbacks, constants, t) {
    * 더 많은 이미지 로드
    */
   async function loadMoreImages() {
+    const currentCount = generatedImages.value.length
+
+    if (currentCount >= totalImageCount.value) {
+      showToast?.(t('history.noMoreImages'), 'info')
+      return
+    }
+
     try {
-      const currentCount = generatedImages.value.length
       const loadCount = Math.min(currentCount + LOAD_MORE_COUNT, totalImageCount.value)
-
-      if (currentCount >= totalImageCount.value) {
-        showToast?.(t('history.noMoreImages'), 'info')
-        return
-      }
-
       const history = await indexedDB.getRecentImages(loadCount)
       generatedImages.value = history
       console.log(`추가 로드: ${history.length}/${totalImageCount.value}개 이미지`)
       showToast?.(t('history.loadedMore', { count: history.length - currentCount }), 'success')
     } catch (error) {
-      console.error('이미지 추가 로드 실패:', error)
-      showToast?.(t('history.loadMoreFailed'), 'error')
+      storage(error, {
+        context: 'loadMoreImages',
+        i18nKey: 'history.loadMoreFailed'
+      })
     }
   }
 
@@ -220,14 +232,14 @@ export function useHistory(refs, composables, callbacks, constants, t) {
    * 히스토리 모달에서 삭제
    */
   async function handleHistoryDelete(item) {
-    const confirmed = await showConfirm?.({
+    const result = await showConfirm?.({
       title: t('common.deleteImage'),
       message: t('common.deleteImageConfirm'),
       confirmText: t('common.delete'),
       cancelText: t('common.cancel')
     })
 
-    if (!confirmed) {
+    if (!result?.confirmed) {
       return
     }
 
@@ -281,8 +293,10 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
       showToast?.(t('history.downloadComplete', { count: items.length }), 'success')
     } catch (error) {
-      console.error('일괄 다운로드 실패:', error)
-      showToast?.(t('history.batchDownloadFailed'), 'error')
+      file(error, {
+        context: 'handleHistoryDownloadMultiple',
+        i18nKey: 'history.batchDownloadFailed'
+      })
     }
   }
 
@@ -290,14 +304,14 @@ export function useHistory(refs, composables, callbacks, constants, t) {
    * 여러 이미지 삭제
    */
   async function handleHistoryDeleteMultiple(items) {
-    const confirmed = await showConfirm?.({
+    const result = await showConfirm?.({
       title: t('common.batchDelete'),
       message: t('common.batchDeleteConfirm', { count: items.length }),
       confirmText: t('common.delete'),
       cancelText: t('common.cancel')
     })
 
-    if (!confirmed) {
+    if (!result?.confirmed) {
       return
     }
 
@@ -315,8 +329,10 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
       showToast?.(t('history.imagesDeleted', { count: items.length }), 'success')
     } catch (error) {
-      console.error('일괄 삭제 실패:', error)
-      showToast?.(t('history.batchDeleteFailed'), 'error')
+      storage(error, {
+        context: 'handleHistoryDeleteMultiple',
+        i18nKey: 'history.batchDeleteFailed'
+      })
     }
   }
 
@@ -407,8 +423,10 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       isSelectionMode.value = false
       selectedImages.value.clear()
     } catch (error) {
-      console.error('일괄 다운로드 실패:', error)
-      showToast?.(t('history.batchDownloadFailed'), 'error')
+      file(error, {
+        context: 'downloadSelectedImages',
+        i18nKey: 'history.batchDownloadFailed'
+      })
     }
   }
 
@@ -459,8 +477,11 @@ export function useHistory(refs, composables, callbacks, constants, t) {
 
         showToast?.(t('message.success.migrationComplete'), 'success')
       } catch (error) {
-        console.error('마이그레이션 실패:', error)
-        showToast?.(t('message.warning.migrationFailedContinue'), 'warning')
+        general(error, {
+          context: 'loadData:migration',
+          i18nKey: 'message.warning.migrationFailedContinue',
+          toastType: 'warning'
+        })
       }
     }
 
@@ -477,7 +498,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
         console.log(`IndexedDB에서 ${history.length}/${totalImageCount.value}개 이미지 로드 완료`)
       }
     } catch (error) {
-      console.error('IndexedDB 로드 실패:', error)
+      storage(error, { context: 'loadData:history', silent: true })
     }
 
     // Load slots from IndexedDB
@@ -485,7 +506,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       const loadedSlots = await indexedDB.loadSlots()
       slots.value = loadedSlots
     } catch (error) {
-      console.error('슬롯 로드 실패:', error)
+      storage(error, { context: 'loadData:slots', silent: true })
       // Fallback to localStorage
       const loadedSlots = localStorage.loadSlots()
       slots.value = loadedSlots
@@ -518,7 +539,7 @@ export function useHistory(refs, composables, callbacks, constants, t) {
         seed.value = params.seed || -1
         sessionStorage.removeItem('pending-prompt-load')
       } catch (error) {
-        console.error('Failed to load pending prompt:', error)
+        general(error, { context: 'loadData:pendingPrompt', silent: true })
       }
     }
   }
