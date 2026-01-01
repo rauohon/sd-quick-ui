@@ -435,8 +435,10 @@ const localWidth = ref(props.width)
 const localHeight = ref(props.height)
 
 // Debounce timers
-let widthDebounceTimer = null
-let heightDebounceTimer = null
+const debounceTimers = { width: null, height: null }
+
+// Local refs lookup for dimension updates
+const localRefs = { width: localWidth, height: localHeight }
 
 // Watch props to sync local state when changed externally
 watch(() => props.width, (newWidth) => {
@@ -447,16 +449,19 @@ watch(() => props.height, (newHeight) => {
   localHeight.value = newHeight
 })
 
-// Debounced update functions with validation
-async function updateWidth(value) {
-  localWidth.value = value
+// Unified dimension update function with debounce and 8-multiple validation
+async function updateDimension(type, value) {
+  const localRef = localRefs[type]
+  localRef.value = value
 
-  if (widthDebounceTimer) {
-    clearTimeout(widthDebounceTimer)
+  if (debounceTimers[type]) {
+    clearTimeout(debounceTimers[type])
   }
 
-  widthDebounceTimer = setTimeout(async () => {
+  debounceTimers[type] = setTimeout(async () => {
     const numValue = Number(value)
+    const emitEvent = `update:${type}`
+    const messageKey = `dimensionValidation.${type}Message`
 
     // Check if value is multiple of 8
     if (numValue % 8 !== 0) {
@@ -467,7 +472,7 @@ async function updateWidth(value) {
         // No preference set - ask user
         const result = await props.showConfirm({
           title: t('dimensionValidation.title'),
-          message: t('dimensionValidation.widthMessage', { original: numValue, corrected: correctedValue }),
+          message: t(messageKey, { original: numValue, corrected: correctedValue }),
           confirmText: t('dimensionValidation.applyCorrection'),
           cancelText: t('dimensionValidation.keepOriginal'),
           showDontAskAgain: true,
@@ -475,99 +480,36 @@ async function updateWidth(value) {
         })
 
         if (result.confirmed) {
-          // User chose to auto-correct
-          localWidth.value = correctedValue
-          emit('update:width', correctedValue)
-
-          if (result.dontAskAgain) {
-            localStorage.setItem('sd-auto-correct-dimensions', 'true')
-            autoCorrectDimensions.value = true
-            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
-          }
+          localRef.value = correctedValue
+          emit(emitEvent, correctedValue)
         } else {
-          // User chose not to auto-correct
-          emit('update:width', numValue)
+          emit(emitEvent, numValue)
+        }
 
-          if (result.dontAskAgain) {
-            localStorage.setItem('sd-auto-correct-dimensions', 'false')
-            autoCorrectDimensions.value = false
-            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
-          }
+        if (result.dontAskAgain) {
+          localStorage.setItem('sd-auto-correct-dimensions', String(result.confirmed))
+          autoCorrectDimensions.value = result.confirmed
+          props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
         }
       } else if (setting === 'true') {
-        // Auto-correct enabled - apply correction without asking
-        localWidth.value = correctedValue
-        emit('update:width', correctedValue)
+        localRef.value = correctedValue
+        emit(emitEvent, correctedValue)
       } else {
-        // Auto-correct disabled - keep original value without asking
-        emit('update:width', numValue)
+        emit(emitEvent, numValue)
       }
     } else {
-      // Value is already valid
-      emit('update:width', numValue)
+      emit(emitEvent, numValue)
     }
   }, 300)
 }
 
-async function updateHeight(value) {
-  localHeight.value = value
+// Wrapper functions for template binding
+function updateWidth(value) {
+  updateDimension('width', value)
+}
 
-  if (heightDebounceTimer) {
-    clearTimeout(heightDebounceTimer)
-  }
-
-  heightDebounceTimer = setTimeout(async () => {
-    const numValue = Number(value)
-
-    // Check if value is multiple of 8
-    if (numValue % 8 !== 0) {
-      const correctedValue = Math.round(numValue / 8) * 8
-      const setting = localStorage.getItem('sd-auto-correct-dimensions')
-
-      if (setting === null) {
-        // No preference set - ask user
-        const result = await props.showConfirm({
-          title: t('dimensionValidation.title'),
-          message: t('dimensionValidation.heightMessage', { original: numValue, corrected: correctedValue }),
-          confirmText: t('dimensionValidation.applyCorrection'),
-          cancelText: t('dimensionValidation.keepOriginal'),
-          showDontAskAgain: true,
-          dontAskAgainText: t('common.dontAskAgain')
-        })
-
-        if (result.confirmed) {
-          // User chose to auto-correct
-          localHeight.value = correctedValue
-          emit('update:height', correctedValue)
-
-          if (result.dontAskAgain) {
-            localStorage.setItem('sd-auto-correct-dimensions', 'true')
-            autoCorrectDimensions.value = true
-            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
-          }
-        } else {
-          // User chose not to auto-correct
-          emit('update:height', numValue)
-
-          if (result.dontAskAgain) {
-            localStorage.setItem('sd-auto-correct-dimensions', 'false')
-            autoCorrectDimensions.value = false
-            props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
-          }
-        }
-      } else if (setting === 'true') {
-        // Auto-correct enabled - apply correction without asking
-        localHeight.value = correctedValue
-        emit('update:height', correctedValue)
-      } else {
-        // Auto-correct disabled - keep original value without asking
-        emit('update:height', numValue)
-      }
-    } else {
-      // Value is already valid
-      emit('update:height', numValue)
-    }
-  }, 300)
+function updateHeight(value) {
+  updateDimension('height', value)
 }
 
 // Save auto-correct setting to localStorage
@@ -642,7 +584,7 @@ onMounted(() => {
 .advanced-content {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px;
   background: var(--color-bg-secondary);
 }
 
