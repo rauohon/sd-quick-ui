@@ -71,6 +71,14 @@
   - Integrated with existing modal system and slot management
   - Added i18n translation keys (ko/en)
   - Exposed focus method from PromptTextarea component
+- [x] 2. Drag & Drop for PNG files (2026-01-01)
+  - Created useDragAndDrop composable for global drag & drop handling
+  - Visual drop zone overlay with fade-in animation when dragging files
+  - PNG file validation (image type, .png extension, max 50MB)
+  - Integrated with existing PngInfo extraction and preview modal
+  - Drag counter for nested element handling
+  - Full-screen blue overlay with 📁 icon and instructional text
+  - i18n support for drop zone messages (ko/en)
 
 ## In Progress
 - [ ]
@@ -78,10 +86,6 @@
 ## Planned
 
 ### UI/UX Improvements
-- [ ] 2. Drag & Drop for PNG files
-  - Drop PNG on window to extract metadata (existing PngInfoView)
-  - Drop generated SD images to add to history with metadata
-  - Visual drop zone indicator
 - [ ] 6. Dark mode
   - Theme toggle in System Settings
   - Persist theme preference in localStorage

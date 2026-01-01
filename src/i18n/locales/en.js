@@ -647,5 +647,11 @@ export default {
     closeModal: 'Close Modal',
     switchSlot: 'Switch to Slot {slot}',
     focusPrompt: 'Focus Prompt'
+  },
+
+  // Drag and Drop
+  dragDrop: {
+    dropHere: 'Drop PNG file here',
+    pngOnly: 'Only PNG images are supported'
   }
 }

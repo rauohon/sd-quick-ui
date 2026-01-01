@@ -647,6 +647,12 @@ export default {
     closeModal: '모달 닫기',
     switchSlot: '슬롯 {slot} 전환',
     focusPrompt: '프롬프트에 포커스'
+  },
+
+  // 드래그 앤 드롭
+  dragDrop: {
+    dropHere: 'PNG 파일을 여기에 놓으세요',
+    pngOnly: 'PNG 이미지만 지원됩니다'
   }
 
   // Phase 3에서 extracted-texts.json을 기반으로 실제 텍스트로 채워질 예정

@@ -48,6 +48,7 @@ import { useModelLoader } from '../composables/useModelLoader'
 import { useModals } from '../composables/useModals'
 import { useQueueProcessor } from '../composables/useQueueProcessor'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
+import { useDragAndDrop } from '../composables/useDragAndDrop'
 
 // i18n
 const { t } = useI18n()
@@ -564,6 +565,9 @@ useKeyboardShortcuts({
   }
 })
 
+// Initialize Drag and Drop
+const { isDragging } = useDragAndDrop(handleLoadPngInfo)
+
 // Watch for prompt changes after applying bookmark
 watch([prompt, negativePrompt], () => {
   if (appliedBookmarkId.value) {
@@ -1050,10 +1054,92 @@ onUnmounted(() => {
       @update:prompt="adetailers[editingADetailerIndex].prompt = $event"
       @update:negativePrompt="adetailers[editingADetailerIndex].negativePrompt = $event"
     />
+
+    <!-- Drag and Drop Overlay -->
+    <div v-if="isDragging" class="drag-drop-overlay">
+      <div class="drag-drop-content">
+        <div class="drag-drop-icon">📁</div>
+        <div class="drag-drop-text">{{ $t('dragDrop.dropHere') }}</div>
+        <div class="drag-drop-hint">{{ $t('dragDrop.pngOnly') }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Drag and Drop Overlay */
+.drag-drop-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(102, 126, 234, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.drag-drop-content {
+  text-align: center;
+  color: white;
+  padding: 60px;
+  border: 4px dashed rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.drag-drop-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.drag-drop-text {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.drag-drop-hint {
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
 /* Preview image - 비율 유지하며 최대 크기 */
 .preview-image {
   width: 100%;
