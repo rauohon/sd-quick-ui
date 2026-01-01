@@ -1,4 +1,25 @@
 <script setup>
+/**
+ * PresetManager.vue - 프리셋 관리 컴포넌트
+ *
+ * 리팩토링 분석 (2026-01-01):
+ * - 코드 라인: 406 (script 169 + template 237)
+ * - Scoped CSS: 489 라인 (분리 불필요)
+ *
+ * 현재 구조가 적절한 이유:
+ * 1. Add/Edit 다이얼로그가 의도적으로 분리됨
+ *    - Add: 저장될 값 미리보기(Save Preview) 섹션 포함
+ *    - Edit: 이름/설명만 수정 (파라미터 변경 불가)
+ *    - 기능이 다르므로 통합 시 오히려 복잡해짐
+ *
+ * 2. getParam, getPresetSummary 유틸 함수
+ *    - 이 컴포넌트에서만 사용됨
+ *    - 외부 분리 시 오히려 관리 복잡해짐
+ *
+ * 3. usePresets composable 이미 분리됨
+ *    - CRUD 로직이 composable로 분리되어 있음
+ *    - 컴포넌트는 UI 로직만 담당
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePresets } from '../composables/usePresets'

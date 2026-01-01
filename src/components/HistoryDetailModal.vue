@@ -147,8 +147,14 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil } from '../utils/dateUtils'
 
 const { t } = useI18n()
+
+// Wrapper to provide i18n fallback text
+function formatFullTimestamp(timestamp) {
+  return formatFullTimestampUtil(timestamp, t('history.unknown'))
+}
 
 const props = defineProps({
   items: {
@@ -254,43 +260,6 @@ function selectCompareImage(item) {
 
 function closeCompare() {
   compareImage.value = null
-}
-
-function formatTimestamp(timestamp) {
-  if (!timestamp) return '--:--'
-
-  try {
-    const date = new Date(timestamp)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-    }
-  } catch (e) {
-    // Fallback
-  }
-
-  return timestamp
-}
-
-function formatFullTimestamp(timestamp) {
-  if (!timestamp) return t('history.unknown')
-
-  try {
-    const date = new Date(timestamp)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      })
-    }
-  } catch (e) {
-    // Fallback
-  }
-
-  return timestamp
 }
 </script>
 

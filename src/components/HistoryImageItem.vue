@@ -43,6 +43,7 @@
 
 <script setup>
 import LazyImage from './LazyImage.vue'
+import { formatTimestamp } from '../utils/dateUtils'
 
 defineProps({
   item: {
@@ -64,37 +65,6 @@ defineProps({
 })
 
 defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'compare-image'])
-
-// Format timestamp for display (supports both old and new formats)
-function formatTimestamp(timestamp) {
-  if (!timestamp) return '--:--'
-
-  try {
-    // Try parsing as ISO format (new format)
-    const date = new Date(timestamp)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-    }
-  } catch (e) {
-    // Fallback to old format parsing
-  }
-
-  // Fallback: extract time from old format "2025. 12. 28. 오후 3:30:45"
-  try {
-    const parts = timestamp.split(' ')
-    // Find time part (contains ":")
-    const timePart = parts.find(p => p.includes(':'))
-    if (timePart) {
-      // Extract HH:MM from "3:30:45" or "15:30:45"
-      const [hour, minute] = timePart.split(':')
-      return `${hour}:${minute}`
-    }
-  } catch (e) {
-    // Last resort: return original
-  }
-
-  return timestamp
-}
 </script>
 
 <style scoped>

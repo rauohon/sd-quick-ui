@@ -261,12 +261,34 @@
 </template>
 
 <script setup>
+/**
+ * HistoryManagerModal.vue - 이미지 히스토리 관리 모달
+ *
+ * 리팩토링 분석 (2026-01-01):
+ * - 코드 라인: ~500 (template 260 + script 240)
+ * - Scoped CSS: ~820 라인 (분리 불필요)
+ *
+ * 완료된 최적화:
+ * 1. useVirtualScroll composable 사용 ✅
+ * 2. LazyImage 컴포넌트 사용 ✅
+ * 3. formatTimestamp/formatFullTimestamp → dateUtils.js로 분리 ✅
+ *
+ * 현재 구조가 적절한 이유:
+ * - 비교 모드, 일괄 선택, 검색/정렬이 한 컴포넌트에서 관리되어야 함
+ * - 더 분리하면 상태 공유가 복잡해짐
+ */
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
 import LazyImage from './LazyImage.vue'
+import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil } from '../utils/dateUtils'
 
 const { t } = useI18n()
+
+// Wrapper to provide i18n fallback text
+function formatFullTimestamp(timestamp) {
+  return formatFullTimestampUtil(timestamp, t('history.unknown'))
+}
 
 const props = defineProps({
   items: {
@@ -482,44 +504,6 @@ function nextCompareImage() {
 function closeCompare() {
   compareImages.value = []
   compareIndex.value = 0
-}
-
-// Formatting
-function formatTimestamp(timestamp) {
-  if (!timestamp) return '--:--'
-
-  try {
-    const date = new Date(timestamp)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-    }
-  } catch (e) {
-    // Fallback
-  }
-
-  return timestamp
-}
-
-function formatFullTimestamp(timestamp) {
-  if (!timestamp) return t('history.unknown')
-
-  try {
-    const date = new Date(timestamp)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      })
-    }
-  } catch (e) {
-    // Fallback
-  }
-
-  return timestamp
 }
 
 // Highlight search query in text

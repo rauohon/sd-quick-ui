@@ -134,6 +134,17 @@
   - Unified Add/Edit dialogs into single dialog with mode
   - Fixed useQueue singleton bug (queue state not shared between components)
   - QueueManager.vue: 1064 → 1027 lines (-3%)
+- [x] 12. LoraSelector.vue refactoring (2026-01-01)
+  - Created useCivitaiCache.js composable (Civitai API 캐시 관리)
+  - Created loraUtils.js (LoRA 메타데이터 유틸 함수)
+  - LoraSelector.vue: 879 → 728 lines (-17%)
+- [x] 13. History 컴포넌트 날짜 유틸 통합 (2026-01-01)
+  - Created dateUtils.js (formatTimestamp, formatFullTimestamp)
+  - 3개 컴포넌트에서 중복 코드 제거: HistoryImageItem, HistoryDetailModal, HistoryManagerModal
+  - HistoryImageItem.vue: 110 → 79 lines (-28%)
+  - HistoryDetailModal.vue: 691 → 656 lines (-5%)
+  - HistoryManagerModal.vue: 1352 → 1319 lines (-2%)
+  - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
 - [ ]
@@ -154,7 +165,12 @@
   - App.vue: 1703 → 430 lines (-75%, CSS → style.css)
   - AdvancedSettingsPanel.vue: 931 → 873 lines (-6%, 중복 제거)
   - QueueManager.vue: 1064 → 1027 lines (-3%, 다이얼로그 통합)
+  - LoraSelector.vue: 879 → 728 lines (-17%, 로직 분리)
+  - HistoryImageItem.vue: 110 → 79 lines (-28%, 날짜 유틸 분리)
+  - HistoryDetailModal.vue: 691 → 656 lines (-5%, 날짜 유틸 분리)
+  - HistoryManagerModal.vue: 1352 → 1319 lines (-2%, 날짜 유틸 분리)
   - useQueue.js: 싱글톤 패턴 적용 (버그 수정)
+  - Created useCivitaiCache.js, loraUtils.js, dateUtils.js
   - Created 3 new composables + constants extraction
 
 ## Backlog
