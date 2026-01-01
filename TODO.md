@@ -130,6 +130,10 @@
   - Removed ~60 lines of duplicate code
   - Fixed horizontal scroll issue (padding 12px → 10px)
   - AdvancedSettingsPanel.vue: 931 → 873 lines (-6%)
+- [x] 11. QueueManager.vue refactoring (2026-01-01)
+  - Unified Add/Edit dialogs into single dialog with mode
+  - Fixed useQueue singleton bug (queue state not shared between components)
+  - QueueManager.vue: 1064 → 1027 lines (-3%)
 
 ## In Progress
 - [ ]
@@ -149,6 +153,8 @@
   - Txt2ImgView.vue: 1397 → 1168 lines (-16%)
   - App.vue: 1703 → 430 lines (-75%, CSS → style.css)
   - AdvancedSettingsPanel.vue: 931 → 873 lines (-6%, 중복 제거)
+  - QueueManager.vue: 1064 → 1027 lines (-3%, 다이얼로그 통합)
+  - useQueue.js: 싱글톤 패턴 적용 (버그 수정)
   - Created 3 new composables + constants extraction
 
 ## Backlog

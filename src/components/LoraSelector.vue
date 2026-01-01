@@ -3,14 +3,22 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mockLoras } from '../mocks/lorasMock'
 import { logError } from '../composables/useErrorHandler'
+import { useCivitaiCache } from '../composables/useCivitaiCache'
+import {
+  getCategory,
+  getSdVersion,
+  getResolution,
+  getTriggerWords,
+  getThumbnailUrl
+} from '../utils/loraUtils'
 import LazyImage from './LazyImage.vue'
 
 const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
 const USE_MOCK_DATA = import.meta.env.VITE_MOCK_API === 'true'
-const CIVITAI_API_URL = 'https://civitai.com/api/v1'
-const CIVITAI_CACHE_KEY = 'civitai_trigger_cache'
-const CIVITAI_CACHE_DAYS = 7 // 캐시 유효기간 (일)
+
+// Civitai cache composable
+const { fetchTriggerWords: fetchCivitaiTriggerWords } = useCivitaiCache()
 
 // Props
 const props = defineProps({
@@ -107,92 +115,6 @@ async function fetchLoras(force = false) {
   }
 }
 
-/**
- * Get cached Civitai data from localStorage
- */
-function getCivitaiCache(hash) {
-  try {
-    const cacheStr = localStorage.getItem(CIVITAI_CACHE_KEY)
-    if (!cacheStr) return null
-
-    const cache = JSON.parse(cacheStr)
-    const cached = cache[hash]
-
-    if (!cached) return null
-
-    // Check if cache is expired (older than CIVITAI_CACHE_DAYS)
-    const cacheAge = Date.now() - cached.timestamp
-    const maxAge = CIVITAI_CACHE_DAYS * 24 * 60 * 60 * 1000
-
-    if (cacheAge > maxAge) {
-      // Cache expired, remove it
-      delete cache[hash]
-      localStorage.setItem(CIVITAI_CACHE_KEY, JSON.stringify(cache))
-      return null
-    }
-
-    return cached.words
-  } catch (error) {
-    logError(error, 'getCachedCivitaiWords')
-    return null
-  }
-}
-
-/**
- * Save Civitai data to localStorage cache
- */
-function setCivitaiCache(hash, words) {
-  try {
-    const cacheStr = localStorage.getItem(CIVITAI_CACHE_KEY)
-    const cache = cacheStr ? JSON.parse(cacheStr) : {}
-
-    cache[hash] = {
-      words,
-      timestamp: Date.now()
-    }
-
-    localStorage.setItem(CIVITAI_CACHE_KEY, JSON.stringify(cache))
-  } catch (error) {
-    logError(error, 'saveCivitaiCache')
-  }
-}
-
-/**
- * Fetch trigger words from Civitai by hash
- */
-async function fetchCivitaiTriggerWords(lora) {
-  if (!lora.hash) {
-    return null
-  }
-
-  // Check cache first
-  const cached = getCivitaiCache(lora.hash)
-  if (cached !== null) {
-    console.log(`Civitai cache hit for ${lora.name}`)
-    return cached
-  }
-
-  // Cache miss, fetch from API
-  try {
-    const response = await fetch(`${CIVITAI_API_URL}/model-versions/by-hash/${lora.hash}`)
-    if (!response.ok) {
-      console.log(`Civitai lookup failed for ${lora.name}: ${response.status}`)
-      return null
-    }
-
-    const data = await response.json()
-    const words = data.trainedWords || []
-
-    // Save to cache
-    setCivitaiCache(lora.hash, words)
-    console.log(`Civitai cache saved for ${lora.name}`)
-
-    return words
-  } catch (error) {
-    logError(error, `fetchCivitaiInfo:${lora.name}`)
-    return null
-  }
-}
 
 /**
  * Refresh LoRA list
@@ -220,83 +142,10 @@ async function refreshLoras() {
 }
 
 /**
- * Get thumbnail URL for LoRA
+ * Get thumbnail URL for LoRA (wrapper to pass API_URL)
  */
-function getThumbnailUrl(lora) {
-  // Use the preview_url from API if available
-  if (lora.preview_url) {
-    return `${API_URL}${lora.preview_url}`
-  }
-  
-  // No preview available, will show placeholder
-  return null
-}
-
-/**
- * Handle thumbnail load error - show placeholder
- */
-function handleImageError(event) {
-  event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14"%3ENo Preview%3C/text%3E%3C/svg%3E'
-}
-
-/**
- * Extract category from LoRA path
- */
-function getCategory(lora) {
-  const path = lora.path.replace(/\\/g, '/')
-  
-  if (path.includes('models/Lora/')) {
-    const parts = path.split('models/Lora/')[1].split('/')
-    if (parts.length > 1) {
-      return parts[0]
-    }
-  }
-  
-  return 'root'
-}
-
-/**
- * Get SD version from metadata
- */
-function getSdVersion(lora) {
-  const baseModel = lora.metadata?.ss_base_model_version || ''
-  if (baseModel.startsWith('sdxl')) return 'SDXL'
-  if (baseModel === 'sd_v2') return 'SD2.0'
-  if (baseModel === 'sd_v1') return 'SD1.5'
-  return null
-}
-
-/**
- * Get training resolution from metadata
- */
-function getResolution(lora) {
-  const resolution = lora.metadata?.ss_resolution || lora.metadata?.['modelspec.resolution']
-  if (!resolution) return null
-  return resolution.replace(/[()]/g, '').replace(', ', 'x')
-}
-
-/**
- * Get trigger words from metadata
- */
-function getTriggerWords(lora) {
-  // Prioritize Civitai trained words
-  if (lora.civitaiWords && lora.civitaiWords.length > 0) {
-    return lora.civitaiWords.slice(0, 5)
-  }
-
-  // Fallback to metadata tags
-  const tagFreq = lora.metadata?.ss_tag_frequency
-  if (!tagFreq) return []
-
-  const words = []
-  for (const category in tagFreq) {
-    for (const tag in tagFreq[category]) {
-      if (tag && tag !== 'None' && !tag.match(/^\d+_/)) {
-        words.push(tag)
-      }
-    }
-  }
-  return words.slice(0, 3)
+function getLoraThumbUrl(lora) {
+  return getThumbnailUrl(lora, API_URL)
 }
 
 /**
@@ -403,8 +252,8 @@ onMounted(() => {
         >
           <div class="lora-thumbnail">
             <LazyImage
-              v-if="getThumbnailUrl(lora)"
-              :src="getThumbnailUrl(lora)"
+              v-if="getLoraThumbUrl(lora)"
+              :src="getLoraThumbUrl(lora)"
               :alt="lora.name"
             />
             <div v-else class="no-preview-placeholder">No Preview</div>
