@@ -117,8 +117,9 @@
   - Phase 2: Created usePanelVisibility composable (5 panel states + localStorage persistence)
   - Phase 3: Created useGenerationState composable (20+ generation params + computed + helpers)
   - Phase 4: Created useBookmarkTracking composable (bookmark apply/update/save handlers)
+  - Auto-save watchers: Documented and kept in place (20+ refs dependency)
   - UI: Moved bookmark update actions between positive/negative prompts
-  - Reduced Txt2ImgView.vue from 1397 to 1187 lines (-210 lines, 15% reduction)
+  - Final: Txt2ImgView.vue 1397 → 1168 lines (-229 lines, 16% reduction)
 
 ## In Progress
 - [ ]
@@ -135,10 +136,8 @@
 ### Code Quality
 - [x] 4. Error handling consolidation ✅ Completed (2026-01-01)
 - [x] 5. Component refactoring ✅ Completed (2026-01-01)
-  - Phase 1: Moved constants to constants.js (ASPECT_RATIOS, ADETAILER_*, SLOT_COUNT)
-  - Phase 2: Created usePanelVisibility composable (panel states + localStorage)
-  - Phase 3: Created useGenerationState composable (all generation params)
-  - Txt2ImgView.vue reduced from 1397 to 1240 lines (-11%)
+  - Phase 1~4: Created 3 new composables + constants extraction
+  - Txt2ImgView.vue: 1397 → 1168 lines (-16%)
 
 ## Backlog
 - [ ]
