@@ -112,6 +112,11 @@
   - Migrated 10+ composables and 2 components
   - Fixed confirm dialog bug: showConfirm returns {confirmed, dontAskAgain}
   - Changed if(!confirmed) to if(!result?.confirmed) in useHistory.js (4 locations)
+- [x] 8. Txt2ImgView.vue refactoring (2026-01-01)
+  - Phase 1: Moved constants to constants.js (ASPECT_RATIOS, ADETAILER_*, SLOT_COUNT, etc.)
+  - Phase 2: Created usePanelVisibility composable (5 panel states + localStorage persistence)
+  - Phase 3: Created useGenerationState composable (20+ generation params + computed + helpers)
+  - Reduced Txt2ImgView.vue from 1397 to 1240 lines (-157 lines, 11% reduction)
 
 ## In Progress
 - [ ]
@@ -127,11 +132,11 @@
 
 ### Code Quality
 - [x] 4. Error handling consolidation ✅ Completed (2026-01-01)
-- [ ] 5. Component refactoring
-  - Split Txt2ImgView.vue (800+ lines is too large)
-  - Extract repeated logic into composables
-  - Improve component hierarchy and data flow
-  - Reduce prop drilling
+- [x] 5. Component refactoring ✅ Completed (2026-01-01)
+  - Phase 1: Moved constants to constants.js (ASPECT_RATIOS, ADETAILER_*, SLOT_COUNT)
+  - Phase 2: Created usePanelVisibility composable (panel states + localStorage)
+  - Phase 3: Created useGenerationState composable (all generation params)
+  - Txt2ImgView.vue reduced from 1397 to 1240 lines (-11%)
 
 ## Backlog
 - [ ]
