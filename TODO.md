@@ -1,6 +1,12 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 14. Batch generation: Save all images from batch (2026-01-02)
+  - Fixed batch generation only saving first image (now saves batch_size × n_iter images)
+  - Each image stores individual seed from all_seeds array
+  - Each image stores actual prompt from all_prompts (for Dynamic Prompts support)
+  - Updated Mock API to return correct number of images
+  - Added watch to update totalImageCount when images are added
 - [x] 10. Bookmarks: Enhance bookmark manager with advanced features (2025-12-31)
   - Added import/export functionality (JSON format with merge strategy)
   - Auto-link generated images as thumbnails with manual override option
@@ -183,4 +189,4 @@
 - Keep this file updated across Claude Code sessions
 
 ---
-Last updated: 2026-01-01
+Last updated: 2026-01-02
