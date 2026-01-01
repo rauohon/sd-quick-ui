@@ -67,6 +67,39 @@
 ## Planned
 
 ### UI/UX Improvements
+- [ ] 1. Keyboard shortcuts
+  - Generate image: Ctrl+Enter / Cmd+Enter
+  - Close modal: ESC key
+  - Switch slots: Ctrl+1/2/3
+  - Focus prompt: Ctrl+/
+- [ ] 2. Drag & Drop for PNG files
+  - Drop PNG on window to extract metadata (existing PngInfoView)
+  - Drop generated SD images to add to history with metadata
+  - Visual drop zone indicator
+- [ ] 6. Dark mode
+  - Theme toggle in System Settings
+  - Persist theme preference in localStorage
+  - CSS custom properties for theming
+  - Smooth theme transition
+
+### Performance Optimization
+- [ ] 3. Image loading optimization
+  - Virtual scrolling for history panel (200 images can be heavy)
+  - Lazy loading for off-screen images
+  - Optimize thumbnail quality/size (current: WebP 0.9)
+  - Consider progressive loading for large images
+
+### Code Quality
+- [ ] 4. Error handling consolidation
+  - Create global error handler composable
+  - Standardize error messages and toast patterns
+  - Replace scattered try/catch blocks
+  - Add error boundary for critical failures
+- [ ] 5. Component refactoring
+  - Split Txt2ImgView.vue (800+ lines is too large)
+  - Extract repeated logic into composables
+  - Improve component hierarchy and data flow
+  - Reduce prop drilling
 
 ## Backlog
 - [ ]
@@ -78,4 +111,4 @@
 - Keep this file updated across Claude Code sessions
 
 ---
-Last updated: 2025-12-31
+Last updated: 2026-01-01
