@@ -49,6 +49,7 @@ import { useModals } from '../composables/useModals'
 import { useQueueProcessor } from '../composables/useQueueProcessor'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useDragAndDrop } from '../composables/useDragAndDrop'
+import { useVirtualScroll } from '../composables/useVirtualScroll'
 
 // i18n
 const { t } = useI18n()
@@ -419,6 +420,31 @@ const {
   addSampleImage,
   loadData
 } = history
+
+// History panel ref for virtual scroll
+const historyPanelRef = ref(null)
+
+// Virtual scroll container ref (will be set after HistoryPanel mounts)
+const historyScrollContainerRef = computed(() => {
+  return historyPanelRef.value?.scrollContainerRef || null
+})
+
+// Virtual scroll for history panel
+// Item height: 120px (image) + gap 16px = 136px per row (3 columns)
+const historyVirtualScroll = useVirtualScroll({
+  items: filteredImages,
+  containerRef: historyScrollContainerRef,
+  itemHeight: 120,
+  columns: 3,
+  buffer: 2,
+  gap: 16
+})
+
+const {
+  visibleItems: visibleHistoryItems,
+  totalHeight: historyTotalHeight,
+  offsetY: historyOffsetY
+} = historyVirtualScroll
 
 // LoRA handlers
 function handleSelectLora(loraTag) {
@@ -940,6 +966,7 @@ onUnmounted(() => {
       />
 
       <HistoryPanel
+        ref="historyPanelRef"
         :is-expanded="showHistoryPanel"
         :is-content-collapsed="isHistoryContentCollapsed"
         :show-favorite-only="showFavoriteOnly"
@@ -950,6 +977,9 @@ onUnmounted(() => {
         :is-empty="filteredImages.length === 0"
         :has-favorites="generatedImages.some(img => img.favorite)"
         :has-images="generatedImages.length > 0"
+        :use-virtual-scroll="true"
+        :total-height="historyTotalHeight"
+        :offset-y="historyOffsetY"
         @toggle-panel="showHistoryPanel = !showHistoryPanel"
         @toggle-content="isHistoryContentCollapsed = !isHistoryContentCollapsed"
         @toggle-favorite-filter="toggleFavoriteFilter"
@@ -962,10 +992,10 @@ onUnmounted(() => {
         @load-more="loadMoreImages"
       >
         <HistoryImageItem
-          v-for="(item, index) in filteredImages"
+          v-for="item in visibleHistoryItems"
           :key="item.id || item.timestamp"
           :item="item"
-          :index="index"
+          :index="item._virtualIndex"
           :is-selection-mode="isSelectionMode"
           :is-selected="selectedImages.has(item.id)"
           @toggle-favorite="toggleImageFavorite"

@@ -64,8 +64,23 @@
         </template>
       </div>
     </div>
-    <div v-if="isExpanded && !isContentCollapsed" class="history-content">
-      <slot></slot>
+    <div
+      v-if="isExpanded && !isContentCollapsed"
+      ref="scrollContainerRef"
+      class="history-content"
+      :class="{ 'virtual-scroll-mode': useVirtualScroll }"
+    >
+      <!-- Virtual scroll: spacer for total height -->
+      <div v-if="useVirtualScroll" class="virtual-scroll-spacer" :style="{ height: totalHeight + 'px' }">
+        <!-- Virtual scroll: positioned content -->
+        <div class="virtual-scroll-content" :style="{ transform: `translateY(${offsetY}px)` }">
+          <slot></slot>
+        </div>
+      </div>
+      <!-- Non-virtual scroll: direct content -->
+      <template v-else>
+        <slot></slot>
+      </template>
       <div v-if="isEmpty && !showFavoriteOnly" class="history-empty">
         {{ $t('history.noImages') }}
         <button class="sample-btn" @click="$emit('add-sample')">
@@ -94,6 +109,8 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 defineProps({
   isExpanded: {
     type: Boolean,
@@ -134,7 +151,28 @@ defineProps({
   hasImages: {
     type: Boolean,
     default: false
+  },
+  // Virtual scroll props
+  useVirtualScroll: {
+    type: Boolean,
+    default: false
+  },
+  totalHeight: {
+    type: Number,
+    default: 0
+  },
+  offsetY: {
+    type: Number,
+    default: 0
   }
+})
+
+// Scroll container ref for virtual scroll
+const scrollContainerRef = ref(null)
+
+// Expose the scroll container ref to parent
+defineExpose({
+  scrollContainerRef
 })
 
 defineEmits([
@@ -288,19 +326,39 @@ defineEmits([
 .history-content {
   flex: 1;
   overflow-y: auto;
+  padding: 12px;
+  background: var(--color-bg-tertiary);
+  /* Default: grid layout for non-virtual scroll */
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  padding: 12px;
-  background: var(--color-bg-tertiary);
+}
+
+/* Virtual scroll mode: remove grid from container */
+.history-content.virtual-scroll-mode {
+  display: block;
+}
+
+/* Virtual scroll container */
+.virtual-scroll-spacer {
+  position: relative;
+  width: 100%;
+}
+
+.virtual-scroll-content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .history-empty {
   grid-column: 1 / -1;
+  width: 100%;
   padding: 40px 20px;
   text-align: center;
   color: var(--color-text-tertiary);
   font-size: 14px;
+  box-sizing: border-box;
 }
 
 .sample-btn {
