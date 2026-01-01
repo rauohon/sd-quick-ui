@@ -105,6 +105,13 @@
   - generateThumbnail function with resize + compression
   - Grid views use thumbnail, detail views use full image
   - Backwards compatible with existing data (fallback to full image)
+- [x] 7. Error handling consolidation (2026-01-01)
+  - Created useErrorHandler composable with category-based handlers
+  - Categories: network, storage, validation, generation, file, general
+  - Added logError function for composables without toast dependencies
+  - Migrated 10+ composables and 2 components
+  - Fixed confirm dialog bug: showConfirm returns {confirmed, dontAskAgain}
+  - Changed if(!confirmed) to if(!result?.confirmed) in useHistory.js (4 locations)
 
 ## In Progress
 - [ ]
@@ -120,12 +127,6 @@
 
 ### Code Quality
 - [x] 4. Error handling consolidation ✅ Completed (2026-01-01)
-  - Created useErrorHandler composable with category-based handlers (network, storage, validation, generation, file, general)
-  - Added logError function for composables without toast dependencies
-  - Migrated 10+ composables: useHistory, useImageGeneration, useIndexedDB, useLocalStorage, useBookmarks, usePresets, useQueue, useQueueProcessor, usePngInfo, useModelLoader, useSampleImage
-  - Migrated components: BookmarkManager, LoraSelector
-  - Standardized error logging with context prefix
-  - i18n support for error messages
 - [ ] 5. Component refactoring
   - Split Txt2ImgView.vue (800+ lines is too large)
   - Extract repeated logic into composables
