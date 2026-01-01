@@ -185,6 +185,17 @@ function adjustWeight(increase) {
     textarea.focus()
   }, 0)
 }
+
+// Focus helper for keyboard shortcuts
+function focus() {
+  textareaRef.value?.focus()
+}
+
+// Expose textarea ref and focus method for parent components
+defineExpose({
+  focus,
+  textareaRef
+})
 </script>
 
 <style scoped>

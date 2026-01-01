@@ -47,6 +47,7 @@ import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useModals } from '../composables/useModals'
 import { useQueueProcessor } from '../composables/useQueueProcessor'
+import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 
 // i18n
 const { t } = useI18n()
@@ -129,6 +130,8 @@ const {
   closeADetailerPrompt,
 } = modalSystem
 
+// Ref to prompt textarea for keyboard shortcuts
+const promptTextareaRef = ref(null)
 
 // History panel visibility state
 const showHistoryPanel = ref(true) // Horizontal collapse (panel collapse)
@@ -544,6 +547,22 @@ const {
   changeModel
 } = modelLoader
 
+// Initialize Keyboard Shortcuts
+useKeyboardShortcuts({
+  generateImage,
+  selectSlot,
+  promptRef: promptTextareaRef,
+  isGenerating,
+  apiConnected,
+  modals: {
+    showLoraSelector,
+    showPromptSelector,
+    showBookmarkManager,
+    showPresetManager,
+    showQueueManager,
+    showADetailerPrompt
+  }
+})
 
 // Watch for prompt changes after applying bookmark
 watch([prompt, negativePrompt], () => {
@@ -851,6 +870,7 @@ onUnmounted(() => {
         @open-prompts="openPromptSelector"
       >
         <PromptTextarea
+          ref="promptTextareaRef"
           v-model="prompt"
           :label="$t('prompt.positive')"
           placeholder="beautiful landscape, detailed, masterpiece, best quality..."

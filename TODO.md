@@ -60,6 +60,17 @@
   - 300ms debounce before validation
   - Toast notification mentions System Settings availability
   - i18n support (en/ko)
+- [x] 1. Keyboard shortcuts (2026-01-01)
+  - Ctrl/Cmd+Enter: Generate image (works in textareas too)
+  - ESC: Close any open modal (LoRA, Prompt, Bookmark, Preset, Queue, ADetailer)
+  - Ctrl/Cmd+1/2/3: Switch to slot 1/2/3
+  - Ctrl/Cmd+/: Focus prompt input
+  - Created useKeyboardShortcuts composable for centralized shortcut management
+  - Platform-aware (Cmd on Mac, Ctrl on Windows/Linux)
+  - Smart context detection (ignores shortcuts when typing, except Ctrl+Enter)
+  - Integrated with existing modal system and slot management
+  - Added i18n translation keys (ko/en)
+  - Exposed focus method from PromptTextarea component
 
 ## In Progress
 - [ ]
@@ -67,11 +78,6 @@
 ## Planned
 
 ### UI/UX Improvements
-- [ ] 1. Keyboard shortcuts
-  - Generate image: Ctrl+Enter / Cmd+Enter
-  - Close modal: ESC key
-  - Switch slots: Ctrl+1/2/3
-  - Focus prompt: Ctrl+/
 - [ ] 2. Drag & Drop for PNG files
   - Drop PNG on window to extract metadata (existing PngInfoView)
   - Drop generated SD images to add to history with metadata

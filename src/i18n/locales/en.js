@@ -639,5 +639,13 @@ export default {
     keepOriginal: 'Keep Original',
     autoCorrect: 'Auto-correct to 8-multiple',
     settingsHint: 'You can change this setting in System Settings'
+  },
+
+  // Keyboard Shortcuts
+  keyboardShortcuts: {
+    generateImage: 'Generate Image',
+    closeModal: 'Close Modal',
+    switchSlot: 'Switch to Slot {slot}',
+    focusPrompt: 'Focus Prompt'
   }
 }

@@ -639,6 +639,14 @@ export default {
     keepOriginal: '유지',
     autoCorrect: '8의 배수로 자동 보정',
     settingsHint: '설정을 변경하려면 시스템 설정을 확인하세요'
+  },
+
+  // 키보드 단축키
+  keyboardShortcuts: {
+    generateImage: '이미지 생성',
+    closeModal: '모달 닫기',
+    switchSlot: '슬롯 {slot} 전환',
+    focusPrompt: '프롬프트에 포커스'
   }
 
   // Phase 3에서 extracted-texts.json을 기반으로 실제 텍스트로 채워질 예정
