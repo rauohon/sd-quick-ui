@@ -3,14 +3,46 @@
  * VITE_MOCK_API=true일 때 실제 WebUI API 대신 사용
  */
 
-// 샘플 base64 이미지 (1x1 투명 PNG)
-const SAMPLE_IMAGE_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-
-// Mock 이미지 생성 (512x512 그라디언트)
+/**
+ * Canvas로 Mock 이미지 생성
+ * 512x512 랜덤 컬러 그라디언트
+ */
 function generateMockImage() {
-  // 실제로는 간단한 패턴 이미지를 base64로 인코딩
-  // 여기서는 샘플 데이터 반환
-  return SAMPLE_IMAGE_BASE64
+  // Canvas 생성
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const ctx = canvas.getContext('2d')
+
+  // 랜덤 그라디언트 색상
+  const colors = [
+    ['#667eea', '#764ba2'], // 보라-핑크
+    ['#f093fb', '#f5576c'], // 핑크-레드
+    ['#4facfe', '#00f2fe'], // 파랑-시안
+    ['#43e97b', '#38f9d7'], // 초록-청록
+    ['#fa709a', '#fee140'], // 핑크-노랑
+    ['#30cfd0', '#330867'], // 시안-남색
+  ]
+  const [color1, color2] = colors[Math.floor(Math.random() * colors.length)]
+
+  // 그라디언트 생성
+  const gradient = ctx.createLinearGradient(0, 0, 512, 512)
+  gradient.addColorStop(0, color1)
+  gradient.addColorStop(1, color2)
+
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, 512, 512)
+
+  // "MOCK" 텍스트 추가
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+  ctx.font = 'bold 80px Arial'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('MOCK', 256, 256)
+
+  // Base64로 변환 (prefix 제거)
+  const dataUrl = canvas.toDataURL('image/png')
+  return dataUrl.split(',')[1] // "data:image/png;base64," 제거
 }
 
 // Mock 진행 상태
