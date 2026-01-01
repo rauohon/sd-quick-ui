@@ -441,56 +441,44 @@ useKeyboardShortcuts({
 // Initialize Drag and Drop
 const { isDragging } = useDragAndDrop(handleLoadPngInfo)
 
-// Auto-save current slot when settings change (with debounce)
-// Watch text fields (prompt, etc.) with 1000ms debounce
+// ============================================================================
+// AUTO-SAVE WATCHERS
+// Note: 의도적으로 Txt2ImgView에 유지. 분리 시 20개+ refs 전달 필요하여 복잡도 증가.
+// startDebouncedSlotSave가 핵심 로직 담당, 여기는 단순 선언적 watchers만 존재.
+// ============================================================================
+
+// Text fields (1000ms debounce)
 watch(
   [prompt, negativePrompt, samplerName, scheduler, hrUpscaler],
-  () => {
-    startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT) // Text inputs
-  }
+  () => startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT)
 )
 
-// Watch number fields with shorter 500ms debounce (faster feedback)
+// Number fields (500ms debounce - faster feedback)
 watch(
   [steps, cfgScale, width, height, batchCount, batchSize, seed, hrSteps, denoisingStrength, hrUpscale, notificationVolume],
-  () => {
-    startDebouncedSlotSave(DEBOUNCE_NUMBER_INPUT) // Number inputs
-  }
+  () => startDebouncedSlotSave(DEBOUNCE_NUMBER_INPUT)
 )
 
-// Watch notification type separately (text-like select field)
-watch(
-  notificationType,
-  () => {
-    startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT)
-  }
-)
+// Notification type (text-like select)
+watch(notificationType, () => startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT))
 
-// Watch adetailers - use computed string to avoid expensive deep watch
-// Only watches key fields that affect generation
+// ADetailer (computed string to avoid expensive deep watch)
 watch(
   () => adetailers.value.map(ad =>
     `${ad.enable}-${ad.model}-${ad.prompt}-${ad.confidence}-${ad.inpaintDenoising}`
   ).join('|'),
-  () => {
-    startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT) // Text inputs
-  }
+  () => startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT)
 )
 
-// Save slots to IndexedDB when they change
-watch(
-  slots,
-  async (newSlots) => {
-    try {
-      // Convert Vue reactive proxy to plain object for IndexedDB
-      const plainSlots = JSON.parse(JSON.stringify(toRaw(newSlots)))
-      await indexedDB.saveSlots(plainSlots)
-    } catch (error) {
-      console.error('슬롯 IndexedDB 저장 실패:', error)
-    }
-  },
-  { deep: true }
-)
+// Slots → IndexedDB persistence
+watch(slots, async (newSlots) => {
+  try {
+    const plainSlots = JSON.parse(JSON.stringify(toRaw(newSlots)))
+    await indexedDB.saveSlots(plainSlots)
+  } catch (error) {
+    console.error('슬롯 IndexedDB 저장 실패:', error)
+  }
+}, { deep: true })
 
 // Watch progress to detect completion of backend-synced generation
 let completionTimeout = null
