@@ -8,18 +8,15 @@ import { useIndexedDB } from '../composables/useIndexedDB'
 import { useBookmarks } from '../composables/useBookmarks'
 import { notifyCompletion } from '../utils/notification'
 import {
-  MAX_QUEUE_CONSECUTIVE_ERRORS,
-  QUEUE_ITEM_TIMEOUT,
-  QUEUE_SUCCESS_DELAY,
-  QUEUE_FAILURE_DELAY,
-  API_CHECK_THROTTLE,
-  API_TIMEOUT,
   INITIAL_LOAD_COUNT,
   LOAD_MORE_COUNT,
   DEBOUNCE_TEXT_INPUT,
   DEBOUNCE_NUMBER_INPUT,
   NOTIFICATION_TYPES,
-  DEFAULT_NOTIFICATION_VOLUME
+  SLOT_COUNT,
+  ADETAILER_LABELS,
+  ADETAILER_MODELS,
+  ASPECT_RATIOS
 } from '../config/constants'
 import LoraSelector from '../components/LoraSelector.vue'
 import PromptSelector from '../components/PromptSelector.vue'
@@ -50,6 +47,8 @@ import { useQueueProcessor } from '../composables/useQueueProcessor'
 import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useDragAndDrop } from '../composables/useDragAndDrop'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
+import { usePanelVisibility } from '../composables/usePanelVisibility'
+import { useGenerationState } from '../composables/useGenerationState'
 
 // i18n
 const { t } = useI18n()
@@ -86,33 +85,6 @@ const emit = defineEmits(['updateCurrentImage'])
 
 // Constants (expose to template)
 const NOTIFICATION_TYPES_CONST = NOTIFICATION_TYPES
-const SEED_MAX = 4294967295
-const SLOT_COUNT = 3
-const ADETAILER_COUNT = 4
-const ADETAILER_LABELS = ['1st', '2nd', '3rd', '4th']
-const ADETAILER_MODELS = [
-  'face_yolov8n.pt',
-  'face_yolov8s.pt',
-  'hand_yolov8n.pt',
-  'person_yolov8n-seg.pt',
-  'breasts_seg.pt',
-  'mediapipe_face_full',
-  'mediapipe_face_short',
-  'mediapipe_face_mesh'
-]
-
-// Aspect Ratio presets (ratio-based, includes both orientations)
-const ASPECT_RATIOS = [
-  { label: '1:1', ratio: [1, 1] },
-  { label: '3:2', ratio: [3, 2] },
-  { label: '2:3', ratio: [2, 3] },
-  { label: '4:3', ratio: [4, 3] },
-  { label: '3:4', ratio: [3, 4] },
-  { label: '16:9', ratio: [16, 9] },
-  { label: '9:16', ratio: [9, 16] },
-  { label: '21:9', ratio: [21, 9] },
-  { label: '9:21', ratio: [9, 21] },
-]
 
 // Initialize Modals composable
 const modalSystem = useModals()
@@ -143,18 +115,20 @@ const {
 // Ref to prompt textarea for keyboard shortcuts
 const promptTextareaRef = ref(null)
 
-// History panel visibility state
-const showHistoryPanel = ref(true) // Horizontal collapse (panel collapse)
-const isHistoryContentCollapsed = ref(false) // Vertical collapse (content collapse)
-
-// Image panel visibility state
-const showImagePanel = ref(true)
-
-// Advanced panel visibility state
-const showAdvancedPanel = ref(true)
-
-// Params panel visibility state
-const showParamsPanel = ref(true)
+// Panel visibility composable
+const {
+  showHistoryPanel,
+  isHistoryContentCollapsed,
+  showImagePanel,
+  showAdvancedPanel,
+  showParamsPanel,
+  toggleHistoryPanel,
+  toggleHistoryContent,
+  toggleImagePanel,
+  toggleAdvancedPanel,
+  toggleParamsPanel,
+  initPanelVisibility
+} = usePanelVisibility()
 
 // Use Queue
 const queueSystem = useQueue()
@@ -167,101 +141,49 @@ const {
   saveQueue: saveQueueState,
 } = queueSystem
 
-// ADetailer 기본값 정의
-const DEFAULT_ADETAILER = {
-  enable: false,
-  model: 'face_yolov8n.pt',
-  prompt: '',
-  negativePrompt: '',
-  confidence: 0.3,
-  dilateErode: 4,
-  inpaintDenoising: 0.4,
-  inpaintOnlyMasked: true,
-  useSeparateSteps: false,
-  steps: 28,
-}
-
-// ADetailer 프리셋 생성 헬퍼
-const createADetailerPreset = (model = 'face_yolov8n.pt') => ({
-  ...DEFAULT_ADETAILER,
-  model
-})
-
-// Txt2Img state - Quick settings
-const prompt = ref('')
-const negativePrompt = ref('')
-const steps = ref(20)
-const cfgScale = ref(7)
-const selectedModel = ref('')
+// Generation state composable
+const generationState = useGenerationState()
+const {
+  // Quick settings
+  prompt,
+  negativePrompt,
+  steps,
+  cfgScale,
+  selectedModel,
+  // Advanced settings
+  samplerName,
+  scheduler,
+  width,
+  height,
+  batchCount,
+  batchSize,
+  seed,
+  seedVariationRange,
+  // Hires fix settings
+  enableHr,
+  hrUpscaler,
+  hrSteps,
+  denoisingStrength,
+  hrUpscale,
+  // ADetailer settings
+  adetailers,
+  // Notification settings
+  notificationType,
+  notificationVolume,
+  // Objects
+  defaultSettings,
+  SETTINGS_REFS,
+  // Computed
+  enabledADetailers,
+  hasEnabledADetailers,
+  currentParams,
+  // Functions
+  randomizeSeed
+} = generationState
 
 // Bookmark tracking
 const appliedBookmarkId = ref(null)
 const bookmarkPromptChanged = ref(false)
-
-// Txt2Img state - Advanced settings
-const samplerName = ref('Euler a')
-const scheduler = ref('Automatic')
-const width = ref(512)
-const height = ref(512)
-const batchCount = ref(1)
-const batchSize = ref(1)
-const seed = ref(-1)
-const seedVariationRange = ref(100)
-
-// Hires fix settings (always enabled)
-const enableHr = ref(true)
-const hrUpscaler = ref('Latent')
-const hrSteps = ref(10)
-const denoisingStrength = ref(0.7)
-const hrUpscale = ref(2)
-
-// ADetailer settings (1st, 2nd, 3rd, 4th)
-const adetailers = ref([
-  createADetailerPreset('face_yolov8n.pt'),
-  createADetailerPreset('hand_yolov8n.pt'),
-  createADetailerPreset('person_yolov8n-seg.pt'),
-  createADetailerPreset('face_yolov8n.pt'),
-])
-
-// Notification settings
-const notificationType = ref(NOTIFICATION_TYPES.NONE)
-const notificationVolume = ref(DEFAULT_NOTIFICATION_VOLUME)
-
-// Default/initial settings
-const defaultSettings = {
-  prompt: '',
-  negativePrompt: '',
-  steps: 20,
-  cfgScale: 7,
-  samplerName: 'Euler a',
-  scheduler: 'Automatic',
-  width: 512,
-  height: 512,
-  batchCount: 1,
-  batchSize: 1,
-  seed: -1,
-  seedVariationRange: 100,
-  selectedModel: '',
-  hrUpscaler: 'Latent',
-  hrSteps: 10,
-  denoisingStrength: 0.7,
-  hrUpscale: 2,
-  notificationType: NOTIFICATION_TYPES.NONE,
-  notificationVolume: DEFAULT_NOTIFICATION_VOLUME,
-  adetailers: [
-    createADetailerPreset('face_yolov8n.pt'),
-    createADetailerPreset('hand_yolov8n.pt'),
-    createADetailerPreset('person_yolov8n-seg.pt'),
-    createADetailerPreset('face_yolov8n.pt'),
-  ]
-}
-
-// Settings keys for mapping
-const SETTINGS_REFS = {
-  prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-  width, height, batchCount, batchSize, seed, seedVariationRange, selectedModel, hrUpscaler, hrSteps,
-  denoisingStrength, hrUpscale, notificationType, notificationVolume
-}
 
 // Initialize composables (after all refs are declared)
 // 1. Aspect Ratio composable
@@ -282,16 +204,7 @@ const paramsRefs = {
 }
 const paramsApplication = useParamsApplication(paramsRefs, props.showToast)
 const { applyParams, handleApplyPreset, loadParamsFromHistory } = paramsApplication
-
-
-// Computed values
-const enabledADetailers = computed(() =>
-  adetailers.value.filter(ad => ad.enable)
-)
-
-const hasEnabledADetailers = computed(() => enabledADetailers.value.length > 0)
-
-// 프롬프트가 마지막 생성과 다른지 체크
+// 프롬프트가 마지막 생성과 다른지 체크 (lastUsedParams 의존)
 const promptChanged = computed(() => {
   if (!lastUsedParams.value) return false
   return prompt.value !== lastUsedParams.value.prompt
@@ -301,27 +214,6 @@ const negativePromptChanged = computed(() => {
   if (!lastUsedParams.value) return false
   return negativePrompt.value !== lastUsedParams.value.negative_prompt
 })
-
-// Current generation parameters
-const currentParams = computed(() => ({
-  prompt: prompt.value,
-  negative_prompt: negativePrompt.value,
-  steps: steps.value,
-  cfg_scale: cfgScale.value,
-  sampler_name: samplerName.value,
-  scheduler: scheduler.value,
-  width: width.value,
-  height: height.value,
-  batch_size: batchSize.value,
-  batch_count: batchCount.value,
-  seed: seed.value,
-  enable_hr: enableHr.value,
-  hr_upscaler: hrUpscaler.value,
-  hr_steps: hrSteps.value,
-  denoising_strength: denoisingStrength.value,
-  hr_scale: hrUpscale.value,
-  adetailers: adetailers.value,
-}))
 
 // Use composables
 const localStorage = useLocalStorage()
@@ -540,11 +432,6 @@ function handleSaveAsNewBookmark() {
   props.showToast(t('bookmark.savedAsNew'), 'success')
 }
 
-// Seed handlers
-function randomizeSeed() {
-  seed.value = -1
-}
-
 // Notification handlers
 function testNotification() {
   props.showToast?.('테스트 알림입니다', notificationType.value)
@@ -708,57 +595,13 @@ watch(selectedModel, async (newModel, oldModel) => {
   await changeModel(newModel)
 })
 
-// Watch panel visibility states and save to localStorage
-watch(showHistoryPanel, (newValue) => {
-  window.localStorage.setItem('txt2img_showHistoryPanel', String(newValue))
-})
-
-watch(isHistoryContentCollapsed, (newValue) => {
-  window.localStorage.setItem('txt2img_isHistoryContentCollapsed', String(newValue))
-})
-
-watch(showImagePanel, (newValue) => {
-  window.localStorage.setItem('txt2img_showImagePanel', String(newValue))
-})
-
-watch(showAdvancedPanel, (newValue) => {
-  window.localStorage.setItem('txt2img_showAdvancedPanel', String(newValue))
-})
-
-watch(showParamsPanel, (newValue) => {
-  window.localStorage.setItem('txt2img_showParamsPanel', String(newValue))
-})
-
 // Lifecycle
 onMounted(async () => {
   // Load bookmarks from localStorage
   loadBookmarks()
 
-  // Load panel visibility states from localStorage
-  const savedHistoryPanel = window.localStorage.getItem('txt2img_showHistoryPanel')
-  if (savedHistoryPanel !== null) {
-    showHistoryPanel.value = savedHistoryPanel === 'true'
-  }
-
-  const savedHistoryContentCollapsed = window.localStorage.getItem('txt2img_isHistoryContentCollapsed')
-  if (savedHistoryContentCollapsed !== null) {
-    isHistoryContentCollapsed.value = savedHistoryContentCollapsed === 'true'
-  }
-
-  const savedImagePanel = window.localStorage.getItem('txt2img_showImagePanel')
-  if (savedImagePanel !== null) {
-    showImagePanel.value = savedImagePanel === 'true'
-  }
-
-  const savedAdvancedPanel = window.localStorage.getItem('txt2img_showAdvancedPanel')
-  if (savedAdvancedPanel !== null) {
-    showAdvancedPanel.value = savedAdvancedPanel === 'true'
-  }
-
-  const savedParamsPanel = window.localStorage.getItem('txt2img_showParamsPanel')
-  if (savedParamsPanel !== null) {
-    showParamsPanel.value = savedParamsPanel === 'true'
-  }
+  // Initialize panel visibility (load from localStorage + setup watchers)
+  initPanelVisibility()
 
   // Check API connection first
   await checkApiStatus()
@@ -829,7 +672,7 @@ onUnmounted(() => {
         :adetailer-labels="ADETAILER_LABELS"
         :show-confirm="showConfirm"
         :show-toast="showToast"
-        @toggle-panel="showAdvancedPanel = !showAdvancedPanel"
+        @toggle-panel="toggleAdvancedPanel"
         @check-api="checkApiStatus"
         @update:selectedModel="selectedModel = $event"
         @update:samplerName="samplerName = $event"
@@ -865,7 +708,7 @@ onUnmounted(() => {
         :slots="slots"
         :active-slot="activeSlot"
         :slot-count="SLOT_COUNT"
-        @toggle-panel="showParamsPanel = !showParamsPanel"
+        @toggle-panel="toggleParamsPanel"
         @update:steps="steps = $event"
         @update:cfgScale="cfgScale = $event"
         @update:hrUpscaler="hrUpscaler = $event"
@@ -960,7 +803,7 @@ onUnmounted(() => {
         :current-image="currentImage"
         :is-loading="isLoadingPngInfo"
         :is-expanded="showImagePanel"
-        @toggle-panel="showImagePanel = !showImagePanel"
+        @toggle-panel="toggleImagePanel"
         @show-preview="props.openModal('viewer')"
         @load-png-info="handleLoadPngInfo"
       />
@@ -980,8 +823,8 @@ onUnmounted(() => {
         :use-virtual-scroll="true"
         :total-height="historyTotalHeight"
         :offset-y="historyOffsetY"
-        @toggle-panel="showHistoryPanel = !showHistoryPanel"
-        @toggle-content="isHistoryContentCollapsed = !isHistoryContentCollapsed"
+        @toggle-panel="toggleHistoryPanel"
+        @toggle-content="toggleHistoryContent"
         @toggle-favorite-filter="toggleFavoriteFilter"
         @toggle-selection-mode="openHistoryManager"
         @select-all="selectAllImages"

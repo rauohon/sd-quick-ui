@@ -43,6 +43,55 @@ export const MAX_STORAGE_SIZE_MB = 4 // localStorage 최대 크기 (MB)
 // ===== Seed 관련 =====
 export const SEED_MAX = 4294967295 // 2^32 - 1
 
+// ===== 슬롯 관련 =====
+export const SLOT_COUNT = 3
+
+// ===== ADetailer 관련 =====
+export const ADETAILER_COUNT = 4
+export const ADETAILER_LABELS = ['1st', '2nd', '3rd', '4th']
+export const ADETAILER_MODELS = [
+  'face_yolov8n.pt',
+  'face_yolov8s.pt',
+  'hand_yolov8n.pt',
+  'person_yolov8n-seg.pt',
+  'breasts_seg.pt',
+  'mediapipe_face_full',
+  'mediapipe_face_short',
+  'mediapipe_face_mesh'
+]
+
+export const DEFAULT_ADETAILER = {
+  enable: false,
+  model: 'face_yolov8n.pt',
+  prompt: '',
+  negativePrompt: '',
+  confidence: 0.3,
+  dilateErode: 4,
+  inpaintDenoising: 0.4,
+  inpaintOnlyMasked: true,
+  useSeparateSteps: false,
+  steps: 28,
+}
+
+// ADetailer 프리셋 생성 헬퍼
+export const createADetailerPreset = (model = 'face_yolov8n.pt') => ({
+  ...DEFAULT_ADETAILER,
+  model
+})
+
+// ===== Aspect Ratio 관련 =====
+export const ASPECT_RATIOS = [
+  { label: '1:1', ratio: [1, 1] },
+  { label: '3:2', ratio: [3, 2] },
+  { label: '2:3', ratio: [2, 3] },
+  { label: '4:3', ratio: [4, 3] },
+  { label: '3:4', ratio: [3, 4] },
+  { label: '16:9', ratio: [16, 9] },
+  { label: '9:16', ratio: [9, 16] },
+  { label: '21:9', ratio: [21, 9] },
+  { label: '9:21', ratio: [9, 21] },
+]
+
 // ===== 파라미터 검증 범위 =====
 export const PARAM_RANGES = {
   width: { min: 64, max: 2048, default: 512, step: 64 },
