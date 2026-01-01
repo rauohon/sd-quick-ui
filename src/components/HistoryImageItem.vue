@@ -9,7 +9,7 @@
     @click="isSelectionMode ? $emit('toggle-selection', item.id) : null"
   >
     <LazyImage
-      :src="item.image"
+      :src="item.thumbnail || item.image"
       :alt="'Generated ' + index"
       @click="isSelectionMode ? $event.stopPropagation() : $emit('compare-image', item)"
     />

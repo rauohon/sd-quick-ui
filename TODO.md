@@ -100,6 +100,11 @@
   - Shimmer animation placeholder while loading
   - Fade-in effect when image loads
   - Applied to HistoryImageItem, HistoryManagerModal, BookmarkManager, LoraSelector
+- [x] 6. Thumbnail optimization (2026-01-01)
+  - Separate thumbnail storage (200px, 0.6 quality) from full image (0.9 quality)
+  - generateThumbnail function with resize + compression
+  - Grid views use thumbnail, detail views use full image
+  - Backwards compatible with existing data (fallback to full image)
 
 ## In Progress
 - [ ]
@@ -107,11 +112,11 @@
 ## Planned
 
 ### Performance Optimization
-- [ ] 3. Image loading optimization
+- [x] 3. Image loading optimization ✅ Completed (2026-01-01)
   - ~~Virtual scrolling for history panel (200 images can be heavy)~~ ✅ Done
   - ~~Lazy loading for off-screen images~~ ✅ Done
-  - Optimize thumbnail quality/size (current: WebP 0.9)
-  - Consider progressive loading for large images
+  - ~~Optimize thumbnail quality/size (current: WebP 0.9)~~ ✅ Done
+  - Consider progressive loading for large images (optional, low priority)
 
 ### Code Quality
 - [ ] 4. Error handling consolidation

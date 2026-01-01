@@ -74,7 +74,7 @@
                   <input type="checkbox" :checked="selectedIds.has(item.id)" @click.stop>
                   <span class="checkmark">{{ selectedIds.has(item.id) ? '✓' : '' }}</span>
                 </div>
-                <LazyImage :src="item.image" :alt="'Image ' + item.id" />
+                <LazyImage :src="item.thumbnail || item.image" :alt="'Image ' + item.id" />
                 <div class="item-overlay">
                   <div class="item-time">{{ formatTimestamp(item.timestamp) }}</div>
                   <div class="item-badges">
@@ -210,7 +210,7 @@
               class="compare-item"
               @click="selectCompareImage(item)"
             >
-              <LazyImage :src="item.image" :alt="'Compare ' + item.id" />
+              <LazyImage :src="item.thumbnail || item.image" :alt="'Compare ' + item.id" />
               <div class="compare-time">{{ formatTimestamp(item.timestamp) }}</div>
             </div>
           </div>

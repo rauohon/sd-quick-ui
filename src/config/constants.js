@@ -7,6 +7,8 @@ export const MAX_IMAGES = 200 // IndexedDB에 저장할 최대 이미지 수
 export const INITIAL_LOAD_COUNT = 50 // 앱 시작 시 로드할 이미지 수
 export const LOAD_MORE_COUNT = 50 // "더보기" 클릭 시 추가 로드할 이미지 수
 export const IMAGE_COMPRESSION_QUALITY = 0.9 // WebP 압축 품질 (0-1)
+export const THUMBNAIL_COMPRESSION_QUALITY = 0.6 // 썸네일 압축 품질 (0-1)
+export const THUMBNAIL_MAX_SIZE = 200 // 썸네일 최대 크기 (px)
 
 // ===== 에러 처리 관련 =====
 export const MAX_CONSECUTIVE_ERRORS = 3 // 연속 에러 허용 횟수 (무한 모드)

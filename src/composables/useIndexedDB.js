@@ -1,7 +1,12 @@
 /**
  * IndexedDB 관리 composable
  */
-import { MAX_IMAGES, IMAGE_COMPRESSION_QUALITY } from '../config/constants'
+import {
+  MAX_IMAGES,
+  IMAGE_COMPRESSION_QUALITY,
+  THUMBNAIL_COMPRESSION_QUALITY,
+  THUMBNAIL_MAX_SIZE
+} from '../config/constants'
 
 const DB_NAME = 'sd-image-history'
 const DB_VERSION = 1
@@ -39,6 +44,55 @@ async function compressToWebP(base64Image, quality = IMAGE_COMPRESSION_QUALITY) 
 
     img.onerror = () => {
       reject(new Error('이미지 로드 실패'))
+    }
+
+    img.src = base64Image
+  })
+}
+
+/**
+ * Base64 이미지를 썸네일로 변환 (리사이즈 + 압축)
+ */
+async function generateThumbnail(base64Image, maxSize = THUMBNAIL_MAX_SIZE, quality = THUMBNAIL_COMPRESSION_QUALITY) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+
+    img.onload = () => {
+      // Calculate thumbnail dimensions (maintain aspect ratio)
+      let width = img.width
+      let height = img.height
+
+      if (width > height) {
+        if (width > maxSize) {
+          height = Math.round(height * maxSize / width)
+          width = maxSize
+        }
+      } else {
+        if (height > maxSize) {
+          width = Math.round(width * maxSize / height)
+          height = maxSize
+        }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // WebP로 변환 (저품질)
+      const thumbnail = canvas.toDataURL('image/webp', quality)
+
+      // 썸네일 크기 로그
+      const thumbSize = (thumbnail.length * 0.75 / 1024).toFixed(1) // KB
+      console.log(`썸네일 생성: ${width}x${height}, ${thumbSize}KB`)
+
+      resolve(thumbnail)
+    }
+
+    img.onerror = () => {
+      reject(new Error('썸네일 생성 실패'))
     }
 
     img.src = base64Image
@@ -90,18 +144,30 @@ async function initDB() {
 }
 
 /**
- * 이미지 저장 (WebP 압축 적용)
+ * 이미지 저장 (WebP 압축 + 썸네일 생성)
  * @returns {Promise<{id: number, deletedCount: number}>} - 생성된 ID와 삭제된 이미지 수
  */
 async function saveImage(imageData) {
   try {
     // WebP로 압축 (실패 시 원본 사용)
     let finalImage
+    let thumbnail = null
+
     try {
-      finalImage = await compressToWebP(imageData.image, 0.9)
+      // 원본 이미지 압축
+      finalImage = await compressToWebP(imageData.image, IMAGE_COMPRESSION_QUALITY)
+
+      // 썸네일 생성 (원본 기준으로 생성하여 품질 저하 방지)
+      thumbnail = await generateThumbnail(imageData.image, THUMBNAIL_MAX_SIZE, THUMBNAIL_COMPRESSION_QUALITY)
     } catch (compressionError) {
       console.warn('⚠️ 이미지 압축 실패, 원본 이미지 사용:', compressionError.message)
       finalImage = imageData.image // Fallback to original
+      // 썸네일도 시도
+      try {
+        thumbnail = await generateThumbnail(imageData.image, THUMBNAIL_MAX_SIZE, THUMBNAIL_COMPRESSION_QUALITY)
+      } catch {
+        thumbnail = null // 썸네일 없이 진행
+      }
     }
 
     const database = await initDB()
@@ -110,6 +176,7 @@ async function saveImage(imageData) {
 
     const record = {
       image: finalImage,  // 압축된 이미지 또는 원본 사용
+      thumbnail: thumbnail, // 썸네일 (그리드 표시용)
       info: imageData.info,
       params: imageData.params,
       timestamp: imageData.timestamp || new Date().toISOString(),
@@ -179,6 +246,7 @@ async function getRecentImages(limit = 50, offset = 0) {
             results.push({
               id: data.id,
               image: data.image,
+              thumbnail: data.thumbnail || data.image, // 썸네일 없으면 원본 사용 (이전 데이터 호환)
               info: data.info,
               params: data.params,
               timestamp: data.timestamp,
