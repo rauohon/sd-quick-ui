@@ -88,6 +88,18 @@
   - Updated all components to use CSS variables (21 files modified)
   - Fixed LoraSelector to respect VITE_MOCK_API environment variable
   - i18n support for theme settings (ko/en)
+- [x] 4. Virtual scroll for history panels (2026-01-01)
+  - Created useVirtualScroll composable for grid-based virtual scrolling
+  - Only renders visible items + buffer rows (reduces DOM nodes from 200+ to ~12)
+  - Applied to HistoryPanel (fixed 3-column grid)
+  - Applied to HistoryManagerModal (dynamic auto-fill columns)
+  - Added dynamic column calculation based on container width
+  - ResizeObserver for responsive column updates
+- [x] 5. Lazy loading for images (2026-01-01)
+  - Created LazyImage.vue component with Intersection Observer
+  - Shimmer animation placeholder while loading
+  - Fade-in effect when image loads
+  - Applied to HistoryImageItem, HistoryManagerModal, BookmarkManager, LoraSelector
 
 ## In Progress
 - [ ]
@@ -96,8 +108,8 @@
 
 ### Performance Optimization
 - [ ] 3. Image loading optimization
-  - Virtual scrolling for history panel (200 images can be heavy)
-  - Lazy loading for off-screen images
+  - ~~Virtual scrolling for history panel (200 images can be heavy)~~ ✅ Done
+  - ~~Lazy loading for off-screen images~~ ✅ Done
   - Optimize thumbnail quality/size (current: WebP 0.9)
   - Consider progressive loading for large images
 

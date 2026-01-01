@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mockLoras } from '../mocks/lorasMock'
+import LazyImage from './LazyImage.vue'
 
 const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
@@ -400,13 +401,11 @@ onMounted(() => {
           @click="selectLora(lora)"
         >
           <div class="lora-thumbnail">
-            <img
+            <LazyImage
               v-if="getThumbnailUrl(lora)"
               :src="getThumbnailUrl(lora)"
               :alt="lora.name"
-              loading="lazy"
-              @error="handleImageError"
-            >
+            />
             <div v-else class="no-preview-placeholder">No Preview</div>
             <div v-if="getSdVersion(lora)" class="version-badge">
               {{ getSdVersion(lora) }}

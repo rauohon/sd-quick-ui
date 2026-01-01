@@ -8,11 +8,11 @@
     }"
     @click="isSelectionMode ? $emit('toggle-selection', item.id) : null"
   >
-    <img
+    <LazyImage
       :src="item.image"
       :alt="'Generated ' + index"
       @click="isSelectionMode ? $event.stopPropagation() : $emit('compare-image', item)"
-    >
+    />
 
     <div v-if="isSelectionMode" class="selection-checkbox" @click.stop="$emit('toggle-selection', item.id)">
       <input type="checkbox" :checked="isSelected" @click.stop>
@@ -42,6 +42,8 @@
 </template>
 
 <script setup>
+import LazyImage from './LazyImage.vue'
+
 defineProps({
   item: {
     type: Object,

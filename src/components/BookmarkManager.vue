@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBookmarks } from '../composables/useBookmarks'
 import { useIndexedDB } from '../composables/useIndexedDB'
+import LazyImage from './LazyImage.vue'
 
 const { t } = useI18n()
 const indexedDB = useIndexedDB()
@@ -340,13 +341,11 @@ onMounted(async () => {
         <!-- Thumbnail (180×180px) -->
         <div class="bookmark-thumbnail">
           <!-- Real thumbnail if available -->
-          <img
+          <LazyImage
             v-if="thumbnails.get(bookmark.id)"
             :src="thumbnails.get(bookmark.id)"
             :alt="bookmark.name"
-            loading="lazy"
-            @error="handleThumbnailError(bookmark.id)"
-          >
+          />
           <!-- Placeholder with initials -->
           <div v-else class="no-thumbnail-placeholder">
             <span>{{ bookmark.name.substring(0, 2).toUpperCase() }}</span>
@@ -474,7 +473,7 @@ onMounted(async () => {
               :class="{ selected: selectedImageForThumbnail?.id === image.id }"
               @click="selectedImageForThumbnail = image"
             >
-              <img :src="image.image" :alt="`Image ${image.id}`">
+              <LazyImage :src="image.image" :alt="`Image ${image.id}`" />
             </div>
           </div>
           <div v-if="generatedImages.length === 0" class="no-images">
