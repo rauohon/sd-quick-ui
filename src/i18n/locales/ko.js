@@ -147,7 +147,8 @@ export default {
     saveAsNew: '새 북마크로 저장',
     saveAsNewTooltip: '현재 프롬프트를 새 북마크로 저장',
     bookmarkUpdated: '북마크가 업데이트되었습니다',
-    savedAsNew: '새 북마크로 저장되었습니다'
+    savedAsNew: '새 북마크로 저장되었습니다',
+    dismissTooltip: '무시하고 닫기'
   },
 
   // 히스토리

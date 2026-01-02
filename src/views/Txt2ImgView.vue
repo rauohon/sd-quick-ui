@@ -194,6 +194,7 @@ const {
   handleApplyBookmark,
   handleUpdateBookmark,
   handleSaveAsNewBookmark,
+  handleDismissBookmarkNotice,
   initBookmarkTracking
 } = bookmarkTracking
 
@@ -691,6 +692,11 @@ onUnmounted(() => {
 
         <!-- Bookmark Update Actions (between prompts) -->
         <div v-if="appliedBookmarkId && bookmarkPromptChanged" class="bookmark-actions">
+          <button
+            class="bookmark-actions-dismiss"
+            @click="handleDismissBookmarkNotice"
+            :title="$t('bookmark.dismissTooltip')"
+          >×</button>
           <div class="bookmark-actions-hint">
             <span>{{ $t('bookmark.promptModified') }}</span>
           </div>
@@ -1114,12 +1120,34 @@ onUnmounted(() => {
 
 /* Bookmark Actions */
 .bookmark-actions {
+  position: relative;
   margin-top: 8px;
   margin-bottom: 8px;
   padding: 12px;
   background: #fef3c7;
   border: 1px solid #fde68a;
   border-radius: 6px;
+}
+
+.bookmark-actions-dismiss {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #92400e;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.bookmark-actions-dismiss:hover {
+  opacity: 1;
 }
 
 .bookmark-actions-hint {

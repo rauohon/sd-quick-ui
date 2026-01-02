@@ -147,7 +147,8 @@ export default {
     saveAsNew: 'Save as New',
     saveAsNewTooltip: 'Save current prompt as a new bookmark',
     bookmarkUpdated: 'Bookmark has been updated',
-    savedAsNew: 'Saved as new bookmark'
+    savedAsNew: 'Saved as new bookmark',
+    dismissTooltip: 'Dismiss and close'
   },
 
   // History

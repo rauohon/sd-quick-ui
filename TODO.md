@@ -1,6 +1,16 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 16. Keep previous image during generation start (2026-01-02)
+  - Removed currentImage reset when generation starts
+  - Previous image stays visible until progress returns current_image
+  - Smoother UX without blank screen between generations
+- [x] 15. Bookmark actions: Add dismiss button (2026-01-02)
+  - Added X button to close bookmark modification notice
+  - Keeps current prompt as-is, just dismisses the notification
+  - Removed unnecessary "revert" feature (user already modified intentionally)
+  - Added handleDismissBookmarkNotice to useBookmarkTracking composable
+  - Added i18n key: dismissTooltip (ko/en)
 - [x] 14. Batch generation: Save all images from batch (2026-01-02)
   - Fixed batch generation only saving first image (now saves batch_size × n_iter images)
   - Each image stores individual seed from all_seeds array

@@ -87,6 +87,15 @@ export function useBookmarkTracking(promptRefs, bookmarkSystem, callbacks) {
   }
 
   /**
+   * 북마크 알림 무시 핸들러
+   * 현재 프롬프트 유지하고 북마크 연결만 해제
+   */
+  function handleDismissBookmarkNotice() {
+    appliedBookmarkId.value = null
+    bookmarkPromptChanged.value = false
+  }
+
+  /**
    * 프롬프트 변경 감지 watcher 설정
    */
   function setupPromptChangeWatcher() {
@@ -122,6 +131,7 @@ export function useBookmarkTracking(promptRefs, bookmarkSystem, callbacks) {
     handleApplyBookmark,
     handleUpdateBookmark,
     handleSaveAsNewBookmark,
+    handleDismissBookmarkNotice,
 
     // Init
     initBookmarkTracking

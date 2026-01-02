@@ -490,7 +490,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     isGenerating.value = true
     progress.value = 0
     progressState.value = t('generation.preparing')
-    currentImage.value = ''
+    // currentImage는 초기화하지 않음 - progress에서 current_image가 올 때까지 직전 이미지 유지
     finalImageReceived.value = false // 플래그 리셋
 
     // Save parameters used for generation
