@@ -711,7 +711,7 @@ onUnmounted(() => {
             :title="$t('bookmark.dismissTooltip')"
           >×</button>
           <div class="bookmark-actions-hint">
-            <span>{{ $t('bookmark.promptModified') }}</span>
+            <span>{{ $t('bookmark.promptModified', { name: bookmarks.find(b => b.id === appliedBookmarkId)?.name || '' }) }}</span>
           </div>
           <div class="bookmark-actions-buttons">
             <button

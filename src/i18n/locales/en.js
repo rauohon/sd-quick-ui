@@ -141,12 +141,12 @@ export default {
     selectThumbnailHint: 'Select an image from history',
     thumbnailSet: 'Thumbnail has been set',
     // Update/Save
-    promptModified: 'Prompt modified after applying bookmark',
+    promptModified: '"{name}" bookmark - prompt modified',
     updateBookmark: 'Update Bookmark',
     updateTooltip: 'Overwrite existing bookmark with current prompt',
     saveAsNew: 'Save as New',
     saveAsNewTooltip: 'Save current prompt as a new bookmark',
-    bookmarkUpdated: 'Bookmark has been updated',
+    bookmarkUpdated: '"{name}" bookmark has been updated',
     savedAsNew: 'Saved as new bookmark',
     dismissTooltip: 'Dismiss and close'
   },

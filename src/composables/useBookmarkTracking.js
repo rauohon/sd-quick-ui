@@ -56,6 +56,10 @@ export function useBookmarkTracking(promptRefs, bookmarkSystem, callbacks) {
   function handleUpdateBookmark() {
     if (!appliedBookmarkId.value) return
 
+    // 업데이트 전에 북마크 이름 저장
+    const bookmark = bookmarks.value.find(b => b.id === appliedBookmarkId.value)
+    const bookmarkName = bookmark?.name || 'Bookmark'
+
     const success = updateBookmarkContent(
       appliedBookmarkId.value,
       prompt.value,
@@ -64,7 +68,7 @@ export function useBookmarkTracking(promptRefs, bookmarkSystem, callbacks) {
 
     if (success) {
       bookmarkPromptChanged.value = false
-      showToast?.(t('bookmark.bookmarkUpdated'), 'success')
+      showToast?.(t('bookmark.bookmarkUpdated', { name: bookmarkName }), 'success')
     }
   }
 

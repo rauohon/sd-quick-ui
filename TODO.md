@@ -1,6 +1,10 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 19. Bookmark update: Show bookmark name in notification (2026-01-02)
+  - Display bookmark name in yellow modification notice (e.g., "My Prompt" 북마크 - 프롬프트가 수정됨)
+  - Show bookmark name in toast message when updated (e.g., "My Prompt" 북마크가 업데이트되었습니다)
+  - Updated i18n keys: promptModified, bookmarkUpdated (with {name} parameter)
 - [x] 18. Resizable prompt/image panel (2026-01-02)
   - Added draggable resizer between prompt panel and image area
   - Created useResizer composable for resize logic

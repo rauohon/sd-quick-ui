@@ -141,12 +141,12 @@ export default {
     selectThumbnailHint: '히스토리에서 이미지를 선택하세요',
     thumbnailSet: '썸네일이 설정되었습니다',
     // Update/Save
-    promptModified: '북마크 적용 후 프롬프트가 수정되었습니다',
+    promptModified: '"{name}" 북마크 - 프롬프트가 수정됨',
     updateBookmark: '북마크 업데이트',
     updateTooltip: '현재 프롬프트로 기존 북마크 덮어쓰기',
     saveAsNew: '새 북마크로 저장',
     saveAsNewTooltip: '현재 프롬프트를 새 북마크로 저장',
-    bookmarkUpdated: '북마크가 업데이트되었습니다',
+    bookmarkUpdated: '"{name}" 북마크가 업데이트되었습니다',
     savedAsNew: '새 북마크로 저장되었습니다',
     dismissTooltip: '무시하고 닫기'
   },
