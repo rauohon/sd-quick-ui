@@ -1,6 +1,10 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 17. ADetailer reorder buttons (2026-01-02)
+  - Added ▲/▼ buttons to change ADetailer order
+  - Buttons disabled at boundaries (first/last) and during generation
+  - Wrapped each ADetailer in ad-section div for proper styling
 - [x] 16. Keep previous image during generation start (2026-01-02)
   - Removed currentImage reset when generation starts
   - Previous image stays visible until progress returns current_image

@@ -241,6 +241,14 @@ const {
   startDebouncedSlotSave,
 } = slotManagement
 
+// ADetailer reorder function
+function reorderADetailers(fromIndex, toIndex) {
+  const newArray = [...adetailers.value]
+  const [item] = newArray.splice(fromIndex, 1)
+  newArray.splice(toIndex, 0, item)
+  adetailers.value = newArray
+}
+
 const imageGeneration = useImageGeneration(
   {
     prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
@@ -653,6 +661,7 @@ onUnmounted(() => {
         @update:adetailer-steps="(index, value) => adetailers[index].steps = value"
         @open-adetailer-prompt="openADetailerPrompt"
         @select-slot="selectSlot"
+        @reorder-adetailers="reorderADetailers"
       />
 
       <!-- 3단: 프롬프트 -->

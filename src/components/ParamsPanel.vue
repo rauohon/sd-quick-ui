@@ -92,9 +92,29 @@
       </div>
 
       <!-- ADetailer sections -->
-      <template v-for="(ad, index) in adetailers" :key="index">
+      <div
+        v-for="(ad, index) in adetailers"
+        :key="ad.id || index"
+        class="ad-section"
+      >
         <div class="section-divider"></div>
         <div class="form-group ad-title">
+          <div class="reorder-buttons">
+            <button
+              type="button"
+              class="reorder-btn"
+              :disabled="index === 0 || isGenerating"
+              @click="$emit('reorder-adetailers', index, index - 1)"
+              title="Move up"
+            >▲</button>
+            <button
+              type="button"
+              class="reorder-btn"
+              :disabled="index === adetailers.length - 1 || isGenerating"
+              @click="$emit('reorder-adetailers', index, index + 1)"
+              title="Move down"
+            >▼</button>
+          </div>
           <label class="checkbox-label">
             <input
               type="checkbox"
@@ -206,7 +226,7 @@
             >
           </div>
         </template>
-      </template>
+      </div>
     </div>
 
     <div v-if="isExpanded" class="panel-footer">
@@ -231,6 +251,27 @@
 </template>
 
 <script setup>
+const emit = defineEmits([
+  'toggle-panel',
+  'update:steps',
+  'update:cfgScale',
+  'update:hrUpscaler',
+  'update:hrSteps',
+  'update:denoisingStrength',
+  'update:hrUpscale',
+  'update:adetailer-enable',
+  'update:adetailer-model',
+  'update:adetailer-confidence',
+  'update:adetailer-dilateErode',
+  'update:adetailer-inpaintDenoising',
+  'update:adetailer-inpaintOnlyMasked',
+  'update:adetailer-useSeparateSteps',
+  'update:adetailer-steps',
+  'open-adetailer-prompt',
+  'select-slot',
+  'reorder-adetailers'
+])
+
 defineProps({
   isExpanded: {
     type: Boolean,
@@ -294,25 +335,6 @@ defineProps({
   }
 })
 
-defineEmits([
-  'toggle-panel',
-  'update:steps',
-  'update:cfgScale',
-  'update:hrUpscaler',
-  'update:hrSteps',
-  'update:denoisingStrength',
-  'update:hrUpscale',
-  'update:adetailer-enable',
-  'update:adetailer-model',
-  'update:adetailer-confidence',
-  'update:adetailer-dilateErode',
-  'update:adetailer-inpaintDenoising',
-  'update:adetailer-inpaintOnlyMasked',
-  'update:adetailer-useSeparateSteps',
-  'update:adetailer-steps',
-  'open-adetailer-prompt',
-  'select-slot'
-])
 </script>
 
 <style scoped>
@@ -506,9 +528,49 @@ defineEmits([
   flex: 1;
 }
 
-.form-group.ad-title {
-  margin-bottom: 8px;
+.ad-section {
+  border-radius: 6px;
 }
+
+.form-group.ad-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.reorder-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reorder-btn {
+  width: 20px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 3px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reorder-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.reorder-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .checkbox-label span {
   font-size: 12px;
 }
