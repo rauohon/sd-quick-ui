@@ -1,6 +1,12 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 18. Resizable prompt/image panel (2026-01-02)
+  - Added draggable resizer between prompt panel and image area
+  - Created useResizer composable for resize logic
+  - Width range: 280px ~ 700px
+  - Saves width to localStorage for persistence
+  - Works correctly when other panels are collapsed
 - [x] 17. ADetailer reorder buttons (2026-01-02)
   - Added ▲/▼ buttons to change ADetailer order
   - Buttons disabled at boundaries (first/last) and during generation

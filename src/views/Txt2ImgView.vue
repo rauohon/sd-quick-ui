@@ -48,6 +48,7 @@ import { useKeyboardShortcuts } from '../composables/useKeyboardShortcuts'
 import { useDragAndDrop } from '../composables/useDragAndDrop'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
 import { usePanelVisibility } from '../composables/usePanelVisibility'
+import { useResizer } from '../composables/useResizer'
 import { useGenerationState } from '../composables/useGenerationState'
 import { useBookmarkTracking } from '../composables/useBookmarkTracking'
 
@@ -130,6 +131,9 @@ const {
   toggleParamsPanel,
   initPanelVisibility
 } = usePanelVisibility()
+
+// Use Resizer for prompt/image panel width
+const { promptPanelWidth, isResizing, startResize } = useResizer()
 
 // Use Queue
 const queueSystem = useQueue()
@@ -576,7 +580,7 @@ onUnmounted(() => {
 
 <template>
   <div class="tab-content">
-    <div class="container">
+    <div class="container" :style="{ '--prompt-panel-width': promptPanelWidth + 'px' }">
       <!-- 1단: 고급 설정 -->
       <AdvancedSettingsPanel
         :is-expanded="showAdvancedPanel"
@@ -738,6 +742,14 @@ onUnmounted(() => {
       </PromptPanel>
 
     </div>
+
+    <!-- Resizer between prompt and image panels -->
+    <div
+      class="panel-resizer"
+      :class="{ 'resizing': isResizing }"
+      @mousedown="startResize"
+      title="Drag to resize"
+    ></div>
 
     <!-- 4단: 이미지 프리뷰 + 히스토리 OR Easy Prompt Selector OR Bookmark Manager OR Preset Manager OR Queue Manager OR LoRA Selector -->
     <div v-if="!showPromptSelector && !showBookmarkManager && !showPresetManager && !showQueueManager && !showLoraSelector" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
@@ -1008,24 +1020,39 @@ onUnmounted(() => {
 /* Container grid layout */
 .container {
   display: grid;
-  grid-template-columns: 280px 300px 420px;
+  grid-template-columns: 280px 300px var(--prompt-panel-width, 420px);
   gap: 12px;
   transition: grid-template-columns 0.3s ease;
 }
 
 /* Advanced panel collapsed only */
 .container:has(.advanced-panel.collapsed):not(:has(.params-panel.collapsed)) {
-  grid-template-columns: 40px 300px 660px;
+  grid-template-columns: 40px 300px var(--prompt-panel-width, 420px);
 }
 
 /* Params panel collapsed only */
 .container:has(.params-panel.collapsed):not(:has(.advanced-panel.collapsed)) {
-  grid-template-columns: 280px 40px 680px;
+  grid-template-columns: 280px 40px var(--prompt-panel-width, 420px);
 }
 
 /* Both panels collapsed */
 .container:has(.advanced-panel.collapsed):has(.params-panel.collapsed) {
-  grid-template-columns: 40px 40px 920px;
+  grid-template-columns: 40px 40px var(--prompt-panel-width, 420px);
+}
+
+/* Panel Resizer */
+.panel-resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: var(--color-border-primary);
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.panel-resizer:hover,
+.panel-resizer.resizing {
+  background: var(--color-primary);
 }
 
 
