@@ -1,6 +1,11 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 21. History Manager filter and bug fixes (2026-01-03)
+  - Added filter dropdown (All / Favorites Only / Interrupted)
+  - Filter by interrupted images to easily select and delete skipped/interrupted generations
+  - Fixed totalImageCount not updating after batch delete
+  - Extended mock API generation time to 10 seconds for testing
 - [x] 20. Generation duration tracking (2026-01-03)
   - Record generation start time and calculate duration when complete
   - Save duration (in milliseconds) to IndexedDB with image data

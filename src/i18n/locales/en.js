@@ -168,6 +168,9 @@ export default {
     sortNewest: 'Newest',
     sortOldest: 'Oldest',
     sortFavorite: 'Favorites',
+    filterAll: 'All',
+    filterFavorites: 'Favorites Only',
+    filterInterrupted: 'Interrupted',
 
     // Selection
     selectedCount: '{count} selected',

@@ -63,7 +63,7 @@ export function startMockProgress() {
 
   mockProgressInterval = setInterval(() => {
     if (mockProgress < 1.0) {
-      mockProgress += 0.05
+      mockProgress += 0.02
     } else {
       mockProgress = 1.0
       clearInterval(mockProgressInterval)
@@ -75,7 +75,7 @@ export function startMockProgress() {
         mockProgress = 0
       }, 500)
     }
-  }, 200) // 200ms마다 5% 증가 (약 4초 소요)
+  }, 200) // 200ms마다 2% 증가 (약 10초 소요)
 }
 
 /**

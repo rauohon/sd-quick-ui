@@ -19,6 +19,11 @@
             <option value="oldest">{{ $t('history.sortOldest') }}</option>
             <option value="favorite">{{ $t('history.sortFavorite') }}</option>
           </select>
+          <select v-model="filterBy" class="filter-select">
+            <option value="all">{{ $t('history.filterAll') }}</option>
+            <option value="favorites">{{ $t('history.filterFavorites') }}</option>
+            <option value="interrupted">{{ $t('history.filterInterrupted') }}</option>
+          </select>
           <span v-if="selectedIds.size > 0" class="selection-count-badge">{{ $t('history.selectedCount', { count: selectedIds.size }) }}</span>
           <button @click="selectAll" class="select-btn" :disabled="filteredItems.length === 0">{{ $t('history.selectAll') }}</button>
           <button @click="deselectAll" class="select-btn" :disabled="selectedIds.size === 0">{{ $t('history.deselectAll') }}</button>
@@ -324,26 +329,37 @@ const emit = defineEmits([
 // State
 const searchQuery = ref('')
 const sortBy = ref('newest')
+const filterBy = ref('all') // all, favorites, interrupted
 const selectedItem = ref(props.initialItem || (props.items.length > 0 ? props.items[0] : null))
 const selectedIds = ref(new Set())
 const isCompareMode = ref(false)
 const compareImages = ref([])
 const compareIndex = ref(0)
 
-// Filter items based on search
+// Filter items based on filter type and search
 const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return props.items
+  let items = props.items
+
+  // Apply filter type
+  if (filterBy.value === 'favorites') {
+    items = items.filter(item => item.favorite)
+  } else if (filterBy.value === 'interrupted') {
+    items = items.filter(item => item.interrupted)
   }
 
-  const query = searchQuery.value.toLowerCase()
-  return props.items.filter(item => {
-    if (item.params?.prompt?.toLowerCase().includes(query)) return true
-    if (item.params?.negative_prompt?.toLowerCase().includes(query)) return true
-    if (item.params?.sampler_name?.toLowerCase().includes(query)) return true
-    if (formatFullTimestamp(item.timestamp).toLowerCase().includes(query)) return true
-    return false
-  })
+  // Apply search query
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    items = items.filter(item => {
+      if (item.params?.prompt?.toLowerCase().includes(query)) return true
+      if (item.params?.negative_prompt?.toLowerCase().includes(query)) return true
+      if (item.params?.sampler_name?.toLowerCase().includes(query)) return true
+      if (formatFullTimestamp(item.timestamp).toLowerCase().includes(query)) return true
+      return false
+    })
+  }
+
+  return items
 })
 
 // Sort items
@@ -592,7 +608,8 @@ function highlightText(text) {
   color: var(--color-text-primary);
 }
 
-.sort-select {
+.sort-select,
+.filter-select {
   padding: 8px 12px;
   border: 1px solid var(--color-border-primary);
   border-radius: 6px;

@@ -12,6 +12,7 @@ const API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:7860' : ''
 
 // Mock 모드 지연 시간 (ms) - 실제 API처럼 느리게 동작
 const MOCK_DELAY = 100
+const MOCK_GENERATION_DELAY = 10000 // txt2img 생성 시뮬레이션 (10초)
 
 /**
  * 지연 유틸리티 함수
@@ -32,8 +33,13 @@ export async function apiCall(endpoint, options = {}) {
   if (IS_MOCK_MODE) {
     console.log(`[Mock API] ${method} ${endpoint}`)
 
-    // Mock 지연 추가 (실제 API처럼 동작)
-    await sleep(MOCK_DELAY)
+    // txt2img는 긴 지연 적용 (실제 생성 시간 시뮬레이션)
+    if (endpoint === '/sdapi/v1/txt2img') {
+      await sleep(MOCK_GENERATION_DELAY)
+    } else {
+      // 일반 API는 짧은 지연
+      await sleep(MOCK_DELAY)
+    }
 
     // Request body 파싱 (POST인 경우)
     let body = null

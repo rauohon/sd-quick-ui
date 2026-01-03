@@ -335,6 +335,9 @@ export function useHistory(refs, composables, callbacks, constants, t) {
       const itemIds = new Set(items.map(item => item.id))
       generatedImages.value = generatedImages.value.filter(img => !itemIds.has(img.id))
 
+      // Update total count
+      totalImageCount.value = await indexedDB.getImageCount()
+
       showToast?.(t('history.imagesDeleted', { count: items.length }), 'success')
     } catch (error) {
       storage(error, {

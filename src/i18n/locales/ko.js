@@ -168,6 +168,9 @@ export default {
     sortNewest: '최신순',
     sortOldest: '오래된순',
     sortFavorite: '즐겨찾기',
+    filterAll: '전체',
+    filterFavorites: '즐겨찾기만',
+    filterInterrupted: '중단된 이미지',
 
     // Selection
     selectedCount: '{count}개 선택됨',
