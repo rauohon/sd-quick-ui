@@ -199,6 +199,7 @@ export default {
     // Details
     detailsTitle: 'Details',
     generatedAt: 'Generated At',
+    duration: 'Duration',
     status: 'Status',
     interrupted: 'Interrupted Image',
     parameters: 'Parameters',

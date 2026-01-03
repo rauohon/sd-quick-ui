@@ -181,6 +181,7 @@ async function saveImage(imageData) {
       info: imageData.info,
       params: imageData.params,
       timestamp: imageData.timestamp || new Date().toISOString(),
+      duration: imageData.duration || null, // 소요시간 (밀리초)
       favorite: imageData.favorite || false,
       interrupted: imageData.interrupted || false // 스킵/중단 여부
     }
@@ -251,6 +252,7 @@ async function getRecentImages(limit = 50, offset = 0) {
               info: data.info,
               params: data.params,
               timestamp: data.timestamp,
+              duration: data.duration || null, // 소요시간 (이전 데이터 호환)
               favorite: data.favorite,
               interrupted: data.interrupted || false
             })

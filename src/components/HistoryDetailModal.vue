@@ -66,6 +66,7 @@
           <div class="image-info">
             <div class="info-item">
               <strong>{{ $t('history.generatedAt') }}:</strong> {{ formatFullTimestamp(currentItem.timestamp) }}
+              <span v-if="currentItem.duration" class="duration">({{ formatDuration(currentItem.duration) }})</span>
             </div>
             <div v-if="currentItem.interrupted" class="info-item warning">
               <strong>{{ $t('history.status') }}:</strong> ⚠️ {{ $t('history.interrupted') }}
@@ -147,7 +148,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil } from '../utils/dateUtils'
+import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil, formatDuration } from '../utils/dateUtils'
 
 const { t } = useI18n()
 
@@ -471,6 +472,11 @@ function closeCompare() {
 .info-item.warning {
   background: #fef3c7;
   color: #92400e;
+}
+
+.info-item .duration {
+  color: var(--color-text-secondary);
+  margin-left: 8px;
 }
 
 .params-section {

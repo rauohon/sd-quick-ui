@@ -54,6 +54,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
   const infiniteCount = ref(0)
   const wasInterrupted = ref(false) // 스킵/중단 플래그
   const finalImageReceived = ref(false) // 최종 이미지 수신 플래그
+  const generationStartTime = ref(null) // 생성 시작 시간 (소요시간 계산용)
 
   const progressInterval = ref(null)
 
@@ -488,6 +489,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     }
 
     isGenerating.value = true
+    generationStartTime.value = Date.now() // 소요시간 측정 시작
     progress.value = 0
     progressState.value = t('generation.preparing')
     // currentImage는 초기화하지 않음 - progress에서 current_image가 올 때까지 직전 이미지 유지
@@ -583,6 +585,11 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       const data = await response.json()
 
       if (data.images && data.images.length > 0) {
+        // 소요시간 계산
+        const generationDuration = generationStartTime.value
+          ? Date.now() - generationStartTime.value
+          : null
+
         // Parse info to get actual values used (seeds, prompts for batch)
         let actualSeed = usedParams.seed
         let allSeeds = []
@@ -626,6 +633,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
             info: data.info,
             params: paramsWithActualSeed,
             timestamp: new Date().toISOString(),
+            duration: generationDuration, // 소요시간 (밀리초)
             favorite: false,
             interrupted: wasInterrupted.value
           }

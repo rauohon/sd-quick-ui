@@ -66,3 +66,21 @@ export function formatFullTimestamp(timestamp, fallbackText = 'Unknown') {
 
   return timestamp
 }
+
+/**
+ * Format duration in milliseconds to human-readable format
+ * @param {number} durationMs - Duration in milliseconds
+ * @returns {string} Formatted duration string (e.g., "1분 23초", "45초")
+ */
+export function formatDuration(durationMs) {
+  if (!durationMs || durationMs < 0) return '-'
+
+  const totalSeconds = Math.floor(durationMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes > 0) {
+    return `${minutes}분 ${seconds}초`
+  }
+  return `${seconds}초`
+}

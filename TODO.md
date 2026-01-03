@@ -1,6 +1,12 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 20. Generation duration tracking (2026-01-03)
+  - Record generation start time and calculate duration when complete
+  - Save duration (in milliseconds) to IndexedDB with image data
+  - Display duration in HistoryDetailModal and HistoryManagerModal
+  - Added formatDuration utility function (e.g., "1분 23초", "45초")
+  - Added i18n keys: history.duration (ko: "소요 시간", en: "Duration")
 - [x] 19. Bookmark update: Show bookmark name in notification (2026-01-02)
   - Display bookmark name in yellow modification notice (e.g., "My Prompt" 북마크 - 프롬프트가 수정됨)
   - Show bookmark name in toast message when updated (e.g., "My Prompt" 북마크가 업데이트되었습니다)

@@ -199,6 +199,7 @@ export default {
     // Details
     detailsTitle: '상세 정보',
     generatedAt: '생성 시간',
+    duration: '소요 시간',
     status: '상태',
     interrupted: '중단된 이미지',
     parameters: '파라미터',

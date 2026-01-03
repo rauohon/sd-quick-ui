@@ -142,7 +142,9 @@
             <div class="info-section">
               <div class="info-item">
                 <strong>{{ $t('history.generatedAt') }}</strong>
-                <span>{{ formatFullTimestamp(selectedItem.timestamp) }}</span>
+                <span>{{ formatFullTimestamp(selectedItem.timestamp) }}
+                  <span v-if="selectedItem.duration" class="duration">({{ formatDuration(selectedItem.duration) }})</span>
+                </span>
               </div>
               <div v-if="selectedItem.interrupted" class="info-item warning">
                 <strong>{{ $t('history.status') }}</strong>
@@ -281,7 +283,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
 import LazyImage from './LazyImage.vue'
-import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil } from '../utils/dateUtils'
+import { formatTimestamp, formatFullTimestamp as formatFullTimestampUtil, formatDuration } from '../utils/dateUtils'
 
 const { t } = useI18n()
 
@@ -1059,6 +1061,11 @@ function highlightText(text) {
 .info-item.warning {
   background: #fef3c7;
   color: #92400e;
+}
+
+.info-item .duration {
+  color: var(--color-text-secondary);
+  margin-left: 4px;
 }
 
 .params-section {
