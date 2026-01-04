@@ -27,6 +27,12 @@ import HistoryManagerModal from '../components/HistoryManagerModal.vue'
 import ApiStatusIndicator from '../components/ApiStatusIndicator.vue'
 import ADetailerPromptModal from '../components/ADetailerPromptModal.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import BookmarkManager from '../components/BookmarkManager.vue'
+import PresetManager from '../components/PresetManager.vue'
+
+// Composables
+import { useBookmarks } from '../composables/useBookmarks'
+import { usePresets } from '../composables/usePresets'
 
 const { t } = useI18n()
 
@@ -91,6 +97,23 @@ const selectedImages = ref(new Set())
 // ADetailer 프롬프트 모달
 const showADetailerPrompt = ref(false)
 const editingADetailerIndex = ref(0)
+
+// 북마크/프리셋 모달
+const showBookmarkManager = ref(false)
+const showPresetManager = ref(false)
+
+// 북마크/프리셋 composables
+const {
+  bookmarks,
+  loadBookmarks,
+  addBookmark,
+  updateBookmarkContent
+} = useBookmarks()
+
+const {
+  presets,
+  loadPresets
+} = usePresets()
 
 // 시스템 설정
 const isSystemSettingsExpanded = ref(false)
@@ -508,10 +531,99 @@ function saveAutoCorrectSetting() {
   localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
 }
 
+// ===== 북마크/프리셋 핸들러 =====
+function openBookmarkManager() {
+  showPresetManager.value = false
+  showBookmarkManager.value = !showBookmarkManager.value
+}
+
+function closeBookmarkManager() {
+  showBookmarkManager.value = false
+}
+
+function openPresetManager() {
+  showBookmarkManager.value = false
+  showPresetManager.value = !showPresetManager.value
+}
+
+function closePresetManager() {
+  showPresetManager.value = false
+}
+
+// 북마크 적용
+function applyBookmark({ prompt: newPrompt, negativePrompt: newNegativePrompt, mode }) {
+  if (mode === 'replace') {
+    prompt.value = newPrompt
+    negativePrompt.value = newNegativePrompt
+  } else if (mode === 'prepend') {
+    prompt.value = newPrompt + (prompt.value ? ', ' + prompt.value : '')
+    negativePrompt.value = newNegativePrompt + (negativePrompt.value ? ', ' + negativePrompt.value : '')
+  } else if (mode === 'append') {
+    prompt.value = prompt.value + (prompt.value ? ', ' : '') + newPrompt
+    negativePrompt.value = negativePrompt.value + (negativePrompt.value ? ', ' : '') + newNegativePrompt
+  }
+}
+
+// 프리셋 적용
+function applyPreset(params) {
+  // 기본 파라미터
+  if (params.steps !== undefined) steps.value = params.steps
+  if (params.cfgScale !== undefined) cfgScale.value = params.cfgScale
+  if (params.cfg_scale !== undefined) cfgScale.value = params.cfg_scale
+  if (params.samplerName !== undefined) samplerName.value = params.samplerName
+  if (params.sampler_name !== undefined) samplerName.value = params.sampler_name
+  if (params.scheduler !== undefined) scheduler.value = params.scheduler
+  if (params.width !== undefined) width.value = params.width
+  if (params.height !== undefined) height.value = params.height
+  if (params.seed !== undefined) seed.value = params.seed
+
+  // 배치 설정
+  if (params.batchCount !== undefined) batchCount.value = params.batchCount
+  if (params.batch_count !== undefined) batchCount.value = params.batch_count
+  if (params.batchSize !== undefined) batchSize.value = params.batchSize
+  if (params.batch_size !== undefined) batchSize.value = params.batch_size
+
+  // img2img 전용
+  if (params.denoisingStrength !== undefined) denoisingStrength.value = params.denoisingStrength
+  if (params.denoising_strength !== undefined) denoisingStrength.value = params.denoising_strength
+
+  // 업스케일
+  if (params.enableUpscale !== undefined) enableUpscale.value = params.enableUpscale
+  if (params.upscaler !== undefined) upscaler.value = params.upscaler
+  if (params.upscaleScale !== undefined) upscaleScale.value = params.upscaleScale
+
+  // ADetailer
+  if (params.adetailers) {
+    adetailers.value = JSON.parse(JSON.stringify(params.adetailers))
+  }
+}
+
+// 현재 파라미터 (프리셋 저장용)
+const currentParams = computed(() => ({
+  steps: steps.value,
+  cfgScale: cfgScale.value,
+  samplerName: samplerName.value,
+  scheduler: scheduler.value,
+  width: width.value,
+  height: height.value,
+  seed: seed.value,
+  batchCount: batchCount.value,
+  batchSize: batchSize.value,
+  denoisingStrength: denoisingStrength.value,
+  enableUpscale: enableUpscale.value,
+  upscaler: upscaler.value,
+  upscaleScale: upscaleScale.value,
+  adetailers: JSON.parse(JSON.stringify(adetailers.value))
+}))
+
 // ===== Lifecycle =====
 onMounted(async () => {
   await checkApiStatus()
   await loadModels()
+
+  // Load bookmarks and presets
+  loadBookmarks()
+  loadPresets()
 
   // Load auto-correct setting
   const savedAutoCorrect = localStorage.getItem('sd-auto-correct-dimensions')
@@ -832,17 +944,37 @@ const filteredImages = computed(() => {
 
       <!-- 슬롯 버튼 -->
       <div class="slot-section">
-        <div class="slot-buttons">
-          <button
-            v-for="i in SLOT_COUNT"
-            :key="i"
-            class="slot-btn"
-            :class="{ active: activeSlot === i - 1, filled: slots[i - 1] !== null }"
-            @click="selectSlot(i - 1)"
-          >
-            {{ i }}
-            <span v-if="slots[i - 1]" class="dot">●</span>
-          </button>
+        <div class="slot-row">
+          <div class="slot-buttons">
+            <button
+              v-for="i in SLOT_COUNT"
+              :key="i"
+              class="slot-btn"
+              :class="{ active: activeSlot === i - 1, filled: slots[i - 1] !== null }"
+              @click="selectSlot(i - 1)"
+            >
+              {{ i }}
+              <span v-if="slots[i - 1]" class="dot">●</span>
+            </button>
+          </div>
+          <div class="tool-buttons">
+            <button
+              class="tool-btn bookmark-btn"
+              :class="{ active: showBookmarkManager }"
+              @click="openBookmarkManager"
+              :title="t('bookmark.manager')"
+            >
+              {{ showBookmarkManager ? '✕' : '🔖' }}
+            </button>
+            <button
+              class="tool-btn preset-btn"
+              :class="{ active: showPresetManager }"
+              @click="openPresetManager"
+              :title="t('preset.manager')"
+            >
+              {{ showPresetManager ? '✕' : '⚙️' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -864,8 +996,8 @@ const filteredImages = computed(() => {
       </div>
     </div>
 
-    <!-- 3열: 이미지 영역 -->
-    <div class="image-area">
+    <!-- 3열: 이미지 영역 OR 북마크/프리셋 매니저 -->
+    <div v-if="!showBookmarkManager && !showPresetManager" class="image-area">
       <!-- 입력 이미지 업로드 -->
       <ImageUploadPanel
         v-model="initImage"
@@ -970,6 +1102,26 @@ const filteredImages = computed(() => {
       :adetailer="adetailers[editingADetailerIndex]"
       :adetailer-label="ADETAILER_LABELS[editingADetailerIndex]"
       @save="updateADetailerPrompts"
+    />
+
+    <!-- Bookmark Manager (replaces image area) -->
+    <BookmarkManager
+      v-if="showBookmarkManager"
+      class="image-area"
+      :show-toast="props.showToast"
+      :show-confirm="props.showConfirm"
+      @apply-bookmark="applyBookmark"
+      @close="closeBookmarkManager"
+    />
+
+    <!-- Preset Manager (replaces image area) -->
+    <PresetManager
+      v-if="showPresetManager"
+      class="image-area"
+      :show-toast="props.showToast"
+      :current-params="currentParams"
+      @apply-preset="applyPreset"
+      @close="closePresetManager"
     />
   </div>
 </template>
@@ -1558,9 +1710,55 @@ const filteredImages = computed(() => {
   border-bottom: 1px solid var(--color-border-primary);
 }
 
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .slot-buttons {
   display: flex;
   gap: 8px;
+  flex: 1;
+}
+
+.tool-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.tool-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-border-primary);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tool-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.tool-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.bookmark-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.preset-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .slot-btn {

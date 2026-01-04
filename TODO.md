@@ -1,6 +1,11 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] **img2img 고도화 완료** (2026-01-04)
+  - 슬롯 시스템: txt2img와 독립적인 3개 슬롯, IndexedDB 분리 저장
+  - 업스케일: /sdapi/v1/extra-single-image API, 업스케일 후 사이즈 올바르게 저장
+  - ADetailer: 4개 디테일러 지원, txt2img UI 재사용
+  - 북마크/프리셋: txt2img와 데이터 공유, 슬롯 버튼 옆 🔖/⚙️ 버튼 배치
 - [x] 24. img2img UI 리팩토링 - txt2img 스타일 통일 (2026-01-04)
   - 3-컬럼 그리드 레이아웃 (설정 : 프롬프트 : 이미지 = 1fr : 1.2fr : 2fr)
   - 설정 패널: AdvancedSettingsPanel 스타일 적용
@@ -217,24 +222,9 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] img2img 고도화 및 새 기능 추가
+- [ ] 새 탭 기능 구현 (Inpaint, ControlNet, Workflow)
 
 ## Planned
-
-### img2img 고도화
-- [x] 1. 슬롯 시스템 구현 (txt2img와 독립적인 3개 슬롯) ✅ Completed (2026-01-04)
-  - useSlotManagement.js 패턴 활용
-  - IndexedDB 저장 키 분리 (img2img-slots)
-  - 프롬프트, 파라미터, denoising strength 저장
-- [x] 2. 업스케일 (Hires Fix 대체) 지원 추가 ✅ Completed (2026-01-04)
-  - /sdapi/v1/extra-single-image API 사용
-  - upscaler, upscaleScale 설정
-  - 업스케일 후 사이즈 올바르게 저장
-- [ ] 3. ADetailer 상세 설정 UI 추가
-  - txt2img ADetailer UI 재사용
-  - 4개 디테일러 지원
-- [ ] 4. 북마크/프리셋 연동
-  - img2img 전용 북마크/프리셋 또는 통합 관리
 
 ### 새 탭 기능
 - [ ] 5. Inpaint/Outpainting 구현
