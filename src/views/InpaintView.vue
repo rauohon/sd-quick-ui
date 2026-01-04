@@ -33,6 +33,7 @@ import ADetailerPromptModal from '../components/ADetailerPromptModal.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import BookmarkManager from '../components/BookmarkManager.vue'
 import PresetManager from '../components/PresetManager.vue'
+import MaskCanvas from '../components/MaskCanvas.vue'
 
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
@@ -80,6 +81,9 @@ const inpaintFullResPadding = ref(INPAINT_PARAM_RANGES.onlyMaskedPadding.default
 // 마스크 도구 상태
 const activeTool = ref('brush') // 'brush' | 'eraser'
 const brushSize = ref(30)
+const maskCanvasRef = ref(null)
+const canUndo = ref(false)
+const canRedo = ref(false)
 
 // ADetailer
 const adetailers = ref([
@@ -353,18 +357,32 @@ function setActiveTool(tool) {
 }
 
 function clearMask() {
-  mask.value = null
-  props.showToast(t('inpaint.clearMask'), 'info')
+  maskCanvasRef.value?.clearMask()
 }
 
 function fillMask() {
-  // TODO: 전체 마스크 채우기 구현 (MaskCanvas에서 처리)
-  props.showToast(t('inpaint.fillMask'), 'info')
+  maskCanvasRef.value?.fillMask()
 }
 
 function invertMask() {
-  // TODO: 마스크 반전 구현 (MaskCanvas에서 처리)
-  props.showToast(t('inpaint.invertMask'), 'info')
+  maskCanvasRef.value?.invertMask()
+}
+
+function undo() {
+  maskCanvasRef.value?.undo()
+}
+
+function redo() {
+  maskCanvasRef.value?.redo()
+}
+
+function handleMaskUpdate(maskData) {
+  mask.value = maskData
+}
+
+function handleHistoryChange({ canUndo: undo, canRedo: redo }) {
+  canUndo.value = undo
+  canRedo.value = redo
 }
 
 // ===== ADetailer Functions =====
@@ -963,6 +981,24 @@ watch(
               </button>
             </div>
             <div class="tool-group">
+              <button
+                class="action-btn"
+                @click="undo"
+                :disabled="!canUndo"
+                :title="t('inpaint.undo') + ' (Ctrl+Z)'"
+              >
+                ↩️ {{ t('inpaint.undo') }}
+              </button>
+              <button
+                class="action-btn"
+                @click="redo"
+                :disabled="!canRedo"
+                :title="t('inpaint.redo') + ' (Ctrl+Y)'"
+              >
+                ↪️ {{ t('inpaint.redo') }}
+              </button>
+            </div>
+            <div class="tool-group">
               <label class="upload-btn small">
                 <input type="file" accept="image/*" @change="handleFileUpload" hidden />
                 📁
@@ -971,16 +1007,16 @@ watch(
             </div>
           </div>
 
-          <!-- 캔버스 영역 (임시 - 이미지만 표시) -->
-          <div class="canvas-wrapper">
-            <img :src="initImage" alt="Input Image" class="canvas-image" />
-            <div v-if="mask" class="mask-overlay">
-              <!-- 마스크 오버레이 표시 -->
-            </div>
-            <p class="canvas-placeholder-text">
-              마스크 캔버스는 2단계에서 구현됩니다
-            </p>
-          </div>
+          <!-- 마스크 캔버스 컴포넌트 -->
+          <MaskCanvas
+            ref="maskCanvasRef"
+            :image="initImage"
+            :tool="activeTool"
+            :brush-size="brushSize"
+            :disabled="isGenerating"
+            @update:mask="handleMaskUpdate"
+            @history-change="handleHistoryChange"
+          />
         </div>
 
         <!-- 출력 이미지 프리뷰 -->
@@ -1817,42 +1853,10 @@ watch(
   padding: 6px 10px;
 }
 
-.canvas-wrapper {
+/* MaskCanvas 컴포넌트가 flex: 1로 공간을 차지하도록 */
+.mask-canvas-container :deep(.mask-canvas-container) {
   flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-tertiary);
-  overflow: hidden;
   min-height: 0;
-}
-
-.canvas-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.mask-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-}
-
-.canvas-placeholder-text {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 12px;
 }
 
 /* 출력 이미지 패널 */

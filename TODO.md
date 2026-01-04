@@ -227,7 +227,21 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] Inpaint/Outpainting 기능 구현 (1단계 완료)
+- [ ] Inpaint/Outpainting 기능 구현 (2단계 완료)
+
+### Inpaint 2단계 완료 ✅ (2026-01-04)
+- [x] MaskCanvas.vue 컴포넌트 생성
+  - HTML5 Canvas 기반 마스크 그리기
+  - 이미지 레이어 + 마스크 레이어 분리
+  - 반투명 빨간색 오버레이
+- [x] 브러시/지우개 도구 구현
+  - 브러시 크기 조절 (1~200px)
+  - 원형 브러시 커서 표시 (점선)
+- [x] 마스크 편집 기능
+  - 채우기/지우기/반전
+- [x] Undo/Redo (최대 20단계, Ctrl+Z/Y)
+- [x] 마스크 → Base64 변환 (흑백 PNG)
+- [x] InpaintView에 MaskCanvas 연동
 
 ### Inpaint 1단계 완료 ✅ (2026-01-04)
 - [x] InpaintView.vue 기본 구조 생성
@@ -277,25 +291,25 @@
   - inpaint 관련 라벨, 툴팁, 메시지
 - [x] 1.4 constants.js에 Inpaint 상수 추가
 
-#### 2단계: 마스크 캔버스 컴포넌트
-- [ ] 2.1 MaskCanvas.vue 컴포넌트 생성
+#### 2단계: 마스크 캔버스 컴포넌트 ✅
+- [x] 2.1 MaskCanvas.vue 컴포넌트 생성
   - HTML5 Canvas 기반 마스크 그리기
   - 이미지 레이어 + 마스크 레이어 분리
   - 마스크 색상: 반투명 빨간색 오버레이
-- [ ] 2.2 브러시 도구 구현
+- [x] 2.2 브러시 도구 구현
   - 브러시 크기 조절 (1~200px)
-  - 브러시 경도/부드러움 (hardness)
-  - 원형 브러시 커서 표시
-- [ ] 2.3 지우개 도구 구현
+  - 원형 브러시 커서 표시 (점선)
+- [x] 2.3 지우개 도구 구현
   - 마스크 영역 지우기
   - 브러시와 동일한 크기 설정 공유
-- [ ] 2.4 마스크 편집 기능
+- [x] 2.4 마스크 편집 기능
   - 마스크 전체 채우기 (Fill All)
   - 마스크 전체 지우기 (Clear All)
   - 마스크 반전 (Invert Mask)
-- [ ] 2.5 Undo/Redo 기능
+- [x] 2.5 Undo/Redo 기능
   - 마스크 히스토리 스택 (최대 20단계)
   - Ctrl+Z / Ctrl+Y 단축키
+- [x] 2.6 마스크 → Base64 변환 (흑백 PNG)
 
 #### 3단계: 이미지 입력
 - [ ] 3.1 이미지 로드 기능

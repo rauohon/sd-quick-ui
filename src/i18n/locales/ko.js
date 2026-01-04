@@ -748,6 +748,7 @@ export default {
     noImageSelected: '이미지를 먼저 선택해주세요',
     noMaskDrawn: '마스크를 그려주세요',
     maskRequired: '⚠️ 마스크 필요',
-    imageRequired: '⚠️ 입력 이미지 필요'
+    imageRequired: '⚠️ 입력 이미지 필요',
+    uploadImageFirst: '이미지를 먼저 업로드해주세요'
   }
 }

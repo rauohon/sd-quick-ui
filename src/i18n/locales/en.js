@@ -748,6 +748,7 @@ export default {
     noImageSelected: 'Please select an image first',
     noMaskDrawn: 'Please draw a mask',
     maskRequired: '⚠️ Mask Required',
-    imageRequired: '⚠️ Input Image Required'
+    imageRequired: '⚠️ Input Image Required',
+    uploadImageFirst: 'Please upload an image first'
   }
 }
