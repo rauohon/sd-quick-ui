@@ -772,6 +772,22 @@ export default {
     zoomLevel: '줌 레벨',
     pan: '이동',
     fitToWindow: '창에 맞추기',
-    actualSize: '실제 크기 (100%)'
+    actualSize: '실제 크기 (100%)',
+    // Outpaint (확장)
+    outpaint: 'Outpaint',
+    expand: '캔버스 확장',
+    expandTop: '위',
+    expandBottom: '아래',
+    expandLeft: '왼쪽',
+    expandRight: '오른쪽',
+    expandPixels: 'px',
+    expandPreset: '프리셋',
+    applyExpansion: '확장 적용',
+    resetExpansion: '확장 리셋',
+    expansionApplied: '캔버스가 확장되었습니다',
+    expansionReset: '확장이 초기화되었습니다',
+    noExpansion: '확장할 크기를 입력해주세요',
+    expandAll: '모두',
+    expandPreview: '확장 미리보기'
   }
 }

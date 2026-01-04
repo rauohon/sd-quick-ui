@@ -772,6 +772,22 @@ export default {
     zoomLevel: 'Zoom level',
     pan: 'Pan',
     fitToWindow: 'Fit to window',
-    actualSize: 'Actual size (100%)'
+    actualSize: 'Actual size (100%)',
+    // Outpaint (Expand)
+    outpaint: 'Outpaint',
+    expand: 'Expand Canvas',
+    expandTop: 'Top',
+    expandBottom: 'Bottom',
+    expandLeft: 'Left',
+    expandRight: 'Right',
+    expandPixels: 'px',
+    expandPreset: 'Preset',
+    applyExpansion: 'Apply Expansion',
+    resetExpansion: 'Reset Expansion',
+    expansionApplied: 'Canvas has been expanded',
+    expansionReset: 'Expansion has been reset',
+    noExpansion: 'Please enter expansion size',
+    expandAll: 'All',
+    expandPreview: 'Expansion Preview'
   }
 }

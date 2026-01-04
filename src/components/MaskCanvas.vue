@@ -44,6 +44,27 @@ const props = defineProps({
   panY: {
     type: Number,
     default: 0
+  },
+  // Outpaint 확장 설정
+  expandTop: {
+    type: Number,
+    default: 0
+  },
+  expandBottom: {
+    type: Number,
+    default: 0
+  },
+  expandLeft: {
+    type: Number,
+    default: 0
+  },
+  expandRight: {
+    type: Number,
+    default: 0
+  },
+  isExpanded: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -59,9 +80,26 @@ const cursorCanvasRef = ref(null)
 const isDrawing = ref(false)
 const lastPoint = ref(null)
 const imageLoaded = ref(false)
-const canvasWidth = ref(512)
-const canvasHeight = ref(512)
+const imageWidth = ref(512)  // 원본 이미지 크기
+const imageHeight = ref(512)
 const baseScale = ref(1)
+
+// 확장된 캔버스 크기 (이미지 + 확장 영역)
+const canvasWidth = computed(() => {
+  if (!props.isExpanded) return imageWidth.value
+  return imageWidth.value + props.expandLeft + props.expandRight
+})
+
+const canvasHeight = computed(() => {
+  if (!props.isExpanded) return imageHeight.value
+  return imageHeight.value + props.expandTop + props.expandBottom
+})
+
+// 원본 이미지의 캔버스 내 위치 (확장 시 오프셋)
+const imageOffset = computed(() => ({
+  x: props.isExpanded ? props.expandLeft : 0,
+  y: props.isExpanded ? props.expandTop : 0
+}))
 
 // 패닝 상태
 const isPanning = ref(false)
@@ -101,6 +139,44 @@ watch(() => props.image, async (newImage) => {
   }
 }, { immediate: true })
 
+// 확장 상태 변경 시 캔버스 재초기화
+watch(() => props.isExpanded, (newIsExpanded) => {
+  if (imageLoaded.value && loadedImage.value) {
+    // 기존 마스크 데이터 저장 (확장 적용 시에만)
+    const oldMaskData = newIsExpanded && maskCtx
+      ? maskCtx.getImageData(0, 0, maskCanvasRef.value.width, maskCanvasRef.value.height)
+      : null
+    const oldWidth = maskCanvasRef.value?.width || 0
+    const oldHeight = maskCanvasRef.value?.height || 0
+
+    nextTick(() => {
+      initCanvases()
+      drawImageWithExpansion()
+
+      if (newIsExpanded) {
+        // 확장 적용: 확장 영역 자동 마스킹 + 기존 마스크 이동
+        autoMaskExpansionArea()
+
+        // 기존 마스크를 새 위치에 복원
+        if (oldMaskData && maskCtx) {
+          const tempCanvas = document.createElement('canvas')
+          tempCanvas.width = oldWidth
+          tempCanvas.height = oldHeight
+          const tempCtx = tempCanvas.getContext('2d')
+          tempCtx.putImageData(oldMaskData, 0, 0)
+
+          // 기존 마스크를 새 오프셋 위치에 합성
+          maskCtx.drawImage(tempCanvas, imageOffset.value.x, imageOffset.value.y)
+        }
+      }
+      // 확장 리셋: 마스크 초기화 (clearMask가 initCanvases에서 이미 처리됨)
+
+      saveToHistory()
+      emitMask()
+    })
+  }
+})
+
 async function loadImage(src) {
   return new Promise((resolve) => {
     const img = new Image()
@@ -109,13 +185,13 @@ async function loadImage(src) {
       loadedImage.value = img
       imageLoaded.value = true
 
-      // 캔버스 크기 설정
-      canvasWidth.value = img.width
-      canvasHeight.value = img.height
+      // 원본 이미지 크기 설정
+      imageWidth.value = img.width
+      imageHeight.value = img.height
 
       nextTick(() => {
         initCanvases()
-        drawImage()
+        drawImageWithExpansion()
         clearMask()
         saveToHistory()
         resolve()
@@ -133,13 +209,16 @@ async function loadImage(src) {
 function initCanvases() {
   if (!imageCanvasRef.value || !maskCanvasRef.value || !cursorCanvasRef.value) return
 
+  const width = canvasWidth.value
+  const height = canvasHeight.value
+
   // 캔버스 크기 설정
-  imageCanvasRef.value.width = canvasWidth.value
-  imageCanvasRef.value.height = canvasHeight.value
-  maskCanvasRef.value.width = canvasWidth.value
-  maskCanvasRef.value.height = canvasHeight.value
-  cursorCanvasRef.value.width = canvasWidth.value
-  cursorCanvasRef.value.height = canvasHeight.value
+  imageCanvasRef.value.width = width
+  imageCanvasRef.value.height = height
+  maskCanvasRef.value.width = width
+  maskCanvasRef.value.height = height
+  cursorCanvasRef.value.width = width
+  cursorCanvasRef.value.height = height
 
   // Context 가져오기
   imageCtx = imageCanvasRef.value.getContext('2d')
@@ -186,11 +265,99 @@ function resetZoom() {
   emit('update:panY', 0)
 }
 
-function drawImage() {
+// 체크무늬 패턴 생성 (확장 영역 시각화용)
+function createCheckerPattern() {
+  const patternCanvas = document.createElement('canvas')
+  const patternSize = 16
+  patternCanvas.width = patternSize * 2
+  patternCanvas.height = patternSize * 2
+
+  const patternCtx = patternCanvas.getContext('2d')
+
+  // 밝은 회색 배경
+  patternCtx.fillStyle = '#e0e0e0'
+  patternCtx.fillRect(0, 0, patternSize * 2, patternSize * 2)
+
+  // 어두운 회색 체크
+  patternCtx.fillStyle = '#c0c0c0'
+  patternCtx.fillRect(0, 0, patternSize, patternSize)
+  patternCtx.fillRect(patternSize, patternSize, patternSize, patternSize)
+
+  return patternCanvas
+}
+
+// 이미지 그리기 (확장 영역 포함)
+function drawImageWithExpansion() {
   if (!imageCtx || !loadedImage.value) return
 
-  imageCtx.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
-  imageCtx.drawImage(loadedImage.value, 0, 0)
+  const width = canvasWidth.value
+  const height = canvasHeight.value
+
+  imageCtx.clearRect(0, 0, width, height)
+
+  // 확장 모드일 때 체크무늬 배경 그리기
+  if (props.isExpanded) {
+    const checkerPattern = createCheckerPattern()
+    const pattern = imageCtx.createPattern(checkerPattern, 'repeat')
+    imageCtx.fillStyle = pattern
+    imageCtx.fillRect(0, 0, width, height)
+
+    // 확장 영역 경계선 표시
+    imageCtx.strokeStyle = 'rgba(100, 100, 255, 0.8)'
+    imageCtx.lineWidth = 2
+    imageCtx.setLineDash([8, 4])
+    imageCtx.strokeRect(
+      imageOffset.value.x,
+      imageOffset.value.y,
+      imageWidth.value,
+      imageHeight.value
+    )
+    imageCtx.setLineDash([])
+  }
+
+  // 원본 이미지를 올바른 위치에 그리기
+  imageCtx.drawImage(
+    loadedImage.value,
+    imageOffset.value.x,
+    imageOffset.value.y
+  )
+}
+
+// 레거시 호환용
+function drawImage() {
+  drawImageWithExpansion()
+}
+
+// 확장 영역 자동 마스킹
+function autoMaskExpansionArea() {
+  if (!maskCtx || !props.isExpanded) return
+
+  const width = canvasWidth.value
+  const height = canvasHeight.value
+  const offsetX = imageOffset.value.x
+  const offsetY = imageOffset.value.y
+
+  maskCtx.fillStyle = props.maskColor
+
+  // 상단 확장 영역
+  if (props.expandTop > 0) {
+    maskCtx.fillRect(0, 0, width, offsetY)
+  }
+
+  // 하단 확장 영역
+  if (props.expandBottom > 0) {
+    maskCtx.fillRect(0, offsetY + imageHeight.value, width, props.expandBottom)
+  }
+
+  // 좌측 확장 영역
+  if (props.expandLeft > 0) {
+    maskCtx.fillRect(0, offsetY, offsetX, imageHeight.value)
+  }
+
+  // 우측 확장 영역
+  if (props.expandRight > 0) {
+    maskCtx.fillRect(offsetX + imageWidth.value, offsetY, props.expandRight, imageHeight.value)
+  }
 }
 
 function clearCanvas() {

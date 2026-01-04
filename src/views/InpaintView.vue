@@ -113,6 +113,16 @@ const MIN_ZOOM = 0.1
 const MAX_ZOOM = 5
 const ZOOM_STEP = 0.1
 
+// Outpaint 확장 상태
+const expandTop = ref(0)
+const expandBottom = ref(0)
+const expandLeft = ref(0)
+const expandRight = ref(0)
+const isExpanded = ref(false) // 확장이 적용되었는지 여부
+
+// 확장 프리셋 값들
+const EXPAND_PRESETS = [64, 128, 256, 512]
+
 // ADetailer
 const adetailers = ref([
   { ...DEFAULT_ADETAILER },
@@ -438,6 +448,64 @@ function resetToActualSize() {
 
 // 줌 퍼센트 표시용 computed
 const zoomPercentage = computed(() => Math.round(zoomLevel.value * 100))
+
+// ===== Outpaint 확장 함수 =====
+// 프리셋 값을 모든 방향에 적용
+function applyPresetToAll(value) {
+  expandTop.value = value
+  expandBottom.value = value
+  expandLeft.value = value
+  expandRight.value = value
+}
+
+// 특정 방향에 프리셋 적용
+function applyPresetToDirection(direction, value) {
+  switch (direction) {
+    case 'top': expandTop.value = value; break
+    case 'bottom': expandBottom.value = value; break
+    case 'left': expandLeft.value = value; break
+    case 'right': expandRight.value = value; break
+  }
+}
+
+// 확장 적용 - 실제 캔버스 확장은 5.2단계에서 구현
+function applyExpansion() {
+  const hasExpansion = expandTop.value > 0 || expandBottom.value > 0 ||
+                       expandLeft.value > 0 || expandRight.value > 0
+
+  if (!hasExpansion) {
+    props.showToast(t('inpaint.noExpansion'), 'warning')
+    return
+  }
+
+  // TODO: 5.2단계에서 MaskCanvas에 확장 적용
+  isExpanded.value = true
+  props.showToast(t('inpaint.expansionApplied'), 'success')
+}
+
+// 확장 리셋
+function resetExpansion() {
+  expandTop.value = 0
+  expandBottom.value = 0
+  expandLeft.value = 0
+  expandRight.value = 0
+  isExpanded.value = false
+
+  // TODO: 5.2단계에서 MaskCanvas 확장 리셋
+  props.showToast(t('inpaint.expansionReset'), 'info')
+}
+
+// 총 확장 픽셀 계산
+const totalExpansion = computed(() => ({
+  width: expandLeft.value + expandRight.value,
+  height: expandTop.value + expandBottom.value
+}))
+
+// 확장 후 예상 크기
+const expandedSize = computed(() => ({
+  width: initImageWidth.value + totalExpansion.value.width,
+  height: initImageHeight.value + totalExpansion.value.height
+}))
 
 // ===== ADetailer Functions =====
 function openADetailerPrompt(index) {
@@ -1164,6 +1232,105 @@ watch(
 
         <!-- 마스크 캔버스 (이미지가 있을 때) -->
         <div v-else class="mask-canvas-container">
+          <!-- Outpaint 확장 컨트롤 바 -->
+          <div class="expand-toolbar">
+            <div class="expand-title">
+              <span class="expand-icon">🔲</span>
+              {{ t('inpaint.expand') }}
+            </div>
+
+            <!-- 방향별 픽셀 입력 -->
+            <div class="expand-inputs">
+              <div class="expand-input-group">
+                <label>{{ t('inpaint.expandTop') }}</label>
+                <input
+                  type="number"
+                  v-model.number="expandTop"
+                  min="0"
+                  max="1024"
+                  step="8"
+                  :disabled="isGenerating || isExpanded"
+                />
+              </div>
+              <div class="expand-input-group">
+                <label>{{ t('inpaint.expandBottom') }}</label>
+                <input
+                  type="number"
+                  v-model.number="expandBottom"
+                  min="0"
+                  max="1024"
+                  step="8"
+                  :disabled="isGenerating || isExpanded"
+                />
+              </div>
+              <div class="expand-input-group">
+                <label>{{ t('inpaint.expandLeft') }}</label>
+                <input
+                  type="number"
+                  v-model.number="expandLeft"
+                  min="0"
+                  max="1024"
+                  step="8"
+                  :disabled="isGenerating || isExpanded"
+                />
+              </div>
+              <div class="expand-input-group">
+                <label>{{ t('inpaint.expandRight') }}</label>
+                <input
+                  type="number"
+                  v-model.number="expandRight"
+                  min="0"
+                  max="1024"
+                  step="8"
+                  :disabled="isGenerating || isExpanded"
+                />
+              </div>
+            </div>
+
+            <!-- 프리셋 버튼 -->
+            <div class="expand-presets">
+              <span class="preset-label">{{ t('inpaint.expandAll') }}:</span>
+              <button
+                v-for="preset in EXPAND_PRESETS"
+                :key="preset"
+                class="preset-btn"
+                @click="applyPresetToAll(preset)"
+                :disabled="isGenerating || isExpanded"
+              >
+                {{ preset }}
+              </button>
+            </div>
+
+            <!-- 확장 적용/리셋 버튼 -->
+            <div class="expand-actions">
+              <button
+                class="expand-apply-btn"
+                @click="applyExpansion"
+                :disabled="isGenerating || isExpanded || (expandTop === 0 && expandBottom === 0 && expandLeft === 0 && expandRight === 0)"
+              >
+                {{ t('inpaint.applyExpansion') }}
+              </button>
+              <button
+                class="expand-reset-btn"
+                @click="resetExpansion"
+                :disabled="isGenerating || (!isExpanded && expandTop === 0 && expandBottom === 0 && expandLeft === 0 && expandRight === 0)"
+              >
+                {{ t('inpaint.resetExpansion') }}
+              </button>
+            </div>
+
+            <!-- 확장 미리보기 정보 -->
+            <div v-if="expandTop > 0 || expandBottom > 0 || expandLeft > 0 || expandRight > 0" class="expand-preview-info">
+              <span class="preview-label">{{ t('inpaint.expandPreview') }}:</span>
+              <span class="preview-size">
+                {{ initImageWidth }} × {{ initImageHeight }}
+                →
+                {{ expandedSize.width }} × {{ expandedSize.height }}
+              </span>
+              <span v-if="isExpanded" class="expand-status applied">✓</span>
+            </div>
+          </div>
+
           <!-- 마스크 도구바 -->
           <div class="mask-toolbar">
             <div class="tool-group">
@@ -1293,6 +1460,11 @@ watch(
             :zoom="zoomLevel"
             :pan-x="panX"
             :pan-y="panY"
+            :expand-top="expandTop"
+            :expand-bottom="expandBottom"
+            :expand-left="expandLeft"
+            :expand-right="expandRight"
+            :is-expanded="isExpanded"
             @update:mask="handleMaskUpdate"
             @history-change="handleHistoryChange"
             @update:zoom="(val) => zoomLevel = val"
@@ -2344,5 +2516,171 @@ watch(
   text-align: center;
   padding: 40px;
   color: var(--color-text-secondary);
+}
+
+/* ===== Outpaint 확장 컨트롤 ===== */
+.expand-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-primary);
+  flex-wrap: wrap;
+}
+
+.expand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.expand-icon {
+  font-size: 16px;
+}
+
+.expand-inputs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expand-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.expand-input-group label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-width: 30px;
+}
+
+.expand-input-group input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.expand-input-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preset-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.preset-btn {
+  padding: 4px 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.preset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.expand-apply-btn {
+  padding: 6px 12px;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-apply-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.expand-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-reset-btn {
+  padding: 6px 12px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-reset-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.expand-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-preview-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.preview-label {
+  font-weight: 500;
+}
+
+.preview-size {
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.expand-status.applied {
+  color: var(--color-success);
+  font-weight: 600;
 }
 </style>

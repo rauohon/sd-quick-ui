@@ -64,12 +64,13 @@ function findTranslationCallsWithParams(content) {
 
     // Match t('key', { param: value }) or $t('key', { param: value })
     // This is a simplified regex - may not catch all edge cases
-    const regex = /\$?t\s*\(\s*['"]([^'"]+)['"]\s*,\s*\{([^}]+)\}/g
+    // Use \b word boundary to avoid matching emit(), format(), etc.
+    const regex = /(?:^|[^\w])(\$?t)\s*\(\s*['"]([^'"]+)['"]\s*,\s*\{([^}]+)\}/g
     let match
 
     while ((match = regex.exec(line)) !== null) {
-      const key = match[1]
-      const paramsStr = match[2]
+      const key = match[2]  // match[1] is $t or t, match[2] is key
+      const paramsStr = match[3]
 
       // Extract parameter names from object literal
       // Handles both "key: value" and ES6 shorthand "{ key }"
