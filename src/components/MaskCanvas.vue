@@ -665,6 +665,42 @@ function emitMask() {
   emit('update:mask', base64)
 }
 
+// 마스크를 Base64로 반환 (API 전송용)
+function getMaskBase64() {
+  if (!maskCtx) return null
+
+  const width = canvasWidth.value
+  const height = canvasHeight.value
+
+  // 임시 캔버스에 흑백 마스크 생성
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = width
+  tempCanvas.height = height
+  const tempCtx = tempCanvas.getContext('2d')
+
+  // 배경을 검은색으로
+  tempCtx.fillStyle = '#000000'
+  tempCtx.fillRect(0, 0, width, height)
+
+  // 마스크 영역을 흰색으로
+  const maskData = maskCtx.getImageData(0, 0, width, height)
+  const tempData = tempCtx.getImageData(0, 0, width, height)
+
+  for (let i = 0; i < maskData.data.length; i += 4) {
+    if (maskData.data[i + 3] > 0) {
+      tempData.data[i] = 255     // R
+      tempData.data[i + 1] = 255 // G
+      tempData.data[i + 2] = 255 // B
+      tempData.data[i + 3] = 255 // A
+    }
+  }
+
+  tempCtx.putImageData(tempData, 0, 0)
+
+  // Base64로 변환
+  return tempCanvas.toDataURL('image/png')
+}
+
 // 마스크가 비어있는지 확인
 function isMaskEmpty() {
   if (!maskCtx) return true
@@ -737,6 +773,7 @@ defineExpose({
   canRedo,
   isMaskEmpty,
   emitMask,
+  getMaskBase64,
   fitToScreen,
   resetZoom
 })

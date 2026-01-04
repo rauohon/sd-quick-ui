@@ -564,11 +564,11 @@ function generateExpandedImage() {
 }
 
 // 확장된 마스크 가져오기 (API 전송용)
+// 확장 시 확장 영역은 자동으로 마스크됨 (흰색 = inpaint 대상)
 function getExpandedMask() {
-  // MaskCanvas에서 이미 확장된 크기의 마스크를 생성함
-  // maskCanvasRef.value.emitMask()가 호출되면 handleMaskUpdate로 전달됨
-  maskCanvasRef.value?.emitMask?.()
-  return maskData.value
+  // MaskCanvas에서 직접 Base64 마스크 가져오기
+  const mask = maskCanvasRef.value?.getMaskBase64?.()
+  return mask || maskData.value
 }
 
 // ===== ADetailer Functions =====
