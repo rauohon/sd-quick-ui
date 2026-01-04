@@ -788,6 +788,10 @@ export default {
     expansionReset: 'Expansion has been reset',
     noExpansion: 'Please enter expansion size',
     expandAll: 'All',
-    expandPreview: 'Expansion Preview'
+    expandPreview: 'Expansion Preview',
+    // Expansion fill options
+    expandFill: 'Fill',
+    fillSolid: 'Solid',
+    fillNoise: 'Noise'
   }
 }

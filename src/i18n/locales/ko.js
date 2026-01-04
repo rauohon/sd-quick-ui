@@ -788,6 +788,10 @@ export default {
     expansionReset: '확장이 초기화되었습니다',
     noExpansion: '확장할 크기를 입력해주세요',
     expandAll: '모두',
-    expandPreview: '확장 미리보기'
+    expandPreview: '확장 미리보기',
+    // 확장 채우기 옵션
+    expandFill: '채우기',
+    fillSolid: '단색',
+    fillNoise: '노이즈'
   }
 }

@@ -119,9 +119,12 @@ const expandBottom = ref(0)
 const expandLeft = ref(0)
 const expandRight = ref(0)
 const isExpanded = ref(false) // 확장이 적용되었는지 여부
+const expandFillMode = ref('fill') // 'fill' | 'noise'
+const expandFillColor = ref('#000000') // 단색 채우기 색상
 
 // 확장 프리셋 값들
 const EXPAND_PRESETS = [64, 128, 256, 512]
+const EXPAND_FILL_COLORS = ['#000000', '#808080', '#ffffff'] // 검정, 회색, 흰색
 
 // ADetailer
 const adetailers = ref([
@@ -506,6 +509,67 @@ const expandedSize = computed(() => ({
   width: initImageWidth.value + totalExpansion.value.width,
   height: initImageHeight.value + totalExpansion.value.height
 }))
+
+// 확장된 이미지 생성 (API 전송용)
+function generateExpandedImage() {
+  return new Promise((resolve, reject) => {
+    if (!initImage.value || !isExpanded.value) {
+      resolve(initImage.value)
+      return
+    }
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      const newWidth = expandedSize.value.width
+      const newHeight = expandedSize.value.height
+
+      canvas.width = newWidth
+      canvas.height = newHeight
+
+      // 확장 영역 채우기
+      if (expandFillMode.value === 'fill') {
+        // 단색 채우기
+        ctx.fillStyle = expandFillColor.value
+        ctx.fillRect(0, 0, newWidth, newHeight)
+      } else if (expandFillMode.value === 'noise') {
+        // 노이즈 채우기
+        const imageData = ctx.createImageData(newWidth, newHeight)
+        const data = imageData.data
+        for (let i = 0; i < data.length; i += 4) {
+          const noise = Math.floor(Math.random() * 256)
+          data[i] = noise     // R
+          data[i + 1] = noise // G
+          data[i + 2] = noise // B
+          data[i + 3] = 255   // A
+        }
+        ctx.putImageData(imageData, 0, 0)
+      }
+
+      // 원본 이미지를 올바른 위치에 배치
+      ctx.drawImage(img, expandLeft.value, expandTop.value)
+
+      // Base64로 변환
+      const base64 = canvas.toDataURL('image/png')
+      resolve(base64)
+    }
+    img.onerror = () => {
+      reject(new Error('Failed to load image for expansion'))
+    }
+    img.src = initImage.value
+  })
+}
+
+// 확장된 마스크 가져오기 (API 전송용)
+function getExpandedMask() {
+  // MaskCanvas에서 이미 확장된 크기의 마스크를 생성함
+  // maskCanvasRef.value.emitMask()가 호출되면 handleMaskUpdate로 전달됨
+  maskCanvasRef.value?.emitMask?.()
+  return maskData.value
+}
 
 // ===== ADetailer Functions =====
 function openADetailerPrompt(index) {
@@ -1299,6 +1363,31 @@ watch(
               >
                 {{ preset }}
               </button>
+            </div>
+
+            <!-- 채우기 옵션 -->
+            <div class="expand-fill-options">
+              <span class="fill-label">{{ t('inpaint.expandFill') }}:</span>
+              <select
+                v-model="expandFillMode"
+                :disabled="isGenerating || isExpanded"
+                class="fill-mode-select"
+              >
+                <option value="fill">{{ t('inpaint.fillSolid') }}</option>
+                <option value="noise">{{ t('inpaint.fillNoise') }}</option>
+              </select>
+              <div v-if="expandFillMode === 'fill'" class="fill-colors">
+                <button
+                  v-for="color in EXPAND_FILL_COLORS"
+                  :key="color"
+                  class="color-btn"
+                  :class="{ active: expandFillColor === color }"
+                  :style="{ backgroundColor: color }"
+                  @click="expandFillColor = color"
+                  :disabled="isGenerating || isExpanded"
+                  :title="color"
+                />
+              </div>
             </div>
 
             <!-- 확장 적용/리셋 버튼 -->
@@ -2682,5 +2771,60 @@ watch(
 .expand-status.applied {
   color: var(--color-success);
   font-weight: 600;
+}
+
+/* 채우기 옵션 */
+.expand-fill-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fill-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.fill-mode-select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.fill-mode-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fill-colors {
+  display: flex;
+  gap: 4px;
+}
+
+.color-btn {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.color-btn.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.color-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
