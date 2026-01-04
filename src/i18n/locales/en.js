@@ -766,6 +766,7 @@ export default {
     removeImage: 'Remove image',
     replaceImage: 'Replace image',
     confirmMaskReset: 'Replacing the image will reset the current mask. Continue?',
+    confirmImageRemove: 'Removing the image will reset the current mask and expansion settings. Continue?',
     imageRemoved: 'Image removed',
     // Zoom/View
     zoom: 'Zoom',

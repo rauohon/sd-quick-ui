@@ -486,16 +486,19 @@ function applyExpansion() {
   props.showToast(t('inpaint.expansionApplied'), 'success')
 }
 
-// 확장 리셋
+// 확장 리셋 (UI 버튼용 - 토스트 표시)
 function resetExpansion() {
+  resetExpansionState()
+  props.showToast(t('inpaint.expansionReset'), 'info')
+}
+
+// 확장 상태만 초기화 (내부용 - 토스트 없음)
+function resetExpansionState() {
   expandTop.value = 0
   expandBottom.value = 0
   expandLeft.value = 0
   expandRight.value = 0
   isExpanded.value = false
-
-  // TODO: 5.2단계에서 MaskCanvas 확장 리셋
-  props.showToast(t('inpaint.expansionReset'), 'info')
 }
 
 // 총 확장 픽셀 계산
@@ -745,19 +748,36 @@ async function loadImageFromClipboard(file) {
 }
 
 // 이미지 제거
-function removeImage() {
+async function removeImage() {
+  // 마스크가 있거나 확장이 적용된 경우 확인 다이얼로그
+  const hasMask = mask.value && !maskCanvasRef.value?.isMaskEmpty?.()
+  if (hasMask || isExpanded.value) {
+    const result = await props.showConfirm({
+      title: t('inpaint.removeImage'),
+      message: t('inpaint.confirmImageRemove'),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel')
+    })
+    if (!result?.confirmed) {
+      return
+    }
+  }
+
   initImage.value = null
   initImageWidth.value = 0
   initImageHeight.value = 0
   initImageFormat.value = ''
   mask.value = null
+  // 확장 상태 초기화
+  resetExpansionState()
   props.showToast(t('inpaint.imageRemoved'), 'info')
 }
 
 // 이미지 교체 전 마스크 확인
 async function confirmImageReplace() {
-  // 마스크가 있으면 확인 다이얼로그
-  if (mask.value && !maskCanvasRef.value?.isMaskEmpty?.()) {
+  // 마스크가 있거나 확장이 적용된 경우 확인 다이얼로그
+  const hasMask = mask.value && !maskCanvasRef.value?.isMaskEmpty?.()
+  if (hasMask || isExpanded.value) {
     const result = await props.showConfirm({
       title: t('inpaint.replaceImage'),
       message: t('inpaint.confirmMaskReset'),
@@ -771,6 +791,8 @@ async function confirmImageReplace() {
   // 마스크 초기화
   mask.value = null
   maskCanvasRef.value?.clearMask?.()
+  // 확장 상태 초기화
+  resetExpansionState()
   return true
 }
 

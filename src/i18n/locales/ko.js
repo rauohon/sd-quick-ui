@@ -766,6 +766,7 @@ export default {
     removeImage: '이미지 제거',
     replaceImage: '이미지 교체',
     confirmMaskReset: '이미지를 교체하면 현재 마스크가 초기화됩니다. 계속하시겠습니까?',
+    confirmImageRemove: '이미지를 제거하면 현재 마스크와 확장 설정이 초기화됩니다. 계속하시겠습니까?',
     imageRemoved: '이미지가 제거되었습니다',
     // 줌/뷰
     zoom: '줌',

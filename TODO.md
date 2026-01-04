@@ -437,13 +437,15 @@
 - [x] getMaskBase64() 함수 추가 - API 전송용 흑백 마스크 반환
 - [x] getExpandedMask() 함수 개선
 
-##### 5.5 상태 관리
-- [ ] 확장 전/후 상태 분리
-  - originalImage: 원본 이미지 (확장 전)
-  - expandedImage: 확장된 이미지 (API 전송용)
-  - expansionOffsets: {top, bottom, left, right}
-- [ ] 확장 리셋 시 원본으로 복귀
-- [ ] 이미지 교체 시 확장 상태 초기화
+##### 5.5 상태 관리 ✅ (2026-01-05)
+- [x] 확장 전/후 상태 분리
+  - initImage: 원본 이미지 (확장 전)
+  - generateExpandedImage(): 확장된 이미지 (API 전송용)
+  - expandTop/Bottom/Left/Right: 확장 오프셋
+- [x] resetExpansionState() 함수 추가 (내부용)
+- [x] 확장 리셋 시 원본으로 복귀
+- [x] 이미지 교체 시 확장 상태 초기화 + 확인 다이얼로그
+- [x] 이미지 제거 시 확장 상태 초기화 + 확인 다이얼로그
 
 ##### 5.6 테스트 시나리오
 - [ ] 한 방향만 확장 (예: 오른쪽 256px)
