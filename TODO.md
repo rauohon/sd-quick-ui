@@ -222,15 +222,123 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] 새 탭 기능 구현 (Inpaint, ControlNet, Workflow)
+- [ ] Inpaint/Outpainting 기능 구현
 
 ## Planned
 
-### 새 탭 기능
-- [ ] 5. Inpaint/Outpainting 구현
-  - 캔버스 기반 마스크 그리기
-  - /sdapi/v1/img2img with mask 파라미터
-  - 브러시 크기, 마스크 블러 설정
+### Inpaint/Outpainting 구현
+
+#### 1단계: 기본 구조 생성
+- [ ] 1.1 InpaintView.vue 생성
+  - img2img 패턴 기반 3-컬럼 레이아웃
+  - 설정 패널 / 프롬프트 패널 / 캔버스+히스토리 영역
+  - App.vue에서 inpaint 탭 연결
+- [ ] 1.2 useInpaintGeneration.js 컴포저블 생성
+  - useImg2imgGeneration.js 기반
+  - mask 파라미터 추가 (base64)
+  - inpaint 전용 파라미터 (mask_blur, inpainting_fill 등)
+- [ ] 1.3 i18n 키 추가 (ko.js, en.js)
+  - inpaint 관련 라벨, 툴팁, 메시지
+
+#### 2단계: 마스크 캔버스 컴포넌트
+- [ ] 2.1 MaskCanvas.vue 컴포넌트 생성
+  - HTML5 Canvas 기반 마스크 그리기
+  - 이미지 레이어 + 마스크 레이어 분리
+  - 마스크 색상: 반투명 빨간색 오버레이
+- [ ] 2.2 브러시 도구 구현
+  - 브러시 크기 조절 (1~200px)
+  - 브러시 경도/부드러움 (hardness)
+  - 원형 브러시 커서 표시
+- [ ] 2.3 지우개 도구 구현
+  - 마스크 영역 지우기
+  - 브러시와 동일한 크기 설정 공유
+- [ ] 2.4 마스크 편집 기능
+  - 마스크 전체 채우기 (Fill All)
+  - 마스크 전체 지우기 (Clear All)
+  - 마스크 반전 (Invert Mask)
+- [ ] 2.5 Undo/Redo 기능
+  - 마스크 히스토리 스택 (최대 20단계)
+  - Ctrl+Z / Ctrl+Y 단축키
+
+#### 3단계: 이미지 입력
+- [ ] 3.1 이미지 로드 기능
+  - 파일 업로드 (PNG, JPG, WebP)
+  - 드래그앤드롭 지원
+  - 히스토리에서 이미지 선택
+- [ ] 3.2 이미지-캔버스 동기화
+  - 이미지 로드 시 캔버스 크기 자동 조정
+  - 이미지 비율 유지
+  - 최대 크기 제한 (화면에 맞게 스케일)
+
+#### 4단계: Inpaint 설정 UI
+- [ ] 4.1 마스크 설정
+  - Mask blur (0~64px): 마스크 경계 블러
+  - Masked content (original/fill/latent noise/latent nothing)
+  - Inpaint area (Whole picture / Only masked)
+- [ ] 4.2 Only masked 설정
+  - Only masked padding (0~256px)
+  - 고해상도 inpaint를 위한 패딩
+- [ ] 4.3 기본 생성 파라미터
+  - img2img와 동일: steps, CFG, sampler, seed 등
+  - Denoising strength
+
+#### 5단계: Outpainting 기능
+- [ ] 5.1 캔버스 확장 UI
+  - 상/하/좌/우 확장 픽셀 입력
+  - 확장 프리셋 (64px, 128px, 256px)
+  - 확장 버튼 클릭 시 캔버스 리사이즈
+- [ ] 5.2 확장 영역 자동 마스킹
+  - 확장된 영역 자동으로 마스크 처리
+  - 기존 이미지 영역은 마스크 제외
+- [ ] 5.3 확장 영역 채우기 옵션
+  - fill (단색), original (확장 불가), latent noise
+
+#### 6단계: API 연동
+- [ ] 6.1 마스크 → Base64 변환
+  - Canvas에서 마스크 레이어만 추출
+  - 흑백 이미지로 변환 (흰색=마스크 영역)
+  - Base64 인코딩
+- [ ] 6.2 /sdapi/v1/img2img 호출
+  - init_images: 원본 이미지
+  - mask: 마스크 이미지 (base64)
+  - mask_blur, inpainting_fill, inpaint_full_res 등
+- [ ] 6.3 Mock API 지원
+  - mockData.js에 inpaint 응답 추가
+
+#### 7단계: UI/UX 완성
+- [ ] 7.1 툴바 UI
+  - 브러시/지우개 토글
+  - 브러시 크기 슬라이더
+  - Undo/Redo 버튼
+  - 마스크 채우기/지우기/반전 버튼
+- [ ] 7.2 캔버스 조작
+  - 줌 인/아웃 (마우스 휠)
+  - 패닝 (스페이스바 + 드래그)
+  - Fit to screen 버튼
+- [ ] 7.3 키보드 단축키
+  - B: 브러시 도구
+  - E: 지우개 도구
+  - [/]: 브러시 크기 감소/증가
+  - Ctrl+Z/Y: Undo/Redo
+  - Ctrl+I: 마스크 반전
+- [ ] 7.4 슬롯/북마크/프리셋 연동
+  - inpaint 전용 슬롯 (IndexedDB 분리)
+  - 북마크/프리셋 공유 (txt2img, img2img와 동일)
+- [ ] 7.5 히스토리 통합
+  - 생성된 이미지 히스토리에 저장
+  - 타입 배지: "inp" 표시
+
+#### 8단계: 고급 기능 (선택)
+- [ ] 8.1 마스크 저장/불러오기
+  - 마스크를 PNG로 저장
+  - 저장된 마스크 불러오기
+- [ ] 8.2 Soft inpainting 지원
+  - Schedule bias, Preservation strength 등
+  - WebUI의 soft inpainting 확장 연동
+
+---
+
+### ControlNet 연동
 - [ ] 6. ControlNet 연동
   - ControlNet 모델 목록 로드
   - 프리프로세서 선택
