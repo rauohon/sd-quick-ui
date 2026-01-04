@@ -214,54 +214,11 @@
     </div>
 
     <!-- System Settings Section -->
-    <div v-if="isExpanded" class="system-settings-section">
-      <div class="system-settings-header" @click="isSystemSettingsExpanded = !isSystemSettingsExpanded">
-        <span class="system-settings-title">⚙️ {{ $t('systemSettings.title') }}</span>
-        <span class="toggle-icon">{{ isSystemSettingsExpanded ? '▲' : '▼' }}</span>
-      </div>
-
-      <transition name="expand">
-        <div v-if="isSystemSettingsExpanded" class="system-settings-content">
-          <div class="setting-group">
-            <label class="setting-label">{{ $t('settings.language') }}</label>
-            <LanguageSwitcher />
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label">{{ $t('theme.title') }}</label>
-            <div class="theme-toggle">
-              <button
-                class="theme-btn"
-                :class="{ active: !isDark }"
-                @click="toggleTheme"
-                :title="$t('theme.light')"
-              >
-                ☀️ {{ $t('theme.light') }}
-              </button>
-              <button
-                class="theme-btn"
-                :class="{ active: isDark }"
-                @click="toggleTheme"
-                :title="$t('theme.dark')"
-              >
-                🌙 {{ $t('theme.dark') }}
-              </button>
-            </div>
-          </div>
-
-          <div class="setting-group">
-            <label class="setting-label checkbox-label">
-              <input
-                type="checkbox"
-                v-model="autoCorrectDimensions"
-                @change="saveAutoCorrectSetting"
-              >
-              <span>{{ $t('dimensionValidation.autoCorrect') }}</span>
-            </label>
-          </div>
-        </div>
-      </transition>
-    </div>
+    <SystemSettingsSection
+      v-if="isExpanded"
+      :isDark="isDark"
+      :toggleTheme="toggleTheme"
+    />
 
     <div v-if="isExpanded" class="panel-footer">
       <span class="footer-title">⚡ SD Quick UI</span>
@@ -279,17 +236,15 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ApiStatusIndicator from './ApiStatusIndicator.vue'
 import LastParamsSection from './LastParamsSection.vue'
-import LanguageSwitcher from './LanguageSwitcher.vue'
+import SystemSettingsSection from './SystemSettingsSection.vue'
 
 const { t } = useI18n()
 
 // State
-const isSystemSettingsExpanded = ref(false)
-const autoCorrectDimensions = ref(false) // Default: unchecked (will ask user)
 
 const props = defineProps({
   isExpanded: {
@@ -511,22 +466,6 @@ function updateWidth(value) {
 function updateHeight(value) {
   updateDimension('height', value)
 }
-
-// Save auto-correct setting to localStorage
-function saveAutoCorrectSetting() {
-  localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
-}
-
-// Load auto-correct setting from localStorage on mount
-onMounted(() => {
-  const saved = localStorage.getItem('sd-auto-correct-dimensions')
-  if (saved === 'true') {
-    autoCorrectDimensions.value = true
-  } else if (saved === 'false') {
-    autoCorrectDimensions.value = false
-  }
-  // If saved is null, keep default (false) and will ask user
-})
 </script>
 
 <style scoped>
@@ -717,157 +656,5 @@ onMounted(() => {
 .footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* System Settings Section */
-.system-settings-section {
-  flex-shrink: 0;
-  border-top: 1px solid var(--color-border-primary);
-  background: var(--color-bg-elevated);
-}
-
-.system-settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s;
-}
-
-.system-settings-header:hover {
-  background: var(--color-bg-hover);
-}
-
-.system-settings-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.toggle-icon {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-}
-
-.system-settings-content {
-  padding: 12px;
-  background: var(--color-bg-secondary);
-  border-top: 1px solid var(--color-border-primary);
-}
-
-.setting-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.setting-group + .setting-group {
-  margin-top: 12px;
-}
-
-.setting-label {
-  flex: 0 0 80px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-.setting-label.checkbox-label {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.setting-label.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-}
-
-.setting-label.checkbox-label span {
-  font-size: 13px;
-  color: var(--color-text-primary);
-}
-
-/* Transition Animation */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-  max-height: 200px;
-  overflow: hidden;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-
-/* LanguageSwitcher override */
-.system-settings-content :deep(.language-switcher .lang-btn) {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-primary);
-}
-
-.system-settings-content :deep(.language-switcher .lang-btn:hover) {
-  background: var(--color-bg-hover);
-}
-
-.system-settings-content :deep(.language-switcher .lang-btn.active) {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary-dark);
-}
-
-/* Theme Toggle */
-.theme-toggle {
-  display: flex;
-  gap: 8px;
-}
-
-.theme-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border: 2px solid var(--color-border-primary);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.theme-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-bg-hover);
-  transform: translateY(-1px);
-}
-
-.theme-btn.active {
-  border-color: var(--color-primary);
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.theme-btn.active:hover {
-  transform: translateY(-1px);
-  opacity: 0.9;
 }
 </style>

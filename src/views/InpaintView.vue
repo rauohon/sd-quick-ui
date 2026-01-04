@@ -30,7 +30,7 @@ import HistoryImageItem from '../components/HistoryImageItem.vue'
 import HistoryManagerModal from '../components/HistoryManagerModal.vue'
 import ApiStatusIndicator from '../components/ApiStatusIndicator.vue'
 import ADetailerPromptModal from '../components/ADetailerPromptModal.vue'
-import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import SystemSettingsSection from '../components/SystemSettingsSection.vue'
 import BookmarkManager from '../components/BookmarkManager.vue'
 import PresetManager from '../components/PresetManager.vue'
 import MaskCanvas from '../components/MaskCanvas.vue'
@@ -170,8 +170,12 @@ const {
 } = usePresets()
 
 // 시스템 설정
-const isSystemSettingsExpanded = ref(false)
-const autoCorrectDimensions = ref(false)
+const systemSettingsRef = ref(null)
+const autoCorrectEnabled = ref(false)
+
+function handleAutoCorrectChange(value) {
+  autoCorrectEnabled.value = value
+}
 
 // API 상태
 const { apiConnected, apiChecking, checkApiStatus } = useApiStatus()
@@ -471,7 +475,12 @@ function applyPresetToDirection(direction, value) {
   }
 }
 
-// 확장 적용 - 실제 캔버스 확장은 5.2단계에서 구현
+// 8의 배수로 보정
+function correctTo8Multiple(value) {
+  return Math.round(value / 8) * 8
+}
+
+// 확장 적용 - 8의 배수 검증 포함
 function applyExpansion() {
   const hasExpansion = expandTop.value > 0 || expandBottom.value > 0 ||
                        expandLeft.value > 0 || expandRight.value > 0
@@ -481,9 +490,42 @@ function applyExpansion() {
     return
   }
 
-  // TODO: 5.2단계에서 MaskCanvas에 확장 적용
-  isExpanded.value = true
-  props.showToast(t('inpaint.expansionApplied'), 'success')
+  // 확장 후 크기 계산
+  const newWidth = initImageWidth.value + expandLeft.value + expandRight.value
+  const newHeight = initImageHeight.value + expandTop.value + expandBottom.value
+
+  // 8의 배수 검증
+  const needsWidthCorrection = newWidth % 8 !== 0
+  const needsHeightCorrection = newHeight % 8 !== 0
+  const needsCorrection = needsWidthCorrection || needsHeightCorrection
+
+  // 자동 보정이 활성화된 경우에만 보정 적용
+  if (needsCorrection && autoCorrectEnabled.value) {
+    if (needsWidthCorrection) {
+      const correctedWidth = correctTo8Multiple(newWidth)
+      const diff = correctedWidth - newWidth
+      expandRight.value = Math.max(0, expandRight.value + diff)
+    }
+
+    if (needsHeightCorrection) {
+      const correctedHeight = correctTo8Multiple(newHeight)
+      const diff = correctedHeight - newHeight
+      expandBottom.value = Math.max(0, expandBottom.value + diff)
+    }
+
+    isExpanded.value = true
+    const finalWidth = initImageWidth.value + expandLeft.value + expandRight.value
+    const finalHeight = initImageHeight.value + expandTop.value + expandBottom.value
+    props.showToast(t('inpaint.expansionCorrected', { width: finalWidth, height: finalHeight }), 'info')
+  } else if (needsCorrection) {
+    // 자동 보정 비활성화: 경고만 표시하고 그대로 적용
+    isExpanded.value = true
+    props.showToast(t('inpaint.expansionNot8Multiple', { size: `${newWidth}×${newHeight}` }), 'warning')
+  } else {
+    // 보정 불필요: 그대로 적용
+    isExpanded.value = true
+    props.showToast(t('inpaint.expansionApplied'), 'success')
+  }
 }
 
 // 확장 리셋 (UI 버튼용 - 토스트 표시)
@@ -1144,33 +1186,13 @@ watch(
       </div>
 
       <!-- System Settings Section -->
-      <div v-if="showSettingsPanel" class="system-settings-section">
-        <div class="system-settings-header" @click="isSystemSettingsExpanded = !isSystemSettingsExpanded">
-          <span class="system-settings-title">{{ t('systemSettings.title') }}</span>
-          <span class="toggle-icon">{{ isSystemSettingsExpanded ? '▲' : '▼' }}</span>
-        </div>
-
-        <transition name="expand">
-          <div v-if="isSystemSettingsExpanded" class="system-settings-content">
-            <div class="setting-group">
-              <label class="setting-label">{{ t('settings.language') }}</label>
-              <LanguageSwitcher />
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label">{{ t('theme.title') }}</label>
-              <div class="theme-toggle">
-                <button class="theme-btn" :class="{ active: !props.isDark }" @click="props.toggleTheme" :title="t('theme.light')">
-                  {{ t('theme.light') }}
-                </button>
-                <button class="theme-btn" :class="{ active: props.isDark }" @click="props.toggleTheme" :title="t('theme.dark')">
-                  {{ t('theme.dark') }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </transition>
-      </div>
+      <SystemSettingsSection
+        v-if="showSettingsPanel"
+        ref="systemSettingsRef"
+        :isDark="props.isDark"
+        :toggleTheme="props.toggleTheme"
+        @update:autoCorrect="handleAutoCorrectChange"
+      />
 
       <div v-if="showSettingsPanel" class="panel-footer">
         <span class="footer-title">SD Quick UI</span>
@@ -1960,92 +1982,6 @@ watch(
   background: var(--color-bg-tertiary);
   cursor: pointer;
   font-size: 12px;
-}
-
-/* System Settings */
-.system-settings-section {
-  flex-shrink: 0;
-  border-top: 1px solid var(--color-border-primary);
-  background: var(--color-bg-elevated);
-}
-
-.system-settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.system-settings-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-
-.toggle-icon {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-}
-
-.system-settings-content {
-  padding: 12px;
-  background: var(--color-bg-secondary);
-  border-top: 1px solid var(--color-border-primary);
-}
-
-.setting-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.setting-group + .setting-group {
-  margin-top: 12px;
-}
-
-.setting-label {
-  flex: 0 0 80px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-.theme-toggle {
-  display: flex;
-  gap: 8px;
-}
-
-.theme-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border: 2px solid var(--color-border-primary);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.theme-btn.active {
-  border-color: var(--color-primary);
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-}
-
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-  max-height: 200px;
-  overflow: hidden;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  max-height: 0;
-  opacity: 0;
 }
 
 /* Panel Footer */

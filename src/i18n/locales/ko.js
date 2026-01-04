@@ -787,6 +787,8 @@ export default {
     resetExpansion: '확장 리셋',
     expansionApplied: '캔버스가 확장되었습니다',
     expansionReset: '확장이 초기화되었습니다',
+    expansionCorrected: '8의 배수로 보정됨: {width} × {height}',
+    expansionNot8Multiple: '확장 크기 {size}은(는) 8의 배수가 아닙니다',
     noExpansion: '확장할 크기를 입력해주세요',
     expandAll: '모두',
     expandPreview: '확장 미리보기',

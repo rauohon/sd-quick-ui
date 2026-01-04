@@ -787,6 +787,8 @@ export default {
     resetExpansion: 'Reset Expansion',
     expansionApplied: 'Canvas has been expanded',
     expansionReset: 'Expansion has been reset',
+    expansionCorrected: 'Corrected to multiple of 8: {width} × {height}',
+    expansionNot8Multiple: 'Expansion size {size} is not a multiple of 8',
     noExpansion: 'Please enter expansion size',
     expandAll: 'All',
     expandPreview: 'Expansion Preview',
