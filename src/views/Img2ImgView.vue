@@ -14,7 +14,9 @@ import {
   ASPECT_RATIOS,
   DEFAULT_ADETAILER,
   IMG2IMG_PARAM_RANGES,
-  IMAGE_TYPES
+  IMAGE_TYPES,
+  INITIAL_LOAD_COUNT,
+  LOAD_MORE_COUNT
 } from '../config/constants'
 
 // Components
@@ -33,6 +35,9 @@ import PresetManager from '../components/PresetManager.vue'
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
 import { usePresets } from '../composables/usePresets'
+import { useHistory } from '../composables/useHistory'
+import { useLocalStorage } from '../composables/useLocalStorage'
+import { useVirtualScroll } from '../composables/useVirtualScroll'
 
 const { t } = useI18n()
 
@@ -90,9 +95,6 @@ const showSettingsPanel = ref(true)
 const showHistoryPanel = ref(true)
 const isHistoryContentCollapsed = ref(false)
 const showImagePanel = ref(true)
-const showFavoriteOnly = ref(false)
-const isSelectionMode = ref(false)
-const selectedImages = ref(new Set())
 
 // ADetailer 프롬프트 모달
 const showADetailerPrompt = ref(false)
@@ -131,14 +133,9 @@ const {
   loadModels
 } = useModelLoader(props.showToast, t)
 
-// IndexedDB
+// IndexedDB & localStorage
 const indexedDB = useIndexedDB()
-const { getRecentImages, getImageCount, saveSlots, loadSlots, deleteImage: deleteImageFromDB, toggleFavorite, clearAllImages } = indexedDB
-const totalImageCount = ref(0)
-
-// History Manager Modal
-const showHistoryManager = ref(false)
-const selectedHistoryImage = ref(null)
+const localStorage = useLocalStorage()
 
 // ===== Slot Management =====
 const IMG2IMG_SLOT_KEY = 'img2img-slots'
@@ -226,6 +223,64 @@ const {
   toggleInfiniteMode
 } = useImg2imgGeneration(generationParams, enabledADetailers, props.showToast, t)
 
+// ===== History Composable =====
+const historyRefs = {
+  generatedImages, currentImage, lastUsedParams, adetailers,
+  slots, activeSlot, prompt, negativePrompt, steps, width, height, cfgScale, seed
+}
+const historyComposables = { indexedDB, localStorage, slotManagement }
+const historyCallbacks = { showToast: props.showToast, showConfirm: props.showConfirm }
+const historyConstants = { INITIAL_LOAD_COUNT, LOAD_MORE_COUNT, SLOT_COUNT }
+const history = useHistory(historyRefs, historyComposables, historyCallbacks, historyConstants, t)
+const {
+  showFavoriteOnly,
+  isSelectionMode,
+  selectedImages,
+  showHistoryDetail: showHistoryManager,
+  selectedHistoryItem: selectedHistoryImage,
+  totalImageCount,
+  filteredImages,
+  toggleImageFavorite,
+  deleteImage,
+  clearHistory,
+  loadMoreImages,
+  openHistoryManager,
+  closeHistoryDetail: closeHistoryManager,
+  handleHistoryDownload,
+  handleHistoryDownloadMultiple,
+  handleHistoryDeleteMultiple,
+  toggleSelectionMode,
+  toggleImageSelection,
+  selectAllImages,
+  deselectAllImages,
+  downloadSelectedImages,
+  toggleFavoriteFilter,
+  addSampleImage
+} = history
+
+// History panel ref for virtual scroll
+const historyPanelRef = ref(null)
+
+// Virtual scroll container ref
+const historyScrollContainerRef = computed(() => {
+  return historyPanelRef.value?.scrollContainerRef || null
+})
+
+// Virtual scroll for history panel
+const historyVirtualScroll = useVirtualScroll({
+  items: filteredImages,
+  containerRef: historyScrollContainerRef,
+  itemHeight: 120,
+  columns: 3,
+  buffer: 2,
+  gap: 16
+})
+const {
+  visibleItems: visibleHistoryItems,
+  totalHeight: historyTotalHeight,
+  offsetY: historyOffsetY
+} = historyVirtualScroll
+
 // Watch current image for parent
 watch(currentImage, (newImage) => {
   emit('updateCurrentImage', newImage)
@@ -263,174 +318,6 @@ function toggleHistoryContent() {
 
 function toggleImagePanel() {
   showImagePanel.value = !showImagePanel.value
-}
-
-function toggleFavoriteFilter() {
-  showFavoriteOnly.value = !showFavoriteOnly.value
-}
-
-// History Manager
-function openHistoryManager(item = null) {
-  selectedHistoryImage.value = item
-  showHistoryManager.value = true
-}
-
-function closeHistoryManager() {
-  showHistoryManager.value = false
-  selectedHistoryImage.value = null
-}
-
-// History download/delete handlers for modal
-async function handleHistoryDownload(item) {
-  if (!item?.image) return
-
-  const link = document.createElement('a')
-  link.href = item.image
-  link.download = `img2img_${item.timestamp || Date.now()}.png`
-  link.click()
-  props.showToast(t('history.downloadStarted'), 'success')
-}
-
-async function handleHistoryDownloadMultiple(ids) {
-  for (const id of ids) {
-    const item = generatedImages.value.find(img => img.id === id)
-    if (item) {
-      const link = document.createElement('a')
-      link.href = item.image
-      link.download = `img2img_${item.timestamp || Date.now()}.png`
-      link.click()
-      await new Promise(r => setTimeout(r, 100)) // Small delay between downloads
-    }
-  }
-  props.showToast(t('history.downloadMultiple', { count: ids.length }), 'success')
-}
-
-async function handleHistoryDeleteMultiple(ids) {
-  const result = await props.showConfirm({
-    title: t('common.delete'),
-    message: t('history.deleteConfirm', { count: ids.length }),
-    confirmText: t('common.delete'),
-    cancelText: t('common.cancel')
-  })
-
-  if (!result?.confirmed) return
-
-  try {
-    for (const id of ids) {
-      await deleteImageFromDB(id)
-    }
-    generatedImages.value = generatedImages.value.filter(img => !ids.includes(img.id))
-    totalImageCount.value = Math.max(0, totalImageCount.value - ids.length)
-    props.showToast(t('history.imagesDeleted', { count: ids.length }), 'success')
-  } catch (error) {
-    console.error('Failed to delete multiple images:', error)
-    props.showToast(t('history.batchDeleteFailed'), 'error')
-  }
-}
-
-// History Image Actions
-async function toggleImageFavorite(item, index) {
-  // Toggle in memory first for instant feedback
-  item.favorite = !item.favorite
-  const isFavorite = item.favorite
-
-  try {
-    if (item.id) {
-      await toggleFavorite(item.id)
-      props.showToast(
-        isFavorite ? t('history.favoriteAdded') : t('history.favoriteRemoved'),
-        'success'
-      )
-    }
-  } catch (error) {
-    // Revert on error
-    item.favorite = !item.favorite
-    console.error('Failed to toggle favorite:', error)
-    props.showToast(t('history.favoriteUpdateFailed'), 'error')
-  }
-}
-
-async function deleteImage(item, index) {
-  const result = await props.showConfirm({
-    title: t('common.delete'),
-    message: t('history.deleteConfirm', { count: 1 }),
-    confirmText: t('common.delete'),
-    cancelText: t('common.cancel')
-  })
-
-  if (!result?.confirmed) return
-
-  try {
-    if (item.id) {
-      await deleteImageFromDB(item.id)
-    }
-    generatedImages.value = generatedImages.value.filter(img => img.id !== item.id)
-    totalImageCount.value = Math.max(0, totalImageCount.value - 1)
-    props.showToast(t('history.imageDeleted'), 'success')
-  } catch (error) {
-    console.error('Failed to delete image:', error)
-    props.showToast(t('history.deleteFailed'), 'error')
-  }
-}
-
-function toggleImageSelection(id) {
-  if (selectedImages.value.has(id)) {
-    selectedImages.value.delete(id)
-  } else {
-    selectedImages.value.add(id)
-  }
-  selectedImages.value = new Set(selectedImages.value)
-}
-
-function selectAllImages() {
-  filteredImages.value.forEach(img => selectedImages.value.add(img.id))
-  selectedImages.value = new Set(selectedImages.value)
-}
-
-function deselectAllImages() {
-  selectedImages.value.clear()
-  selectedImages.value = new Set()
-}
-
-async function downloadSelectedImages() {
-  // TODO: Implement batch download
-  props.showToast(t('history.downloadStarted'), 'info')
-}
-
-async function clearHistory() {
-  const result = await props.showConfirm({
-    title: t('history.clear'),
-    message: t('history.clearConfirm'),
-    confirmText: t('common.delete'),
-    cancelText: t('common.cancel')
-  })
-
-  if (!result?.confirmed) return
-
-  try {
-    await clearAllImages()
-    generatedImages.value = []
-    totalImageCount.value = 0
-    currentImage.value = ''
-    props.showToast(t('history.deletedCount', { count: totalImageCount.value }), 'success')
-  } catch (error) {
-    console.error('Failed to clear history:', error)
-  }
-}
-
-async function addSampleImage() {
-  // Generate a sample test image (for development)
-  props.showToast(t('history.addSample'), 'info')
-}
-
-async function loadMoreImages() {
-  try {
-    const currentCount = generatedImages.value.length
-    const moreImages = await getRecentImages(currentCount + 20)
-    generatedImages.value = moreImages
-  } catch (error) {
-    console.error('Failed to load more images:', error)
-  }
 }
 
 function loadParamsFromHistory(item) {
@@ -626,17 +513,21 @@ onMounted(async () => {
   loadPresets()
 
   // Load auto-correct setting
-  const savedAutoCorrect = localStorage.getItem('sd-auto-correct-dimensions')
+  const savedAutoCorrect = window.localStorage.getItem('sd-auto-correct-dimensions')
   if (savedAutoCorrect === 'true') {
     autoCorrectDimensions.value = true
   }
 
   // Load existing images from IndexedDB
   try {
-    totalImageCount.value = await getImageCount()
-    const images = await getRecentImages(50)
+    const count = await indexedDB.getImageCount()
+    totalImageCount.value = count
+    const images = await indexedDB.getRecentImages(INITIAL_LOAD_COUNT)
     if (images.length > 0) {
       generatedImages.value = images
+      if (images[0]?.image) {
+        currentImage.value = images[0].image
+      }
     }
   } catch (error) {
     console.error('Failed to load images from IndexedDB:', error)
@@ -644,11 +535,11 @@ onMounted(async () => {
 
   // Load slots from IndexedDB
   try {
-    const loadedSlots = await loadSlots(IMG2IMG_SLOT_KEY)
+    const loadedSlots = await indexedDB.loadSlots(IMG2IMG_SLOT_KEY)
     slots.value = loadedSlots
 
     // Load active slot from localStorage
-    const savedActiveSlot = localStorage.getItem(localStorageKey)
+    const savedActiveSlot = window.localStorage.getItem(localStorageKey)
     if (savedActiveSlot !== null) {
       const slotIndex = parseInt(savedActiveSlot, 10)
       if (!isNaN(slotIndex) && slotIndex >= 0 && slotIndex < SLOT_COUNT) {
@@ -664,7 +555,7 @@ onMounted(async () => {
 watch(slots, async (newSlots) => {
   try {
     const plainSlots = JSON.parse(JSON.stringify(toRaw(newSlots)))
-    await saveSlots(plainSlots, IMG2IMG_SLOT_KEY)
+    await indexedDB.saveSlots(plainSlots, IMG2IMG_SLOT_KEY)
   } catch (error) {
     console.error('슬롯 IndexedDB 저장 실패:', error)
   }
@@ -682,13 +573,6 @@ watch(
   }
 )
 
-// Filtered images for history
-const filteredImages = computed(() => {
-  if (showFavoriteOnly.value) {
-    return generatedImages.value.filter(img => img.favorite)
-  }
-  return generatedImages.value
-})
 </script>
 
 <template>
@@ -997,27 +881,33 @@ const filteredImages = computed(() => {
     </div>
 
     <!-- 3열: 이미지 영역 OR 북마크/프리셋 매니저 -->
-    <div v-if="!showBookmarkManager && !showPresetManager" class="image-area">
-      <!-- 입력 이미지 업로드 -->
-      <ImageUploadPanel
-        v-model="initImage"
-        :is-generating="isGenerating"
-        :generated-images="generatedImages"
-        @update:width="initImageWidth = $event"
-        @update:height="initImageHeight = $event"
-        @open-history-selector="openHistorySelector"
-      />
+    <div v-if="!showBookmarkManager && !showPresetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
+      <!-- 이미지 컬럼 (입력 + 출력 상하 분할) -->
+      <div class="image-column">
+        <!-- 입력 이미지 업로드 (상단) -->
+        <ImageUploadPanel
+          class="input-image-panel"
+          v-model="initImage"
+          :is-generating="isGenerating"
+          :generated-images="generatedImages"
+          @update:width="initImageWidth = $event"
+          @update:height="initImageHeight = $event"
+          @open-history-selector="openHistorySelector"
+        />
 
-      <!-- 이미지 프리뷰 -->
-      <ImagePreviewPanel
-        :current-image="currentImage"
-        :is-expanded="showImagePanel"
-        @toggle-panel="toggleImagePanel"
-        @show-preview="props.openModal('viewer')"
-      />
+        <!-- 출력 이미지 프리뷰 (하단) -->
+        <ImagePreviewPanel
+          class="output-image-panel"
+          :current-image="currentImage"
+          :is-expanded="showImagePanel"
+          @toggle-panel="toggleImagePanel"
+          @show-preview="props.openModal('viewer')"
+        />
+      </div>
 
       <!-- 히스토리 -->
-      <HistoryPanel
+        <HistoryPanel
+        ref="historyPanelRef"
         :is-expanded="showHistoryPanel"
         :is-content-collapsed="isHistoryContentCollapsed"
         :show-favorite-only="showFavoriteOnly"
@@ -1028,6 +918,9 @@ const filteredImages = computed(() => {
         :is-empty="filteredImages.length === 0"
         :has-favorites="generatedImages.some(img => img.favorite)"
         :has-images="generatedImages.length > 0"
+        :use-virtual-scroll="true"
+        :total-height="historyTotalHeight"
+        :offset-y="historyOffsetY"
         @toggle-panel="toggleHistoryPanel"
         @toggle-content="toggleHistoryContent"
         @toggle-favorite-filter="toggleFavoriteFilter"
@@ -1040,10 +933,10 @@ const filteredImages = computed(() => {
         @load-more="loadMoreImages"
       >
         <HistoryImageItem
-          v-for="(item, index) in filteredImages.slice(0, 20)"
+          v-for="item in visibleHistoryItems"
           :key="item.id || item.timestamp"
           :item="item"
-          :index="index"
+          :index="item._virtualIndex"
           :is-selection-mode="isSelectionMode"
           :is-selected="selectedImages.has(item.id)"
           @toggle-favorite="toggleImageFavorite"
@@ -1813,10 +1706,73 @@ const filteredImages = computed(() => {
 
 /* ===== 3열: 이미지 영역 ===== */
 .image-area {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* 이미지 컬럼 (입력 + 출력 상하 분할) */
+.image-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+  min-height: 0;
+}
+
+/* 입력 이미지 패널 (상단) */
+.input-image-panel {
+  flex: 0 0 auto;
+  max-height: 45%;
+  min-height: 150px;
+}
+
+/* 출력 이미지 패널 (하단) */
+.output-image-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 히스토리 패널 접힘 시 */
+.image-area.history-collapsed {
+  grid-template-columns: 1fr 40px;
+}
+
+.image-area.history-collapsed .history-panel {
+  width: 40px;
+}
+
+.image-area.history-collapsed .history-panel .panel-header {
+  flex-direction: column;
+  padding: 12px 8px;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-area.history-collapsed .history-panel .panel-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  order: 2;
+}
+
+.image-area.history-collapsed .history-panel .panel-header > div {
+  order: 1;
+}
+
+.image-area.history-collapsed .history-panel .toggle-content-btn,
+.image-area.history-collapsed .history-panel .filter-favorite-btn,
+.image-area.history-collapsed .history-panel .batch-btn,
+.image-area.history-collapsed .history-panel .clear-btn {
+  display: none;
+}
+
+.image-area.history-collapsed .history-panel .history-content,
+.image-area.history-collapsed .history-panel .panel-footer {
+  display: none;
 }
 
 /* History */

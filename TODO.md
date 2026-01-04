@@ -1,6 +1,11 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] **img2img 히스토리 패널 리팩토링** (2026-01-04)
+  - useHistory, useVirtualScroll 컴포저블 적용 (txt2img와 동일)
+  - 인라인 함수 ~150줄 제거, 중복 코드 정리
+  - 레이아웃 통일: grid 레이아웃, 입력/출력 이미지 상하 분할
+  - 히스토리 패널 접힘 기능 적용
 - [x] **img2img 고도화 완료** (2026-01-04)
   - 슬롯 시스템: txt2img와 독립적인 3개 슬롯, IndexedDB 분리 저장
   - 업스케일: /sdapi/v1/extra-single-image API, 업스케일 후 사이즈 올바르게 저장
@@ -223,6 +228,21 @@
 
 ## In Progress
 - [ ] Inpaint/Outpainting 기능 구현
+
+### img2img 히스토리 패널 리팩토링 ✅ (2026-01-04)
+- [x] 1. useHistory 컴포저블 적용
+  - 인라인 히스토리 로직 제거
+  - useHistory 컴포저블 import 및 연동
+- [x] 2. Virtual Scroll 적용
+  - useVirtualScroll 컴포저블 적용
+  - historyPanelRef 연결
+- [x] 3. 중복 코드 정리
+  - toggleImageFavorite, deleteImage 등 인라인 함수 제거
+  - useHistory에서 제공하는 함수 사용
+- [x] 4. 레이아웃 txt2img와 통일
+  - image-area: grid 레이아웃 (1fr 420px)
+  - 이미지 컬럼: 입력 이미지(상단) + 출력 이미지(하단) 상하 분할
+  - 히스토리 패널 접힘 기능 동일하게 적용
 
 ## Planned
 
