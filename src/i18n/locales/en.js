@@ -700,6 +700,14 @@ export default {
     selectImage: 'Select Image',
     imageRequired: '⚠️ Input image required',
     unsupportedFormat: 'Unsupported image format',
-    loadFailed: 'Failed to load image'
+    loadFailed: 'Failed to load image',
+    // Upscale
+    enableUpscale: 'Upscale (Hires Fix)',
+    upscaler: 'Upscaler',
+    upscaleScale: 'Scale',
+    upscaleHint: 'Output size: {width} × {height}',
+    upscaling: 'Upscaling...',
+    upscaleComplete: 'Upscale complete',
+    upscaleFailed: 'Upscale failed'
   }
 }

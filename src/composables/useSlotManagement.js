@@ -3,9 +3,17 @@
  */
 import { ref } from 'vue'
 
-export function useSlotManagement(defaultSettings, settingsRefs, adetailers, showToast = null) {
+/**
+ * @param {Object} defaultSettings - 기본 설정 객체
+ * @param {Object} settingsRefs - 설정 ref 객체들
+ * @param {Ref} adetailers - ADetailer 설정 ref (선택적)
+ * @param {Function} showToast - 토스트 표시 함수 (선택적)
+ * @param {string} slotKeyPrefix - localStorage 키 접두사 (기본값: 'sd', 예: 'sd-img2img')
+ */
+export function useSlotManagement(defaultSettings, settingsRefs, adetailers = null, showToast = null, slotKeyPrefix = 'sd') {
   const slots = ref([null, null, null]) // 3 slots
   const activeSlot = ref(null) // Currently active slot (0, 1, 2, or null)
+  const localStorageKey = `${slotKeyPrefix}-active-slot`
 
   let saveSlotTimeout = null
   let lastSaveTime = 0 // 마지막 저장 시간 (토스트 중복 방지)
@@ -21,8 +29,10 @@ export function useSlotManagement(defaultSettings, settingsRefs, adetailers, sho
       settings[key] = refObj.value
     }
 
-    // ADetailer는 깊은 복사
-    settings.adetailers = JSON.parse(JSON.stringify(adetailers.value))
+    // ADetailer는 깊은 복사 (있는 경우에만)
+    if (adetailers) {
+      settings.adetailers = JSON.parse(JSON.stringify(adetailers.value))
+    }
 
     return settings
   }
@@ -38,8 +48,8 @@ export function useSlotManagement(defaultSettings, settingsRefs, adetailers, sho
       }
     }
 
-    // ADetailer는 깊은 복사
-    if (settings.adetailers) {
+    // ADetailer는 깊은 복사 (있는 경우에만)
+    if (adetailers && settings.adetailers) {
       adetailers.value = JSON.parse(JSON.stringify(settings.adetailers))
     }
   }
@@ -79,7 +89,7 @@ export function useSlotManagement(defaultSettings, settingsRefs, adetailers, sho
       applySettings(JSON.parse(JSON.stringify(defaultSettings)))
     }
 
-    localStorage.setItem('sd-active-slot', slotIndex)
+    localStorage.setItem(localStorageKey, slotIndex)
   }
 
   /**
@@ -117,6 +127,7 @@ export function useSlotManagement(defaultSettings, settingsRefs, adetailers, sho
   return {
     slots,
     activeSlot,
+    localStorageKey,
     getCurrentSettings,
     applySettings,
     saveCurrentSlot,

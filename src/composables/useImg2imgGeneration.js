@@ -346,7 +346,9 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
       width, height, batchCount, batchSize, seed,
       adetailers, selectedModel,
       // img2img 전용 파라미터
-      initImage, denoisingStrength
+      initImage, denoisingStrength,
+      // 업스케일 파라미터
+      enableUpscale, upscaler, upscaleScale
     } = params
 
     // 입력 이미지 체크
@@ -569,6 +571,57 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
         lastUsedParams.value = newImages[0].params
 
         consecutiveErrors.value = 0
+
+        // 업스케일 처리
+        if (enableUpscale?.value && newImages.length > 0) {
+          progressState.value = t('img2img.upscaling')
+
+          try {
+            for (let i = 0; i < newImages.length; i++) {
+              const imageBase64 = newImages[i].image.replace('data:image/png;base64,', '')
+
+              const upscalePayload = {
+                image: imageBase64,
+                upscaler_1: upscaler?.value || 'R-ESRGAN 4x+',
+                upscaling_resize: upscaleScale?.value || 2
+              }
+
+              const upscaleResponse = await post('/sdapi/v1/extra-single-image', upscalePayload)
+
+              if (upscaleResponse.ok) {
+                const upscaleData = await upscaleResponse.json()
+                if (upscaleData.image) {
+                  // 업스케일된 이미지로 교체
+                  const scale = upscaleScale?.value || 2
+                  newImages[i].image = `data:image/png;base64,${upscaleData.image}`
+                  newImages[i].params.upscaled = true
+                  newImages[i].params.upscaler = upscaler?.value
+                  newImages[i].params.upscaleScale = scale
+                  // 업스케일된 사이즈로 업데이트
+                  newImages[i].params.width = Math.round(newImages[i].params.width * scale)
+                  newImages[i].params.height = Math.round(newImages[i].params.height * scale)
+
+                  // IndexedDB 업데이트
+                  try {
+                    await saveImage(newImages[i])
+                  } catch (err) {
+                    console.error('Failed to update upscaled image:', err)
+                  }
+                }
+              }
+            }
+
+            // 업스케일 완료 후 UI 업데이트
+            const combined = [...newImages, ...generatedImages.value.filter(img => !newImages.find(n => n.id === img.id))]
+            generatedImages.value = combined.slice(0, MAX_IMAGES)
+            currentImage.value = newImages[0].image
+
+            showToast(t('img2img.upscaleComplete'), 'success')
+          } catch (upscaleError) {
+            console.error('Upscale failed:', upscaleError)
+            showToast(t('img2img.upscaleFailed'), 'warning')
+          }
+        }
 
         if (!newImages[0].interrupted && params.notificationType?.value) {
           notifyCompletion(params.notificationType.value, {

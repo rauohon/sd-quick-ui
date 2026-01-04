@@ -14,13 +14,20 @@ const { t } = useI18n()
 const { isDark, toggleTheme } = useDarkMode()
 
 // Tab navigation
-const activeTab = ref('txt2img')
 const tabs = [
   { id: 'txt2img', icon: '✏️' },
   { id: 'img2img', icon: '🖼️' },
   { id: 'inpaint', icon: '🎨' },
   { id: 'workflow', icon: '⚙️' }
 ]
+const savedTab = localStorage.getItem('sd-active-tab')
+const activeTab = ref(tabs.some(t => t.id === savedTab) ? savedTab : 'txt2img')
+
+// 탭 변경 시 저장
+function setActiveTab(tabId) {
+  activeTab.value = tabId
+  localStorage.setItem('sd-active-tab', tabId)
+}
 
 // Modal state
 const showModal = ref(false)
@@ -171,7 +178,7 @@ onUnmounted(() => {
         :key="tab.id"
         class="tab-btn"
         :class="{ active: activeTab === tab.id }"
-        @click="activeTab = tab.id"
+        @click="setActiveTab(tab.id)"
       >
         <span class="tab-icon">{{ tab.icon }}</span>
         <span class="tab-label">{{ t(`tabs.${tab.id}`) }}</span>

@@ -1,6 +1,13 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 23. img2img 고도화 - 슬롯, 업스케일, 히스토리 패널 (2026-01-04)
+  - 슬롯 시스템 구현 (txt2img와 독립적인 3개 슬롯, IndexedDB 분리 저장)
+  - 업스케일 기능 추가 (/sdapi/v1/extra-single-image API 사용)
+  - 업스케일 후 히스토리에 올바른 사이즈 저장 (512x512 → 1024x1024)
+  - 히스토리 패널 완전 구현 (HistoryImageItem, HistoryManagerModal 연동)
+  - 즐겨찾기/삭제/파라미터 로드/비교 모달 정상 동작
+  - 탭 위치 localStorage 저장 (새로고침 시 유지)
 - [x] 22. img2img 기본 기능 구현 (2026-01-04)
   - Tab navigation 구조 추가 (txt2img, img2img, inpaint, workflow)
   - Img2ImgView.vue 생성 (txt2img 패턴 기반)
@@ -196,9 +203,39 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ]
+- [ ] img2img 고도화 및 새 기능 추가
 
 ## Planned
+
+### img2img 고도화
+- [x] 1. 슬롯 시스템 구현 (txt2img와 독립적인 3개 슬롯) ✅ Completed (2026-01-04)
+  - useSlotManagement.js 패턴 활용
+  - IndexedDB 저장 키 분리 (img2img-slots)
+  - 프롬프트, 파라미터, denoising strength 저장
+- [x] 2. 업스케일 (Hires Fix 대체) 지원 추가 ✅ Completed (2026-01-04)
+  - /sdapi/v1/extra-single-image API 사용
+  - upscaler, upscaleScale 설정
+  - 업스케일 후 사이즈 올바르게 저장
+- [ ] 3. ADetailer 상세 설정 UI 추가
+  - txt2img ADetailer UI 재사용
+  - 4개 디테일러 지원
+- [ ] 4. 북마크/프리셋 연동
+  - img2img 전용 북마크/프리셋 또는 통합 관리
+
+### 새 탭 기능
+- [ ] 5. Inpaint/Outpainting 구현
+  - 캔버스 기반 마스크 그리기
+  - /sdapi/v1/img2img with mask 파라미터
+  - 브러시 크기, 마스크 블러 설정
+- [ ] 6. ControlNet 연동
+  - ControlNet 모델 목록 로드
+  - 프리프로세서 선택
+  - 컨트롤 이미지 업로드
+  - weight, guidance 설정
+- [ ] 7. Workflow 저장 기능
+  - 전체 생성 설정을 JSON으로 저장/불러오기
+  - 워크플로우 목록 관리
+  - 가져오기/내보내기
 
 ### Performance Optimization
 - [x] 3. Image loading optimization ✅ Completed (2026-01-01)

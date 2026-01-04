@@ -456,15 +456,17 @@ async function clearNonFavoriteImages() {
 
 /**
  * 슬롯 저장
+ * @param {Array} slots - 슬롯 데이터 배열
+ * @param {string} key - 저장 키 (기본값: 'txt2img-slots', 'img2img-slots' 등)
  */
-async function saveSlots(slots) {
+async function saveSlots(slots, key = 'txt2img-slots') {
   try {
     const database = await initDB()
     const transaction = database.transaction([STORE_SLOTS], 'readwrite')
     const store = transaction.objectStore(STORE_SLOTS)
 
     return new Promise((resolve, reject) => {
-      const request = store.put({ id: 'slots', data: slots })
+      const request = store.put({ id: key, data: slots })
 
       request.onsuccess = () => {
         resolve()
@@ -483,15 +485,16 @@ async function saveSlots(slots) {
 
 /**
  * 슬롯 로드
+ * @param {string} key - 저장 키 (기본값: 'txt2img-slots', 'img2img-slots' 등)
  */
-async function loadSlots() {
+async function loadSlots(key = 'txt2img-slots') {
   try {
     const database = await initDB()
     const transaction = database.transaction([STORE_SLOTS], 'readonly')
     const store = transaction.objectStore(STORE_SLOTS)
 
     return new Promise((resolve, reject) => {
-      const request = store.get('slots')
+      const request = store.get(key)
 
       request.onsuccess = () => {
         if (request.result) {

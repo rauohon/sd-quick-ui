@@ -135,7 +135,8 @@ export const IMAGE_TYPES = {
 
 // ===== img2img 관련 =====
 export const IMG2IMG_PARAM_RANGES = {
-  denoisingStrength: { min: 0, max: 1, default: 0.75, step: 0.01 }
+  denoisingStrength: { min: 0, max: 1, default: 0.75, step: 0.01 },
+  upscaleScale: { min: 1, max: 4, default: 2, step: 0.1 }
 }
 
 // 지원하는 이미지 포맷

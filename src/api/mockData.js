@@ -314,6 +314,18 @@ export const mockResponses = {
   'POST:/sdapi/v1/options': {
     status: 200,
     data: {}
+  },
+
+  // POST /sdapi/v1/extra-single-image (Upscale)
+  'POST:/sdapi/v1/extra-single-image': {
+    status: 200,
+    data: (body) => {
+      // Mock: 그냥 입력 이미지를 그대로 반환 (실제로는 업스케일됨)
+      return {
+        image: body.image || generateMockImage(),
+        html_info: `Upscaled with ${body.upscaler_1 || 'Unknown'} x${body.upscaling_resize || 2}`
+      }
+    }
   }
 }
 

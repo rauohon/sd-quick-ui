@@ -700,6 +700,14 @@ export default {
     selectImage: '이미지 선택',
     imageRequired: '⚠️ 입력 이미지 필요',
     unsupportedFormat: '지원하지 않는 이미지 형식입니다',
-    loadFailed: '이미지 로드 실패'
+    loadFailed: '이미지 로드 실패',
+    // 업스케일
+    enableUpscale: '업스케일 (Hires Fix)',
+    upscaler: 'Upscaler',
+    upscaleScale: '배율',
+    upscaleHint: '출력 크기: {width} × {height}',
+    upscaling: '업스케일 중...',
+    upscaleComplete: '업스케일 완료',
+    upscaleFailed: '업스케일 실패'
   }
 }
