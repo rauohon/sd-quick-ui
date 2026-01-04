@@ -126,3 +126,17 @@ export const NOTIFICATION_TYPES = {
 }
 
 export const DEFAULT_NOTIFICATION_VOLUME = 0.5 // 0.0 ~ 1.0
+
+// ===== 이미지 타입 =====
+export const IMAGE_TYPES = {
+  TXT2IMG: 'txt2img',
+  IMG2IMG: 'img2img'
+}
+
+// ===== img2img 관련 =====
+export const IMG2IMG_PARAM_RANGES = {
+  denoisingStrength: { min: 0, max: 1, default: 0.75, step: 0.01 }
+}
+
+// 지원하는 이미지 포맷
+export const SUPPORTED_IMAGE_FORMATS = ['image/png', 'image/jpeg', 'image/webp']

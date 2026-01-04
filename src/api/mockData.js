@@ -248,6 +248,53 @@ export const mockResponses = {
     }
   },
 
+  // POST /sdapi/v1/img2img
+  'POST:/sdapi/v1/img2img': {
+    status: 200,
+    data: (body) => {
+      const batchSize = body.batch_size || 1
+      const nIter = body.n_iter || 1
+      const totalImages = batchSize * nIter
+      const images = Array(totalImages).fill(null).map(() => generateMockImage())
+
+      const baseSeed = body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed
+      const allSeeds = Array(totalImages).fill(null).map((_, i) => baseSeed + i)
+
+      return {
+        images,
+        parameters: body,
+        info: JSON.stringify({
+          prompt: body.prompt || '',
+          all_prompts: Array(totalImages).fill(body.prompt || ''),
+          negative_prompt: body.negative_prompt || '',
+          all_negative_prompts: Array(totalImages).fill(body.negative_prompt || ''),
+          seed: baseSeed,
+          all_seeds: allSeeds,
+          subseed: -1,
+          all_subseeds: Array(totalImages).fill(-1),
+          subseed_strength: 0,
+          width: body.width,
+          height: body.height,
+          sampler_name: body.sampler_name,
+          cfg_scale: body.cfg_scale,
+          steps: body.steps,
+          batch_size: batchSize,
+          restore_faces: body.restore_faces || false,
+          face_restoration_model: null,
+          sd_model_hash: '6ce0161689',
+          denoising_strength: body.denoising_strength || 0.75,
+          extra_generation_params: {},
+          index_of_first_image: 0,
+          infotexts: Array(totalImages).fill(`${body.prompt}\nNegative prompt: ${body.negative_prompt}\nSteps: ${body.steps}, Sampler: ${body.sampler_name}, CFG scale: ${body.cfg_scale}, Seed: ${body.seed}, Size: ${body.width}x${body.height}, Denoising strength: ${body.denoising_strength}`),
+          styles: [],
+          job_timestamp: new Date().toISOString(),
+          clip_skip: 1,
+          is_using_inpainting_conditioning: false
+        })
+      }
+    }
+  },
+
   // POST /sdapi/v1/interrupt
   'POST:/sdapi/v1/interrupt': {
     status: 200,

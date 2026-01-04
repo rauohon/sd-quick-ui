@@ -672,5 +672,34 @@ export default {
   dragDrop: {
     dropHere: 'Drop PNG file here',
     pngOnly: 'Only PNG images are supported'
+  },
+
+  // Tab Navigation
+  tabs: {
+    txt2img: 'txt2img',
+    img2img: 'img2img',
+    inpaint: 'Inpaint',
+    workflow: 'Workflow',
+    comingSoon: 'Coming Soon'
+  },
+
+  // img2img
+  img2img: {
+    title: 'img2img',
+    uploadImage: 'Upload Image',
+    selectFile: '📁 Select File',
+    selectFromHistory: '📋 From History',
+    dropImageHere: 'Drop image here',
+    dragDropHint: 'or drag and drop',
+    denoisingStrength: 'Denoising',
+    denoisingHint: '0: Keep original / 1: Generate new',
+    noImageSelected: 'Please select an image first',
+    imageSize: '{width} × {height}',
+    removeImage: 'Remove image',
+    inputImage: 'Input Image',
+    selectImage: 'Select Image',
+    imageRequired: '⚠️ Input image required',
+    unsupportedFormat: 'Unsupported image format',
+    loadFailed: 'Failed to load image'
   }
 }

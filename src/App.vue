@@ -1,12 +1,26 @@
 <script setup>
 import { ref, onMounted, onUnmounted, h, render } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Txt2ImgView from './views/Txt2ImgView.vue'
+import Img2ImgView from './views/Img2ImgView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
 import { useDarkMode } from './composables/useDarkMode'
 
+// i18n
+const { t } = useI18n()
+
 // Dark mode initialization
 const { isDark, toggleTheme } = useDarkMode()
+
+// Tab navigation
+const activeTab = ref('txt2img')
+const tabs = [
+  { id: 'txt2img', icon: '✏️' },
+  { id: 'img2img', icon: '🖼️' },
+  { id: 'inpaint', icon: '🎨' },
+  { id: 'workflow', icon: '⚙️' }
+]
 
 // Modal state
 const showModal = ref(false)
@@ -150,15 +164,62 @@ onUnmounted(() => {
 
 <template>
   <div class="app">
-    <!-- Main View -->
-    <Txt2ImgView
-      :showToast="showToast"
-      :openModal="openModal"
-      :showConfirm="showConfirm"
-      :isDark="isDark"
-      :toggleTheme="toggleTheme"
-      @updateCurrentImage="currentImage = $event"
-    />
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        class="tab-btn"
+        :class="{ active: activeTab === tab.id }"
+        @click="activeTab = tab.id"
+      >
+        <span class="tab-icon">{{ tab.icon }}</span>
+        <span class="tab-label">{{ t(`tabs.${tab.id}`) }}</span>
+      </button>
+    </nav>
+
+    <!-- Tab Content -->
+    <div class="tab-container">
+      <!-- txt2img -->
+      <Txt2ImgView
+        v-if="activeTab === 'txt2img'"
+        :showToast="showToast"
+        :openModal="openModal"
+        :showConfirm="showConfirm"
+        :isDark="isDark"
+        :toggleTheme="toggleTheme"
+        @updateCurrentImage="currentImage = $event"
+      />
+
+      <!-- img2img -->
+      <Img2ImgView
+        v-else-if="activeTab === 'img2img'"
+        :showToast="showToast"
+        :openModal="openModal"
+        :showConfirm="showConfirm"
+        :isDark="isDark"
+        :toggleTheme="toggleTheme"
+        @updateCurrentImage="currentImage = $event"
+      />
+
+      <!-- inpaint (placeholder) -->
+      <div v-else-if="activeTab === 'inpaint'" class="placeholder-view">
+        <div class="placeholder-content">
+          <span class="placeholder-icon">🎨</span>
+          <h2>{{ t('tabs.inpaint') }}</h2>
+          <p>{{ t('tabs.comingSoon') }}</p>
+        </div>
+      </div>
+
+      <!-- workflow (placeholder) -->
+      <div v-else-if="activeTab === 'workflow'" class="placeholder-view">
+        <div class="placeholder-content">
+          <span class="placeholder-icon">⚙️</span>
+          <h2>{{ t('tabs.workflow') }}</h2>
+          <p>{{ t('tabs.comingSoon') }}</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Universal Modal -->
     <div v-if="showModal" class="modal-overlay" @click="closeModal">
@@ -217,6 +278,100 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   background: var(--color-bg-primary);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-btn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.tab-btn.active {
+  background: var(--color-bg-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-primary);
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+.tab-label {
+  font-size: 13px;
+}
+
+/* Tab Container */
+.tab-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Placeholder View */
+.placeholder-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+}
+
+.placeholder-content {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.placeholder-icon {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.placeholder-content h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: var(--color-text-primary);
+}
+
+.placeholder-content p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 /* Universal Modal */

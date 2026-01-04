@@ -1,0 +1,669 @@
+/**
+ * img2img 이미지 생성 및 진행 상태 관리 composable
+ * useImageGeneration.js를 기반으로 img2img 전용으로 수정
+ */
+import { ref, watch, onUnmounted } from 'vue'
+import { useIndexedDB } from './useIndexedDB'
+import { useErrorHandler } from './useErrorHandler'
+import { cloneADetailers } from '../utils/adetailer'
+import { notifyCompletion } from '../utils/notification'
+import { expandRandomCombination } from '../utils/promptCombination'
+import { get, post } from '../api/client'
+import {
+  SEED_MAX,
+  MAX_CONSECUTIVE_ERRORS,
+  MAX_IDLE_COUNT,
+  PROGRESS_POLL_INTERVAL,
+  GENERATION_TIMEOUT,
+  INFINITE_MODE_INITIAL_WAIT,
+  MAX_IMAGES,
+  IMAGE_TYPES
+} from '../config/constants'
+
+// Number validation helper
+function validateNumber(value, min, max, defaultValue, step = null) {
+  let num = Number(value)
+
+  if (isNaN(num)) {
+    return defaultValue
+  }
+
+  if (num < min) num = min
+  if (num > max) num = max
+
+  if (step && num % step !== 0) {
+    num = Math.round(num / step) * step
+  }
+
+  return num
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
+  const isGenerating = ref(false)
+  const progress = ref(0)
+  const progressState = ref('')
+  const currentImage = ref('')
+  const lastUsedParams = ref(null)
+  const generatedImages = ref([])
+  const isInfiniteMode = ref(false)
+  const infiniteCount = ref(0)
+  const wasInterrupted = ref(false)
+  const finalImageReceived = ref(false)
+  const generationStartTime = ref(null)
+  const pendingUsedParams = ref(null)
+  const hasShownProgressImage = ref(false)
+
+  const progressInterval = ref(null)
+
+  const { saveImage } = useIndexedDB()
+  const { network, storage, generation } = useErrorHandler({ showToast, t })
+
+  const consecutiveErrors = ref(0)
+  let isInfiniteLoopRunning = false
+  let idleCount = 0
+
+  /**
+   * 진행 상태 폴링 시작
+   */
+  function startProgressPolling() {
+    if (progressInterval.value) {
+      return
+    }
+
+    stopProgressPolling()
+    idleCount = 0
+
+    progressInterval.value = setInterval(async () => {
+      try {
+        const response = await get('/sdapi/v1/progress')
+        if (response.ok) {
+          const data = await response.json()
+          const progressPercentage = data.progress * 100
+          const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
+
+          if (!hasActiveJob && progressPercentage === 0) {
+            idleCount++
+            if (idleCount >= MAX_IDLE_COUNT) {
+              stopProgressPolling()
+              return
+            }
+          } else {
+            idleCount = 0
+          }
+
+          progress.value = progressPercentage
+
+          let stateText = ''
+          if (data.textinfo) {
+            stateText = data.textinfo
+          } else if (data.state) {
+            const state = data.state
+            const parts = []
+
+            if (state.job_count > 1) {
+              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
+            }
+
+            if (state.job) {
+              parts.push(state.job)
+            }
+
+            if (state.sampling_step !== undefined && state.sampling_steps > 0) {
+              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
+            }
+
+            if (data.eta_relative > 0) {
+              const eta = Math.ceil(data.eta_relative)
+              parts.push(t('time.secondsRemaining', { eta }))
+            }
+
+            stateText = parts.join(' • ') || t('generation.processing')
+          } else {
+            stateText = t('generation.processing')
+          }
+
+          progressState.value = stateText
+
+          if (data.current_image && !finalImageReceived.value) {
+            currentImage.value = `data:image/png;base64,${data.current_image}`
+
+            if (!hasShownProgressImage.value && pendingUsedParams.value) {
+              lastUsedParams.value = pendingUsedParams.value
+              hasShownProgressImage.value = true
+            }
+          }
+        }
+      } catch (error) {
+        network(error, { context: 'progressPolling', silent: true })
+      }
+    }, PROGRESS_POLL_INTERVAL)
+  }
+
+  function stopProgressPolling() {
+    if (progressInterval.value) {
+      clearInterval(progressInterval.value)
+      progressInterval.value = null
+    }
+    idleCount = 0
+  }
+
+  async function interruptGeneration() {
+    const wasInfiniteMode = isInfiniteMode.value
+
+    try {
+      wasInterrupted.value = true
+
+      if (isInfiniteMode.value) {
+        isInfiniteMode.value = false
+        consecutiveErrors.value = 0
+      }
+
+      if (isInfiniteLoopRunning) {
+        isInfiniteLoopRunning = false
+      }
+
+      const response = await post('/sdapi/v1/interrupt')
+      await response.text()
+
+      stopProgressPolling()
+      progress.value = 0
+      progressState.value = ''
+
+      setTimeout(() => {
+        if (isGenerating.value) {
+          isGenerating.value = false
+        }
+      }, 1000)
+
+      if (wasInfiniteMode) {
+        showToast(t('infiniteMode.interrupted', { count: infiniteCount.value }), 'info')
+      } else {
+        showToast(t('generation.interrupted'), 'info')
+      }
+    } catch (error) {
+      console.error(t('generation.interruptFailed'), error)
+
+      if (isInfiniteMode.value) {
+        isInfiniteMode.value = false
+        consecutiveErrors.value = 0
+      }
+
+      if (isInfiniteLoopRunning) {
+        isInfiniteLoopRunning = false
+      }
+
+      stopProgressPolling()
+      progress.value = 0
+      progressState.value = ''
+
+      setTimeout(() => {
+        if (isGenerating.value) {
+          isGenerating.value = false
+        }
+      }, 1000)
+
+      showToast(t('generation.interruptComplete', { error: error.message }), 'warning')
+    }
+  }
+
+  async function skipCurrentImage() {
+    wasInterrupted.value = true
+
+    try {
+      await post('/sdapi/v1/skip')
+      showToast(t('generation.skipCurrent'), 'info')
+    } catch (error) {
+      generation(error, {
+        context: 'skipCurrentImage',
+        i18nKey: 'generation.skipFailed'
+      })
+    }
+  }
+
+  function stopInfiniteModeOnly() {
+    if (!isInfiniteMode.value) {
+      return
+    }
+
+    const currentCount = infiniteCount.value
+    isInfiniteMode.value = false
+    consecutiveErrors.value = 0
+
+    showToast(t('infiniteMode.stoppedCurrent', { count: currentCount }), 'info')
+  }
+
+  function toggleInfiniteMode() {
+    isInfiniteMode.value = !isInfiniteMode.value
+
+    if (isInfiniteMode.value) {
+      if (isInfiniteLoopRunning) {
+        isInfiniteMode.value = false
+        showToast(t('infiniteMode.alreadyRunning'), 'warning')
+        return
+      }
+
+      if (isGenerating.value) {
+        showToast(t('infiniteMode.waitingCurrent'), 'info')
+      }
+
+      infiniteCount.value = 0
+      consecutiveErrors.value = 0
+      isInfiniteLoopRunning = true
+
+      showToast(t('infiniteMode.started'), 'success')
+      startInfiniteGeneration()
+    } else {
+      consecutiveErrors.value = 0
+      showToast(t('infiniteMode.stopped', { count: infiniteCount.value }), 'info')
+    }
+  }
+
+  async function startInfiniteGeneration() {
+    if (!isInfiniteMode.value) {
+      isInfiniteLoopRunning = false
+      return
+    }
+
+    if (!isInfiniteLoopRunning) {
+      isInfiniteLoopRunning = true
+    }
+
+    if (isGenerating.value) {
+      let waitTime = 0
+      while (isGenerating.value && isInfiniteMode.value && waitTime < INFINITE_MODE_INITIAL_WAIT) {
+        await sleep(500)
+        waitTime += 500
+      }
+
+      if (waitTime >= INFINITE_MODE_INITIAL_WAIT) {
+        showToast(t('infiniteMode.waitTimeout'), 'error')
+        isInfiniteMode.value = false
+        isInfiniteLoopRunning = false
+        return
+      }
+    }
+
+    if (!isInfiniteMode.value) {
+      isInfiniteLoopRunning = false
+      return
+    }
+
+    const baseSeed = params.seed.value
+    const useVariation = baseSeed !== -1
+
+    try {
+      while (isInfiniteMode.value) {
+        if (useVariation) {
+          const range = params.seedVariationRange.value
+          const variation = Math.floor(Math.random() * (range * 2 + 1)) - range
+          params.seed.value = Math.max(0, Math.min(SEED_MAX, baseSeed + variation))
+        } else {
+          params.seed.value = -1
+        }
+
+        await generateImage()
+
+        let waitTime = 0
+        while (isGenerating.value && isInfiniteMode.value && waitTime < GENERATION_TIMEOUT) {
+          await sleep(500)
+          waitTime += 500
+        }
+
+        if (waitTime >= GENERATION_TIMEOUT) {
+          console.error('Generation timeout (10 min)')
+          showToast(t('infiniteMode.generationTimeout'), 'error')
+          isInfiniteMode.value = false
+          break
+        }
+
+        if (!isInfiniteMode.value) {
+          break
+        }
+
+        infiniteCount.value++
+
+        const delayTime = Math.min(1000 + (consecutiveErrors.value * 2000), 10000)
+        const delayIterations = Math.ceil(delayTime / 500)
+
+        for (let i = 0; i < delayIterations && isInfiniteMode.value; i++) {
+          await sleep(500)
+        }
+      }
+    } finally {
+      params.seed.value = baseSeed
+      isInfiniteLoopRunning = false
+    }
+  }
+
+  /**
+   * img2img 이미지 생성
+   */
+  async function generateImage(overrides = {}) {
+    const {
+      prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
+      width, height, batchCount, batchSize, seed,
+      adetailers, selectedModel,
+      // img2img 전용 파라미터
+      initImage, denoisingStrength
+    } = params
+
+    // 입력 이미지 체크
+    if (!initImage.value) {
+      showToast(t('img2img.noImageSelected'), 'error')
+      return
+    }
+
+    const rawPrompt = overrides.prompt !== undefined ? overrides.prompt : prompt.value
+    const rawNegativePrompt = overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value
+
+    const actualPrompt = expandRandomCombination(rawPrompt)
+    const actualNegativePrompt = expandRandomCombination(rawNegativePrompt)
+
+    // img2img는 프롬프트 없이도 가능
+    // if (!actualPrompt.trim()) {
+    //   showToast(t('prompt.required'), 'error')
+    //   return
+    // }
+
+    const corrections = []
+
+    width.value = validateNumber(width.value, 64, 2048, 512)
+    height.value = validateNumber(height.value, 64, 2048, 512)
+
+    const originalSteps = steps.value
+    steps.value = validateNumber(steps.value, 1, 150, 20)
+    if (steps.value !== originalSteps) corrections.push(`Steps: ${originalSteps} → ${steps.value}`)
+
+    const originalCfgScale = cfgScale.value
+    cfgScale.value = validateNumber(cfgScale.value, 1, 30, 7)
+    if (cfgScale.value !== originalCfgScale) corrections.push(`CFG Scale: ${originalCfgScale} → ${cfgScale.value}`)
+
+    denoisingStrength.value = validateNumber(denoisingStrength.value, 0, 1, 0.75)
+    batchCount.value = validateNumber(batchCount.value, 1, 100, 1)
+    batchSize.value = validateNumber(batchSize.value, 1, 8, 1)
+
+    adetailers.value.forEach(ad => {
+      ad.confidence = validateNumber(ad.confidence, 0, 1, 0.3)
+      ad.dilateErode = validateNumber(ad.dilateErode, -128, 128, 4)
+      ad.inpaintDenoising = validateNumber(ad.inpaintDenoising, 0, 1, 0.4)
+      ad.steps = validateNumber(ad.steps, 1, 150, 28)
+    })
+
+    if (corrections.length > 0) {
+      showToast(t('generation.parametersCorrected', { corrections: corrections.join(', ') }), 'warning')
+    }
+
+    isGenerating.value = true
+    generationStartTime.value = Date.now()
+    progress.value = 0
+    progressState.value = t('generation.preparing')
+    finalImageReceived.value = false
+    hasShownProgressImage.value = false
+
+    const usedParams = {
+      prompt: actualPrompt,
+      negative_prompt: actualNegativePrompt,
+      steps: steps.value,
+      sampler_name: samplerName.value,
+      scheduler: scheduler.value,
+      width: width.value,
+      height: height.value,
+      cfg_scale: cfgScale.value,
+      seed: seed.value,
+      batch_size: batchSize.value,
+      batch_count: batchCount.value,
+      denoising_strength: denoisingStrength.value,
+      sd_model_name: selectedModel?.value || '',
+      adetailers: cloneADetailers(adetailers.value),
+      type: IMAGE_TYPES.IMG2IMG // 이미지 타입 표시
+    }
+
+    pendingUsedParams.value = usedParams
+
+    lastUsedParams.value = {
+      ...usedParams,
+      prompt: rawPrompt,
+      negative_prompt: rawNegativePrompt
+    }
+
+    try {
+      startProgressPolling()
+
+      // base64 이미지 추출 (data:image/xxx;base64, 부분 제거)
+      const base64Image = initImage.value.includes(',')
+        ? initImage.value.split(',')[1]
+        : initImage.value
+
+      const payload = {
+        init_images: [base64Image], // img2img 핵심 파라미터
+        prompt: actualPrompt,
+        negative_prompt: actualNegativePrompt,
+        steps: steps.value,
+        sampler_name: samplerName.value,
+        scheduler: scheduler.value,
+        width: width.value,
+        height: height.value,
+        cfg_scale: cfgScale.value,
+        seed: seed.value,
+        batch_size: batchSize.value,
+        n_iter: batchCount.value,
+        denoising_strength: denoisingStrength.value,
+        save_images: true,
+        override_settings: {
+          samples_save: true,
+        },
+        override_settings_restore_afterwards: false,
+      }
+
+      // ADetailer 추가
+      if (enabledADetailers.value.length > 0) {
+        const adetailerArgs = adetailers.value.map(ad => ({
+          "ad_model": ad.enable ? ad.model : "None",
+          "ad_prompt": ad.enable ? (ad.prompt || "") : "",
+          "ad_negative_prompt": ad.enable ? (ad.negativePrompt || "") : "",
+          "ad_confidence": ad.confidence,
+          "ad_mask_min_ratio": 0.0,
+          "ad_mask_max_ratio": 1.0,
+          "ad_dilate_erode": ad.dilateErode,
+          "ad_inpaint_only_masked": ad.inpaintOnlyMasked,
+          "ad_denoising_strength": ad.inpaintDenoising,
+          "ad_use_inpaint_width_height": false,
+          "ad_use_steps": ad.useSeparateSteps,
+          "ad_steps": ad.useSeparateSteps ? ad.steps : steps.value,
+        }))
+
+        payload.alwayson_scripts = {
+          "ADetailer": {
+            "args": adetailerArgs
+          }
+        }
+      }
+
+      // img2img 엔드포인트 호출
+      const response = await post('/sdapi/v1/img2img', payload)
+
+      if (!response.ok) {
+        throw new Error(t('message.error.apiErrorWithStatus', { status: response.status }))
+      }
+
+      const data = await response.json()
+
+      if (data.images && data.images.length > 0) {
+        const generationDuration = generationStartTime.value
+          ? Date.now() - generationStartTime.value
+          : null
+
+        let actualSeed = usedParams.seed
+        let allSeeds = []
+        let allPrompts = []
+        let allNegativePrompts = []
+        try {
+          const info = JSON.parse(data.info)
+          if (info.seed !== undefined) {
+            actualSeed = info.seed
+          }
+          if (info.all_seeds && Array.isArray(info.all_seeds)) {
+            allSeeds = info.all_seeds
+          }
+          if (info.all_prompts && Array.isArray(info.all_prompts)) {
+            allPrompts = info.all_prompts
+          }
+          if (info.all_negative_prompts && Array.isArray(info.all_negative_prompts)) {
+            allNegativePrompts = info.all_negative_prompts
+          }
+        } catch (e) {
+          // Failed to parse info
+        }
+
+        const newImages = []
+        let totalDeletedCount = 0
+
+        for (let i = 0; i < data.images.length; i++) {
+          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
+
+          const paramsWithActualSeed = {
+            ...usedParams,
+            actual_seed: imageSeed,
+            prompt: allPrompts[i] || usedParams.prompt,
+            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
+          }
+
+          const newImage = {
+            image: `data:image/png;base64,${data.images[i]}`,
+            info: data.info,
+            params: paramsWithActualSeed,
+            timestamp: new Date().toISOString(),
+            duration: generationDuration,
+            favorite: false,
+            interrupted: wasInterrupted.value,
+            type: IMAGE_TYPES.IMG2IMG // 이미지 타입 저장
+          }
+
+          try {
+            const result = await saveImage(newImage)
+            newImage.id = result.id
+
+            if (result.deletedCount > 0) {
+              totalDeletedCount += result.deletedCount
+            }
+          } catch (error) {
+            storage(error, { context: 'saveImage', silent: true })
+          }
+
+          newImages.push(newImage)
+        }
+
+        if (totalDeletedCount > 0) {
+          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
+        }
+
+        wasInterrupted.value = false
+
+        const combined = [...newImages, ...generatedImages.value]
+        generatedImages.value = combined.slice(0, MAX_IMAGES)
+
+        finalImageReceived.value = true
+        currentImage.value = generatedImages.value[0].image
+        lastUsedParams.value = newImages[0].params
+
+        consecutiveErrors.value = 0
+
+        if (!newImages[0].interrupted && params.notificationType?.value) {
+          notifyCompletion(params.notificationType.value, {
+            volume: params.notificationVolume?.value || 0.5,
+            imageInfo: {
+              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
+              count: data.images.length
+            }
+          })
+        }
+      }
+    } catch (error) {
+      console.error(t('message.error.generationFailed'), error)
+
+      consecutiveErrors.value++
+
+      let message = t('message.error.generationFailed')
+
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        message = t('message.error.connectionFailed')
+      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
+        const statusMatch = error.message.match(/\d+/)
+        const status = statusMatch ? parseInt(statusMatch[0]) : null
+
+        switch (status) {
+          case 401:
+            message = t('message.error.authRequired')
+            break
+          case 403:
+            message = t('message.error.accessDenied')
+            break
+          case 500:
+            message = t('message.error.serverInternalError')
+            break
+          case 503:
+            message = t('message.error.noResponse')
+            break
+          default:
+            message = t('message.error.serverError', { status })
+        }
+      } else {
+        message = t('message.error.generationFailedMessage', { error: error.message })
+      }
+
+      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
+        isInfiniteMode.value = false
+        isInfiniteLoopRunning = false
+        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
+      } else {
+        showToast(message, 'error')
+      }
+    } finally {
+      isGenerating.value = false
+      stopProgressPolling()
+      progress.value = 0
+      progressState.value = ''
+    }
+  }
+
+  const handleBeforeUnload = (e) => {
+    if (isGenerating.value) {
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+  }
+
+  watch(isGenerating, (generating) => {
+    if (generating) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    } else {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  })
+
+  onUnmounted(() => {
+    stopProgressPolling()
+    window.removeEventListener('beforeunload', handleBeforeUnload)
+  })
+
+  return {
+    isGenerating,
+    progress,
+    progressState,
+    currentImage,
+    lastUsedParams,
+    generatedImages,
+    isInfiniteMode,
+    infiniteCount,
+    generateImage,
+    interruptGeneration,
+    skipCurrentImage,
+    stopInfiniteModeOnly,
+    toggleInfiniteMode,
+    startProgressPolling,
+    stopProgressPolling,
+  }
+}

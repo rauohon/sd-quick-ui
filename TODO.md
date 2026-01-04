@@ -1,6 +1,14 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 22. img2img 기본 기능 구현 (2026-01-04)
+  - Tab navigation 구조 추가 (txt2img, img2img, inpaint, workflow)
+  - Img2ImgView.vue 생성 (txt2img 패턴 기반)
+  - ImageUploadPanel.vue 컴포넌트 (파일 업로드, 드래그앤드롭, 히스토리 선택)
+  - useImg2imgGeneration.js 컴포저블 (init_images, denoising_strength 지원)
+  - Mock API img2img 엔드포인트 추가
+  - 히스토리 통합 관리 (타입 배지로 구분: i2i)
+  - i18n 지원 (ko/en)
 - [x] 21. History Manager filter and bug fixes (2026-01-03)
   - Added filter dropdown (All / Favorites Only / Interrupted)
   - Filter by interrupted images to easily select and delete skipped/interrupted generations
@@ -224,4 +232,4 @@
 - Keep this file updated across Claude Code sessions
 
 ---
-Last updated: 2026-01-02
+Last updated: 2026-01-04

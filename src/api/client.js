@@ -33,8 +33,8 @@ export async function apiCall(endpoint, options = {}) {
   if (IS_MOCK_MODE) {
     console.log(`[Mock API] ${method} ${endpoint}`)
 
-    // txt2img는 긴 지연 적용 (실제 생성 시간 시뮬레이션)
-    if (endpoint === '/sdapi/v1/txt2img') {
+    // txt2img, img2img는 긴 지연 적용 (실제 생성 시간 시뮬레이션)
+    if (endpoint === '/sdapi/v1/txt2img' || endpoint === '/sdapi/v1/img2img') {
       // Progress 시뮬레이션 시작 (대기 전에 호출해야 progress polling이 작동함)
       startMockProgress()
       await sleep(MOCK_GENERATION_DELAY)

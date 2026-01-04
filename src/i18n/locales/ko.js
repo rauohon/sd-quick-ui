@@ -672,7 +672,34 @@ export default {
   dragDrop: {
     dropHere: 'PNG 파일을 여기에 놓으세요',
     pngOnly: 'PNG 이미지만 지원됩니다'
-  }
+  },
 
-  // Phase 3에서 extracted-texts.json을 기반으로 실제 텍스트로 채워질 예정
+  // 탭 네비게이션
+  tabs: {
+    txt2img: 'txt2img',
+    img2img: 'img2img',
+    inpaint: 'Inpaint',
+    workflow: 'Workflow',
+    comingSoon: '준비 중입니다'
+  },
+
+  // img2img
+  img2img: {
+    title: 'img2img',
+    uploadImage: '이미지 업로드',
+    selectFile: '📁 파일 선택',
+    selectFromHistory: '📋 히스토리에서',
+    dropImageHere: '이미지를 여기에 드롭하세요',
+    dragDropHint: '또는 드래그 앤 드롭',
+    denoisingStrength: 'Denoising',
+    denoisingHint: '0: 원본 유지 / 1: 완전히 새로 생성',
+    noImageSelected: '이미지를 먼저 선택해주세요',
+    imageSize: '{width} × {height}',
+    removeImage: '이미지 제거',
+    inputImage: '입력 이미지',
+    selectImage: '이미지 선택',
+    imageRequired: '⚠️ 입력 이미지 필요',
+    unsupportedFormat: '지원하지 않는 이미지 형식입니다',
+    loadFailed: '이미지 로드 실패'
+  }
 }
