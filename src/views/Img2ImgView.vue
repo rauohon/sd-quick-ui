@@ -25,6 +25,8 @@ import HistoryPanel from '../components/HistoryPanel.vue'
 import HistoryImageItem from '../components/HistoryImageItem.vue'
 import HistoryManagerModal from '../components/HistoryManagerModal.vue'
 import ApiStatusIndicator from '../components/ApiStatusIndicator.vue'
+import ADetailerPromptModal from '../components/ADetailerPromptModal.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 
@@ -78,12 +80,21 @@ const notificationType = ref(NOTIFICATION_TYPES.NONE)
 const notificationVolume = ref(0.5)
 
 // UI 상태
+const showSettingsPanel = ref(true)
 const showHistoryPanel = ref(true)
 const isHistoryContentCollapsed = ref(false)
 const showImagePanel = ref(true)
 const showFavoriteOnly = ref(false)
 const isSelectionMode = ref(false)
 const selectedImages = ref(new Set())
+
+// ADetailer 프롬프트 모달
+const showADetailerPrompt = ref(false)
+const editingADetailerIndex = ref(0)
+
+// 시스템 설정
+const isSystemSettingsExpanded = ref(false)
+const autoCorrectDimensions = ref(false)
 
 // API 상태
 const { apiConnected, apiChecking, checkApiStatus } = useApiStatus()
@@ -418,6 +429,57 @@ function handleCompareImage(item) {
   props.openModal('comparison', item.image)
 }
 
+// ===== ADetailer Functions =====
+function openADetailerPrompt(index) {
+  editingADetailerIndex.value = index
+  showADetailerPrompt.value = true
+}
+
+function updateADetailerPrompts(prompt, negativePrompt) {
+  const index = editingADetailerIndex.value
+  adetailers.value[index].prompt = prompt
+  adetailers.value[index].negativePrompt = negativePrompt
+}
+
+function updateADetailerEnable(index, value) {
+  adetailers.value[index].enable = value
+}
+
+function updateADetailerModel(index, value) {
+  adetailers.value[index].model = value
+}
+
+function updateADetailerConfidence(index, value) {
+  adetailers.value[index].confidence = value
+}
+
+function updateADetailerDilateErode(index, value) {
+  adetailers.value[index].dilateErode = value
+}
+
+function updateADetailerInpaintDenoising(index, value) {
+  adetailers.value[index].inpaintDenoising = value
+}
+
+function updateADetailerInpaintOnlyMasked(index, value) {
+  adetailers.value[index].inpaintOnlyMasked = value
+}
+
+function updateADetailerUseSeparateSteps(index, value) {
+  adetailers.value[index].useSeparateSteps = value
+}
+
+function updateADetailerSteps(index, value) {
+  adetailers.value[index].steps = value
+}
+
+function reorderADetailers(fromIndex, toIndex) {
+  if (toIndex < 0 || toIndex >= adetailers.value.length) return
+  const temp = adetailers.value[fromIndex]
+  adetailers.value[fromIndex] = adetailers.value[toIndex]
+  adetailers.value[toIndex] = temp
+}
+
 // History image selector modal (임시 구현)
 const showHistorySelector = ref(false)
 
@@ -441,10 +503,21 @@ function selectImageFromHistory(image) {
   closeHistorySelector()
 }
 
+// 시스템 설정 저장
+function saveAutoCorrectSetting() {
+  localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
+}
+
 // ===== Lifecycle =====
 onMounted(async () => {
   await checkApiStatus()
   await loadModels()
+
+  // Load auto-correct setting
+  const savedAutoCorrect = localStorage.getItem('sd-auto-correct-dimensions')
+  if (savedAutoCorrect === 'true') {
+    autoCorrectDimensions.value = true
+  }
 
   // Load existing images from IndexedDB
   try {
@@ -507,168 +580,274 @@ const filteredImages = computed(() => {
 </script>
 
 <template>
-  <div class="img2img-view">
-    <!-- 왼쪽 패널 -->
-    <div class="left-panel">
-      <!-- API 상태 -->
-      <div class="section api-section">
-        <ApiStatusIndicator
-          :api-connected="apiConnected"
-          :api-checking="apiChecking"
-          @check-api="checkApiStatus"
-        />
-      </div>
-
-      <!-- 이미지 업로드 -->
-      <ImageUploadPanel
-        v-model="initImage"
-        v-model:imageWidth="initImageWidth"
-        v-model:imageHeight="initImageHeight"
-        :is-generating="isGenerating"
-        @open-history-selector="openHistorySelector"
-      />
-
-      <!-- 슬롯 버튼 -->
-      <div class="section slot-section">
-        <div class="slot-buttons">
-          <button
-            v-for="i in SLOT_COUNT"
-            :key="i"
-            class="slot-btn"
-            :class="{
-              active: activeSlot === i - 1,
-              filled: slots[i - 1] !== null
-            }"
-            @click="selectSlot(i - 1)"
-            :title="slots[i - 1] ? t('promptPanel.slotFilledTooltip', { slot: i }) : t('promptPanel.slotEmptyTooltip', { slot: i })"
-          >
-            <span class="slot-number">{{ i }}</span>
-            <span v-if="slots[i - 1]" class="slot-indicator">●</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 생성 버튼 -->
-      <div class="section generate-section">
+  <div class="img2img-view" :class="{ 'settings-collapsed': !showSettingsPanel }">
+    <!-- 1열: 설정 패널 -->
+    <div class="advanced-panel" :class="{ collapsed: !showSettingsPanel }">
+      <div class="panel-header">
         <button
-          v-if="!isGenerating"
-          class="generate-btn"
-          :class="{ disabled: !apiConnected || !initImage }"
-          @click="handleGenerate"
-          :disabled="!apiConnected || !initImage"
+          class="toggle-advanced-btn"
+          @click="showSettingsPanel = !showSettingsPanel"
+          :title="showSettingsPanel ? t('advancedPanel.foldPanel') : t('advancedPanel.unfoldPanel')"
         >
-          <template v-if="!initImage">
-            {{ t('img2img.imageRequired') }}
-          </template>
-          <template v-else-if="!apiConnected">
-            {{ t('promptPanel.apiConnectionRequired') }}
-          </template>
-          <template v-else>
-            🚀 {{ t('common.generate') }}
-          </template>
+          {{ showSettingsPanel ? '◀' : '▶' }}
         </button>
-        <div v-else class="generating-controls">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
-          </div>
-          <div class="progress-text">{{ progressState || t('common.generating') }}</div>
-          <div class="control-buttons">
-            <button class="interrupt-btn" @click="interruptGeneration">
-              {{ t('promptPanel.interrupt') }}
-            </button>
-            <button class="skip-btn" @click="skipCurrentImage">
-              {{ t('promptPanel.skip') }}
-            </button>
-          </div>
+        <h3 class="panel-title">{{ t('advancedPanel.title') }}</h3>
+        <div class="header-right">
+          <ApiStatusIndicator
+            v-if="showSettingsPanel"
+            :connected="apiConnected"
+            :checking="apiChecking"
+            @check="checkApiStatus"
+          />
         </div>
       </div>
 
-      <!-- Denoising Strength -->
-      <div class="section denoising-section">
-        <div class="section-header">
-          <label>{{ t('img2img.denoisingStrength') }}</label>
-          <span class="value-display">{{ denoisingStrength.toFixed(2) }}</span>
+      <div v-if="showSettingsPanel" class="advanced-content">
+        <!-- 모델 선택 -->
+        <div class="form-group horizontal">
+          <label>Checkpoint</label>
+          <select v-model="selectedModel" :disabled="isGenerating">
+            <option value="">{{ t('advancedPanel.selectModel') }}</option>
+            <option v-for="m in availableModels" :key="m.title" :value="m.title">{{ m.model_name }}</option>
+          </select>
         </div>
-        <input
-          type="range"
-          v-model.number="denoisingStrength"
-          :min="IMG2IMG_PARAM_RANGES.denoisingStrength.min"
-          :max="IMG2IMG_PARAM_RANGES.denoisingStrength.max"
-          :step="IMG2IMG_PARAM_RANGES.denoisingStrength.step"
-          :disabled="isGenerating"
-        />
-        <div class="hint">{{ t('img2img.denoisingHint') }}</div>
-      </div>
 
-      <!-- 업스케일 설정 -->
-      <div class="section upscale-section">
-        <div class="section-header">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              v-model="enableUpscale"
-              :disabled="isGenerating"
-            />
-            {{ t('img2img.enableUpscale') }}
-          </label>
-        </div>
-        <div v-if="enableUpscale" class="upscale-options">
-          <div class="param-row">
-            <label>{{ t('img2img.upscaler') }}</label>
-            <select v-model="upscaler" :disabled="isGenerating">
-              <option v-for="u in availableUpscalers" :key="u.name" :value="u.name">{{ u.name }}</option>
-            </select>
-          </div>
-          <div class="param-row">
-            <label>{{ t('img2img.upscaleScale') }}</label>
-            <input
-              type="number"
-              v-model.number="upscaleScale"
-              :min="IMG2IMG_PARAM_RANGES.upscaleScale.min"
-              :max="IMG2IMG_PARAM_RANGES.upscaleScale.max"
-              :step="IMG2IMG_PARAM_RANGES.upscaleScale.step"
-              :disabled="isGenerating"
-            />
-          </div>
-          <div class="hint">{{ t('img2img.upscaleHint', { width: Math.round(width * upscaleScale), height: Math.round(height * upscaleScale) }) }}</div>
-        </div>
-      </div>
-
-      <!-- 기본 파라미터 -->
-      <div class="section params-section">
-        <div class="param-row">
-          <label>Steps</label>
-          <input type="number" v-model.number="steps" min="1" max="150" :disabled="isGenerating" />
-        </div>
-        <div class="param-row">
-          <label>CFG Scale</label>
-          <input type="number" v-model.number="cfgScale" min="1" max="30" step="0.5" :disabled="isGenerating" />
-        </div>
-        <div class="param-row">
-          <label>Width</label>
-          <input type="number" v-model.number="width" min="64" max="2048" step="8" :disabled="isGenerating" />
-        </div>
-        <div class="param-row">
-          <label>Height</label>
-          <input type="number" v-model.number="height" min="64" max="2048" step="8" :disabled="isGenerating" />
-        </div>
-        <div class="param-row">
-          <label>Seed</label>
-          <div class="seed-input">
-            <input type="number" v-model.number="seed" :disabled="isGenerating" />
-            <button @click="randomizeSeed" :disabled="isGenerating" class="dice-btn">🎲</button>
-          </div>
-        </div>
-        <div class="param-row">
+        <!-- 샘플러 -->
+        <div class="form-group horizontal">
           <label>Sampler</label>
           <select v-model="samplerName" :disabled="isGenerating">
             <option v-for="s in availableSamplers" :key="s.name" :value="s.name">{{ s.name }}</option>
           </select>
         </div>
+
+        <!-- 크기 -->
+        <div class="form-group horizontal">
+          <label>Width</label>
+          <input type="number" v-model.number="width" min="64" max="2048" step="64" :disabled="isGenerating" />
+        </div>
+        <div class="form-group horizontal">
+          <label>Height</label>
+          <input type="number" v-model.number="height" min="64" max="2048" step="64" :disabled="isGenerating" />
+        </div>
+
+        <!-- Denoising Strength -->
+        <div class="form-group horizontal">
+          <label>Denoising</label>
+          <input
+            type="range"
+            v-model.number="denoisingStrength"
+            :min="IMG2IMG_PARAM_RANGES.denoisingStrength.min"
+            :max="IMG2IMG_PARAM_RANGES.denoisingStrength.max"
+            :step="IMG2IMG_PARAM_RANGES.denoisingStrength.step"
+            :disabled="isGenerating"
+          />
+          <span class="volume-display">{{ denoisingStrength.toFixed(2) }}</span>
+        </div>
+
+        <!-- 업스케일 -->
+        <div class="form-group horizontal">
+          <label class="checkbox-inline">
+            <input type="checkbox" v-model="enableUpscale" :disabled="isGenerating" />
+            Upscale
+          </label>
+        </div>
+        <template v-if="enableUpscale">
+          <div class="form-group horizontal">
+            <label>Upscaler</label>
+            <select v-model="upscaler" :disabled="isGenerating">
+              <option v-for="u in availableUpscalers" :key="u.name" :value="u.name">{{ u.name }}</option>
+            </select>
+          </div>
+          <div class="form-group horizontal">
+            <label>Scale</label>
+            <input type="number" v-model.number="upscaleScale" :min="1" :max="4" :step="0.5" :disabled="isGenerating" />
+          </div>
+        </template>
+
+        <!-- Seed -->
+        <div class="form-group horizontal">
+          <label>Seed</label>
+          <div style="flex: 1; display: flex; gap: 6px;">
+            <input type="number" v-model.number="seed" :disabled="isGenerating" style="flex: 1;" />
+            <button class="seed-random-btn" @click="randomizeSeed" :disabled="isGenerating" title="Generate random seed">🎲</button>
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <div class="form-group horizontal">
+          <label>Steps</label>
+          <input type="number" v-model.number="steps" min="1" max="150" :disabled="isGenerating" />
+        </div>
+
+        <!-- CFG Scale -->
+        <div class="form-group horizontal">
+          <label>CFG Scale</label>
+          <input type="number" v-model.number="cfgScale" min="1" max="30" step="0.5" :disabled="isGenerating" />
+        </div>
+
+        <!-- Batch -->
+        <div class="form-group horizontal">
+          <label>Batch count</label>
+          <input type="number" v-model.number="batchCount" min="1" :disabled="isGenerating" />
+        </div>
+        <div class="form-group horizontal">
+          <label>Batch size</label>
+          <input type="number" v-model.number="batchSize" min="1" :disabled="isGenerating" />
+        </div>
+
+        <!-- Notification -->
+        <div class="section-divider"></div>
+        <div class="form-group horizontal">
+          <label>Notification</label>
+          <select v-model="notificationType" :disabled="isGenerating" style="flex: 1;">
+            <option :value="NOTIFICATION_TYPES.NONE">🔇 None</option>
+            <option :value="NOTIFICATION_TYPES.SOUND">🔔 Sound</option>
+            <option :value="NOTIFICATION_TYPES.BROWSER">📬 Browser</option>
+            <option :value="NOTIFICATION_TYPES.BOTH">🔔📬 Both</option>
+          </select>
+        </div>
+        <div v-if="notificationType === NOTIFICATION_TYPES.SOUND || notificationType === NOTIFICATION_TYPES.BOTH" class="form-group horizontal">
+          <label>Volume</label>
+          <input type="range" v-model.number="notificationVolume" min="0" max="1" step="0.1" :disabled="isGenerating" />
+          <span class="volume-display">{{ Math.round(notificationVolume * 100) }}%</span>
+        </div>
+
+        <!-- ADetailer -->
+        <div class="section-divider"></div>
+        <div class="adetailer-group">
+          <div class="group-title">🎯 ADetailer</div>
+          <div v-for="(ad, index) in adetailers" :key="index" class="ad-row">
+            <div class="ad-header-row">
+              <div class="reorder-btns">
+                <button :disabled="index === 0 || isGenerating" @click="reorderADetailers(index, index - 1)">▲</button>
+                <button :disabled="index === adetailers.length - 1 || isGenerating" @click="reorderADetailers(index, index + 1)">▼</button>
+              </div>
+              <label class="checkbox-label">
+                <input type="checkbox" :checked="ad.enable" @change="updateADetailerEnable(index, $event.target.checked)" :disabled="isGenerating" />
+                AD {{ ADETAILER_LABELS[index] }}
+              </label>
+            </div>
+            <template v-if="ad.enable">
+              <div class="ad-details">
+                <select :value="ad.model" @change="updateADetailerModel(index, $event.target.value)" :disabled="isGenerating">
+                  <option v-for="model in ADETAILER_MODELS" :key="model" :value="model">{{ model }}</option>
+                </select>
+                <button class="prompt-edit-btn" @click="openADetailerPrompt(index)" :disabled="isGenerating">
+                  {{ ad.prompt || ad.negativePrompt ? '✏️' : '📝' }}
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Settings Section -->
+      <div v-if="showSettingsPanel" class="system-settings-section">
+        <div class="system-settings-header" @click="isSystemSettingsExpanded = !isSystemSettingsExpanded">
+          <span class="system-settings-title">⚙️ {{ t('systemSettings.title') }}</span>
+          <span class="toggle-icon">{{ isSystemSettingsExpanded ? '▲' : '▼' }}</span>
+        </div>
+
+        <transition name="expand">
+          <div v-if="isSystemSettingsExpanded" class="system-settings-content">
+            <div class="setting-group">
+              <label class="setting-label">{{ t('settings.language') }}</label>
+              <LanguageSwitcher />
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">{{ t('theme.title') }}</label>
+              <div class="theme-toggle">
+                <button class="theme-btn" :class="{ active: !props.isDark }" @click="props.toggleTheme" :title="t('theme.light')">
+                  ☀️ {{ t('theme.light') }}
+                </button>
+                <button class="theme-btn" :class="{ active: props.isDark }" @click="props.toggleTheme" :title="t('theme.dark')">
+                  🌙 {{ t('theme.dark') }}
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label checkbox-label">
+                <input type="checkbox" v-model="autoCorrectDimensions" @change="saveAutoCorrectSetting" />
+                <span>{{ t('dimensionValidation.autoCorrect') }}</span>
+              </label>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <div v-if="showSettingsPanel" class="panel-footer">
+        <span class="footer-title">⚡ SD Quick UI</span>
+        <button
+          v-if="!apiConnected"
+          class="footer-btn"
+          @click="checkApiStatus"
+          :disabled="apiChecking"
+          :title="t('api.checkConnection')"
+        >
+          {{ apiChecking ? t('advancedPanel.checking') : t('advancedPanel.reconnect') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 2열: 프롬프트 + 생성 -->
+    <div class="prompt-panel">
+      <div class="prompt-panel-header">
+        <h3 class="prompt-panel-title">{{ t('promptPanel.title') }}</h3>
+        <div class="header-buttons">
+          <button
+            class="generate-btn"
+            @click="handleGenerate"
+            :disabled="isGenerating || !apiConnected || !initImage"
+          >
+            <template v-if="isGenerating">{{ t('promptPanel.generating') }}</template>
+            <template v-else-if="!initImage">{{ t('img2img.imageRequired') }}</template>
+            <template v-else-if="!apiConnected">{{ t('promptPanel.apiConnectionRequired') }}</template>
+            <template v-else>{{ t('promptPanel.generate') }}</template>
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div v-if="isGenerating" class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+        </div>
+        <div class="progress-text">
+          <span v-if="progressState" class="progress-state">{{ progressState }}</span>
+          <span class="progress-percent">{{ Math.round(progress) }}%</span>
+        </div>
+      </div>
+
+      <!-- Generation Controls -->
+      <div v-if="isGenerating" class="generation-controls">
+        <button class="control-btn interrupt-btn" @click="interruptGeneration">
+          {{ t('promptPanel.interrupt') }}
+        </button>
+        <button class="control-btn skip-btn" @click="skipCurrentImage">
+          {{ t('promptPanel.skip') }}
+        </button>
+      </div>
+
+      <!-- 슬롯 버튼 -->
+      <div class="slot-section">
+        <div class="slot-buttons">
+          <button
+            v-for="i in SLOT_COUNT"
+            :key="i"
+            class="slot-btn"
+            :class="{ active: activeSlot === i - 1, filled: slots[i - 1] !== null }"
+            @click="selectSlot(i - 1)"
+          >
+            {{ i }}
+            <span v-if="slots[i - 1]" class="dot">●</span>
+          </button>
+        </div>
       </div>
 
       <!-- 프롬프트 -->
-      <div class="section prompt-section">
+      <div class="prompt-section">
         <PromptTextarea
           v-model="prompt"
           :label="t('prompt.positive')"
@@ -685,8 +864,18 @@ const filteredImages = computed(() => {
       </div>
     </div>
 
-    <!-- 오른쪽 패널 -->
-    <div class="right-panel">
+    <!-- 3열: 이미지 영역 -->
+    <div class="image-area">
+      <!-- 입력 이미지 업로드 -->
+      <ImageUploadPanel
+        v-model="initImage"
+        :is-generating="isGenerating"
+        :generated-images="generatedImages"
+        @update:width="initImageWidth = $event"
+        @update:height="initImageHeight = $event"
+        @open-history-selector="openHistorySelector"
+      />
+
       <!-- 이미지 프리뷰 -->
       <ImagePreviewPanel
         :current-image="currentImage"
@@ -774,178 +963,599 @@ const filteredImages = computed(() => {
         </div>
       </div>
     </div>
+
+    <!-- ADetailer Prompt Modal -->
+    <ADetailerPromptModal
+      v-model="showADetailerPrompt"
+      :adetailer="adetailers[editingADetailerIndex]"
+      :adetailer-label="ADETAILER_LABELS[editingADetailerIndex]"
+      @save="updateADetailerPrompts"
+    />
   </div>
 </template>
 
 <style scoped>
 .img2img-view {
-  display: flex;
-  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 2fr;
   gap: 12px;
+  width: 100%;
+  height: 100%;
   padding: 12px;
   background: var(--color-bg-primary);
   overflow: hidden;
 }
 
-.left-panel {
-  width: 400px;
-  min-width: 350px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
+.img2img-view.settings-collapsed {
+  grid-template-columns: 48px 1fr 1.5fr;
 }
 
-.right-panel {
-  flex: 1;
+/* ===== Advanced Panel (1열) ===== */
+.advanced-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  height: 100%;
   overflow: hidden;
-}
-
-.section {
+  transition: all 0.3s ease;
   background: var(--color-bg-secondary);
   border-radius: 8px;
-  padding: 12px;
 }
 
-.api-section {
-  padding: 8px 12px;
+.advanced-panel.collapsed {
+  min-width: 48px;
+  max-width: 48px;
 }
 
-/* Denoising Section */
-.denoising-section .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+.advanced-panel.collapsed .panel-header {
+  justify-content: center;
+  padding: 8px 4px;
 }
 
-.denoising-section label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-primary);
+.advanced-panel.collapsed .panel-title,
+.advanced-panel.collapsed .header-right {
+  display: none;
 }
 
-.denoising-section .value-display {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-bg-tertiary);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.denoising-section input[type="range"] {
-  width: 100%;
-  margin-bottom: 4px;
-}
-
-.denoising-section .hint {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  opacity: 0.8;
-}
-
-/* Upscale Section */
-.upscale-section .section-header {
-  margin-bottom: 8px;
-}
-
-.upscale-section .checkbox-label {
+.panel-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.toggle-advanced-btn {
+  padding: 4px 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.toggle-advanced-btn:hover {
+  background: var(--color-bg-hover);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 14px;
   font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.advanced-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--color-bg-secondary);
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group.horizontal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group.horizontal label {
+  flex: 0 0 80px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.form-group.horizontal input[type="number"],
+.form-group.horizontal input[type="range"],
+.form-group.horizontal select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.form-group.horizontal input[type="range"] {
+  padding: 0;
+}
+
+.volume-display {
+  flex: 0 0 40px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
   color: var(--color-text-primary);
   cursor: pointer;
 }
 
-.upscale-section .checkbox-label input[type="checkbox"] {
+.checkbox-inline input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
-.upscale-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px;
-  background: var(--color-bg-tertiary);
-  border-radius: 6px;
+.seed-random-btn {
+  padding: 6px 10px;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
 }
 
-.upscale-options .hint {
-  font-size: 11px;
-  color: var(--color-primary);
-  font-weight: 500;
+.seed-random-btn:hover:not(:disabled) {
+  background: var(--color-success-dark);
+  transform: scale(1.05);
 }
 
-/* Params Section */
-.params-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.seed-random-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.param-row {
+.section-divider {
+  height: 1px;
+  background: var(--color-border-primary);
+  margin: 16px 0;
+}
+
+/* ADetailer 그룹 */
+.adetailer-group {
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.adetailer-group .group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.ad-row {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ad-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.ad-header-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.param-row label {
-  width: 80px;
-  font-size: 12px;
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.reorder-btns button {
+  width: 18px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-bg-tertiary);
   color: var(--color-text-secondary);
+  font-size: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.param-row input,
-.param-row select {
+.reorder-btns button:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.reorder-btns button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.ad-details {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-left: 24px;
+}
+
+.ad-details select {
   flex: 1;
-  padding: 6px 8px;
+  padding: 4px 6px;
+  font-size: 11px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-  font-size: 13px;
 }
 
-.seed-input {
-  flex: 1;
-  display: flex;
-  gap: 4px;
-}
-
-.seed-input input {
-  flex: 1;
-}
-
-.dice-btn {
-  padding: 6px 10px;
+.prompt-edit-btn {
+  padding: 4px 8px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: var(--color-bg-tertiary);
   cursor: pointer;
+  font-size: 12px;
 }
 
-.dice-btn:hover {
+.prompt-edit-btn:hover:not(:disabled) {
   background: var(--color-bg-hover);
 }
 
-/* Prompt Section */
-.prompt-section {
+/* System Settings Section */
+.system-settings-section {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
+}
+
+.system-settings-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.system-settings-header:hover {
+  background: var(--color-bg-hover);
+}
+
+.system-settings-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+
+.system-settings-content {
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.setting-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-group + .setting-group {
+  margin-top: 12px;
+}
+
+.setting-label {
+  flex: 0 0 80px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.setting-label.checkbox-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.setting-label.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.setting-label.checkbox-label span {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  display: flex;
   gap: 8px;
 }
 
-/* Slot Section */
-.slot-section {
+.theme-btn {
+  flex: 1;
   padding: 8px 12px;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.theme-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-bg-hover);
+}
+
+.theme-btn.active {
+  border-color: var(--color-primary);
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+}
+
+/* Transition Animation */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Panel Footer */
+.panel-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.footer-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.footer-btn {
+  padding: 4px 10px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.footer-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.footer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== 2열: 프롬프트 패널 ===== */
+.prompt-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.prompt-panel-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.prompt-panel-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.generate-btn {
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  padding: 8px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-text-secondary);
+}
+
+.progress-container {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.progress-state {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.progress-percent {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.generation-controls {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+}
+
+.control-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.interrupt-btn {
+  background: var(--color-error);
+  color: var(--color-text-inverse);
+}
+
+.interrupt-btn:hover {
+  background: var(--color-error-dark);
+  transform: scale(1.02);
+}
+
+.skip-btn {
+  background: var(--color-info);
+  color: var(--color-text-inverse);
+}
+
+.skip-btn:hover {
+  background: var(--color-info-dark);
+  transform: scale(1.02);
+}
+
+.slot-section {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .slot-buttons {
@@ -985,97 +1595,30 @@ const filteredImages = computed(() => {
   border-color: var(--color-success);
 }
 
-.slot-number {
-  font-weight: 700;
-}
-
-.slot-indicator {
+.slot-btn .dot {
   font-size: 8px;
   color: var(--color-success);
 }
 
-.slot-btn.active .slot-indicator {
+.slot-btn.active .dot {
   color: var(--color-text-inverse);
 }
 
-/* Generate Section */
-.generate-section {
-  padding: 16px 12px;
-}
-
-.generate-btn {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 8px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.generate-btn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.generate-btn.disabled,
-.generate-btn:disabled {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-secondary);
-  cursor: not-allowed;
-}
-
-.generating-controls {
+.prompt-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.progress-bar {
-  height: 8px;
-  background: var(--color-bg-tertiary);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  transition: width 0.3s;
-}
-
-.progress-text {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
-.control-buttons {
+/* ===== 3열: 이미지 영역 ===== */
+.image-area {
   display: flex;
-  gap: 8px;
-}
-
-.interrupt-btn,
-.skip-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.interrupt-btn {
-  background: var(--color-error);
-  color: white;
-}
-
-.skip-btn {
-  background: var(--color-warning);
-  color: white;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
 }
 
 /* History */

@@ -1,6 +1,20 @@
 # TODO - SD Vue UI
 
 ## Recently Completed
+- [x] 24. img2img UI 리팩토링 - txt2img 스타일 통일 (2026-01-04)
+  - 3-컬럼 그리드 레이아웃 (설정 : 프롬프트 : 이미지 = 1fr : 1.2fr : 2fr)
+  - 설정 패널: AdvancedSettingsPanel 스타일 적용
+    - 헤더: ◀/▶ 토글 버튼 + 타이틀 + API 상태
+    - 시스템 설정 섹션: 언어, 테마, 크기 자동 보정 (접기/펼치기)
+    - 푸터: SD Quick UI + 재연결 버튼
+  - 프롬프트 패널: PromptPanel 스타일 적용
+    - 헤더: 타이틀 + Generate 버튼 (그라데이션)
+    - 프로그레스 영역: 진행바 + 퍼센트 표시
+    - 생성 컨트롤: Interrupt/Skip 버튼
+    - 슬롯 섹션, 프롬프트 섹션 분리
+  - 패널 접힘 시 그리드 동적 변경 (48px 1fr 1.5fr)
+  - ADetailer UI 추가 (4개 디테일러, 순서 변경, 프롬프트 모달)
+  - LanguageSwitcher 컴포넌트 추가
 - [x] 23. img2img 고도화 - 슬롯, 업스케일, 히스토리 패널 (2026-01-04)
   - 슬롯 시스템 구현 (txt2img와 독립적인 3개 슬롯, IndexedDB 분리 저장)
   - 업스케일 기능 추가 (/sdapi/v1/extra-single-image API 사용)
