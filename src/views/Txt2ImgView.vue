@@ -298,13 +298,7 @@ const combinationCount = computed(() => {
 // 사용된 조합 값만 추출 (원본 프롬프트와 비교)
 const usedCombinationResult = computed(() => {
   if (!lastUsedParams.value?.prompt) return ''
-  const result = extractUsedCombinations(prompt.value, lastUsedParams.value.prompt)
-  console.log('[Combination] usedCombinationResult:', {
-    inputPrompt: prompt.value?.substring(0, 50),
-    usedPrompt: lastUsedParams.value.prompt?.substring(0, 50),
-    result
-  })
-  return result
+  return extractUsedCombinations(prompt.value, lastUsedParams.value.prompt)
 })
 
 function saveCombinationMode(value) {
@@ -314,7 +308,6 @@ function saveCombinationMode(value) {
 
 // Handle generate with combination support
 function handleGenerate() {
-  console.log('[Combination] handleGenerate called, mode:', combinationMode.value, 'count:', combinationCount.value, 'prompt:', prompt.value?.substring(0, 50))
   if (combinationMode.value && combinationCount.value > 1) {
     const combinations = generateAllCombinations(prompt.value)
     const currentSettings = getCurrentSettings()
