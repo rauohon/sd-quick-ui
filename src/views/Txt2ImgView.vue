@@ -7,6 +7,7 @@ import { useLocalStorage } from '../composables/useLocalStorage'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { useBookmarks } from '../composables/useBookmarks'
 import { notifyCompletion } from '../utils/notification'
+import { generateAllCombinations, getCombinationCount, extractUsedCombinations } from '../utils/promptCombination'
 import {
   INITIAL_LOAD_COUNT,
   LOAD_MORE_COUNT,
@@ -144,6 +145,7 @@ const {
   currentIndex: queueCurrentIndex,
   updateQueueItem: updateQueue,
   saveQueue: saveQueueState,
+  addToQueue,
 } = queueSystem
 
 // Generation state composable
@@ -243,6 +245,7 @@ const {
   saveCurrentSlot,
   selectSlot,
   startDebouncedSlotSave,
+  getCurrentSettings,
 } = slotManagement
 
 // ADetailer reorder function
@@ -284,6 +287,57 @@ const {
   stopProgressPolling,
   checkOngoingGeneration,
 } = imageGeneration
+
+// Combination mode
+const combinationMode = ref(window.localStorage.getItem('sd-combination-mode') === 'true')
+const combinationCount = computed(() => {
+  if (!combinationMode.value) return 1
+  return getCombinationCount(prompt.value)
+})
+
+// 사용된 조합 값만 추출 (원본 프롬프트와 비교)
+const usedCombinationResult = computed(() => {
+  if (!lastUsedParams.value?.prompt) return ''
+  const result = extractUsedCombinations(prompt.value, lastUsedParams.value.prompt)
+  console.log('[Combination] usedCombinationResult:', {
+    inputPrompt: prompt.value?.substring(0, 50),
+    usedPrompt: lastUsedParams.value.prompt?.substring(0, 50),
+    result
+  })
+  return result
+})
+
+function saveCombinationMode(value) {
+  combinationMode.value = value
+  window.localStorage.setItem('sd-combination-mode', String(value))
+}
+
+// Handle generate with combination support
+function handleGenerate() {
+  console.log('[Combination] handleGenerate called, mode:', combinationMode.value, 'count:', combinationCount.value, 'prompt:', prompt.value?.substring(0, 50))
+  if (combinationMode.value && combinationCount.value > 1) {
+    const combinations = generateAllCombinations(prompt.value)
+    const currentSettings = getCurrentSettings()
+
+    // prompt와 negativePrompt는 별도로 전달되므로 params에서 제거
+    const { prompt: _p, negativePrompt: _np, ...paramsWithoutPrompts } = currentSettings
+
+    combinations.forEach(combo => {
+      addToQueue(combo, negativePrompt.value, paramsWithoutPrompts, batchCount.value)
+    })
+
+    props.showToast(t('queue.combinationsAdded', { count: combinations.length }), 'success')
+    openQueueManager()
+
+    // 큐가 실행 중이 아니면 자동 시작
+    if (!isQueueRunning.value) {
+      startQueue()
+    }
+    return
+  }
+
+  generateImage()
+}
 
 // Queue Processor composable (must be after useQueue, useImageGeneration, useParamsApplication)
 const queueProcessor = useQueueProcessor(queueSystem, imageGeneration, paramsApplication, props.showToast)
@@ -682,8 +736,10 @@ onUnmounted(() => {
         :show-queue-manager="showQueueManager"
         :show-lora-selector="showLoraSelector"
         :show-prompt-selector="showPromptSelector"
+        :combination-mode="combinationMode"
+        :combination-count="combinationCount"
         @toggle-infinite="toggleInfiniteMode"
-        @generate="generateImage"
+        @generate="handleGenerate"
         @interrupt="interruptGeneration"
         @stop-infinite="stopInfiniteModeOnly"
         @skip="skipCurrentImage"
@@ -692,6 +748,7 @@ onUnmounted(() => {
         @open-queue="openQueueManager"
         @open-lora="openLoraSelector"
         @open-prompts="openPromptSelector"
+        @update:combination-mode="saveCombinationMode"
       >
         <PromptTextarea
           ref="promptTextareaRef"
@@ -757,6 +814,7 @@ onUnmounted(() => {
         :current-image="currentImage"
         :is-loading="isLoadingPngInfo"
         :is-expanded="showImagePanel"
+        :used-prompt="usedCombinationResult"
         @toggle-panel="toggleImagePanel"
         @show-preview="props.openModal('viewer')"
         @load-png-info="handleLoadPngInfo"

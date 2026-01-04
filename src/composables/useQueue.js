@@ -31,10 +31,12 @@ export function useQueue() {
       if (saved) {
         const data = JSON.parse(saved)
         queue.value = data.queue || []
-        // Don't restore running state
-        isRunning.value = false
-        isPaused.value = false
-        currentIndex.value = -1
+        // Don't restore running state on initial load
+        // But don't reset if already running (during active session)
+        if (!isRunning.value) {
+          isPaused.value = false
+          currentIndex.value = -1
+        }
       }
     } catch (error) {
       logError(error, 'loadQueue')
@@ -55,7 +57,7 @@ export function useQueue() {
   // Add item to queue
   function addToQueue(prompt, negativePrompt, params, batchCount = 1) {
     const item = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
       prompt: prompt || '',
       negativePrompt: negativePrompt || '',
       params: JSON.parse(JSON.stringify(params)), // Deep clone

@@ -34,6 +34,12 @@
         <p class="drop-hint">📎 Drop PNG image here to load settings</p>
       </div>
     </div>
+
+    <!-- 사용된 프롬프트 표시 -->
+    <div v-if="isExpanded && usedPrompt" class="used-prompt-section">
+      <div class="used-prompt-header">{{ $t('imagePreview.usedPrompt') }}</div>
+      <div class="used-prompt-text">{{ usedPrompt }}</div>
+    </div>
   </div>
 </template>
 
@@ -52,6 +58,10 @@ defineProps({
   isExpanded: {
     type: Boolean,
     default: true
+  },
+  usedPrompt: {
+    type: String,
+    default: ''
   }
 })
 
@@ -183,5 +193,28 @@ async function handleDrop(e) {
 .preview-placeholder.loading {
   color: var(--color-warning);
   font-weight: 500;
+}
+
+.used-prompt-section {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-primary);
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.used-prompt-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.used-prompt-text {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  word-break: break-word;
 }
 </style>

@@ -29,7 +29,8 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
 
   const {
     isGenerating,
-    generateImage
+    generateImage,
+    interruptGeneration
   } = imageGeneration
 
   const {
@@ -40,7 +41,7 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
   const queueConsecutiveErrors = ref(0)
   const queueSuccessCount = ref(0)
   const queueFailedCount = ref(0)
-  let queueProcessorInterval = null
+  let queueProcessorTimeout = null
 
   /**
    * 다음 대기 중인 큐 아이템 찾기
@@ -50,20 +51,20 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
   }
 
   /**
-   * 큐 아이템의 파라미터를 현재 설정에 적용
+   * 큐 아이템의 파라미터를 현재 설정에 적용 (프롬프트 제외)
+   * 프롬프트는 generateImage에 직접 전달하여 UI를 변경하지 않음
    */
   function applyQueueItemParams(item) {
     if (!item || !item.params) {
       return
     }
 
-    // Apply parameters (will update all refs)
+    // Apply parameters WITHOUT prompts (prompts are passed directly to generateImage)
+    // UI의 프롬프트는 변경하지 않음
     applyParams({
-      prompt: item.prompt,
-      negative_prompt: item.negativePrompt,
       ...item.params,
       batch_count: item.batchCount || 1
-    })
+    }, { includePrompts: false })
   }
 
   /**
@@ -74,24 +75,35 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
       return false
     }
 
+    console.log('[Queue] generateQueueItem start, item.id:', item.id, 'current status:', item.status)
+
     try {
       // Mark as generating
+      console.log('[Queue] Updating status to generating')
       updateQueueItem(item.id, { status: 'generating' })
 
-      // Apply item parameters
+      // 상태 변경 확인
+      const itemAfterUpdate = queue.value.find(i => i.id === item.id)
+      console.log('[Queue] After generating update, status:', itemAfterUpdate?.status)
+
+      // Apply item parameters (excluding prompts)
       applyQueueItemParams(item)
 
-      // Generate image with timeout
+      // Generate image with timeout, passing prompts as overrides
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('큐 아이템 타임아웃')), QUEUE_ITEM_TIMEOUT)
       )
 
       await Promise.race([
-        generateImage(),
+        generateImage({
+          prompt: item.prompt,
+          negativePrompt: item.negativePrompt
+        }),
         timeoutPromise
       ])
 
       // Success
+      console.log('[Queue] Generation success, updating to completed')
       updateQueueItem(item.id, {
         status: 'completed',
         error: null,
@@ -99,6 +111,11 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
           timestamp: new Date().toISOString()
         }
       })
+
+      // 상태 변경 확인
+      const itemAfterComplete = queue.value.find(i => i.id === item.id)
+      console.log('[Queue] After completed update, status:', itemAfterComplete?.status)
+      console.log('[Queue] All queue items (stringified):', JSON.stringify(queue.value.map(i => ({ id: i.id, status: i.status }))))
 
       queueSuccessCount.value++
       queueConsecutiveErrors.value = 0
@@ -108,6 +125,7 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
     } catch (error) {
       // Failure
       logError(error, `generateQueueItem:${item.id}`)
+      console.log('[Queue] Generation failed:', error.message)
 
       updateQueueItem(item.id, {
         status: 'failed',
@@ -125,20 +143,36 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
    * 큐 처리 메인 루프
    */
   async function processQueue() {
-    // Already generating, skip
+    console.log('[Queue] processQueue called, isRunning:', isRunning.value, 'isGenerating:', isGenerating.value)
+
+    // Not running, skip
+    if (!isRunning.value) {
+      console.log('[Queue] Not running, skip')
+      return
+    }
+
+    // Already generating, schedule retry
     if (isGenerating.value) {
+      console.log('[Queue] Already generating, schedule retry')
+      scheduleNextProcess(2000)
       return
     }
 
     // Paused
     if (isPaused.value) {
+      console.log('[Queue] Paused, schedule retry')
+      scheduleNextProcess(2000)
       return
     }
 
     // Find next pending item
+    console.log('[Queue] Before findNextPending, all items:', JSON.stringify(queue.value.map(i => ({ id: i.id, status: i.status }))))
     const nextItem = findNextPendingQueueItem()
+    console.log('[Queue] Next pending item:', nextItem?.id, nextItem?.prompt?.substring(0, 30))
+
     if (!nextItem) {
       // No more items, stop queue
+      console.log('[Queue] No more items, stopping')
       stopQueue()
       showToast?.(
         `큐 처리 완료 (성공: ${queueSuccessCount.value}, 실패: ${queueFailedCount.value})`,
@@ -158,11 +192,32 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
     }
 
     // Generate item
+    console.log('[Queue] Starting generateQueueItem for:', nextItem.id)
     const success = await generateQueueItem(nextItem)
+    console.log('[Queue] generateQueueItem completed, success:', success, 'isRunning:', isRunning.value)
 
-    // Wait before next item
-    const delay = success ? QUEUE_SUCCESS_DELAY : QUEUE_FAILURE_DELAY
-    await new Promise(resolve => setTimeout(resolve, delay))
+    // Wait before next item, then continue
+    if (isRunning.value) {
+      const delay = success ? QUEUE_SUCCESS_DELAY : QUEUE_FAILURE_DELAY
+      console.log('[Queue] Scheduling next process in', delay, 'ms')
+      scheduleNextProcess(delay)
+    } else {
+      console.log('[Queue] isRunning is false, not scheduling next')
+    }
+  }
+
+  /**
+   * 다음 processQueue 호출 예약
+   */
+  function scheduleNextProcess(delay) {
+    if (!isRunning.value) return
+
+    if (queueProcessorTimeout) {
+      clearTimeout(queueProcessorTimeout)
+    }
+    queueProcessorTimeout = setTimeout(() => {
+      processQueue()
+    }, delay)
   }
 
   /**
@@ -201,11 +256,6 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
 
     showToast?.('큐 처리를 시작합니다', 'info')
 
-    // Start processor interval (check every 2 seconds)
-    queueProcessorInterval = setInterval(() => {
-      processQueue()
-    }, 2000)
-
     // Process first item immediately
     processQueue()
   }
@@ -228,14 +278,19 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
    * 큐 중단
    */
   function stopQueue() {
-    if (!isRunning.value) {
-      return
+    // Stop processor first
+    if (queueProcessorTimeout) {
+      clearTimeout(queueProcessorTimeout)
+      queueProcessorTimeout = null
     }
 
-    // Stop processor
-    if (queueProcessorInterval) {
-      clearInterval(queueProcessorInterval)
-      queueProcessorInterval = null
+    // 현재 생성 중이면 중단
+    if (isGenerating.value) {
+      interruptGeneration()
+    }
+
+    if (!isRunning.value) {
+      return
     }
 
     // Reset state

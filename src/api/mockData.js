@@ -199,8 +199,8 @@ export const mockResponses = {
   'POST:/sdapi/v1/txt2img': {
     status: 200,
     data: (body) => {
-      // Mock 진행 상태 시작
-      startMockProgress()
+      // Note: startMockProgress() is called in client.js before the delay
+      // so that progress polling works during generation
 
       const batchSize = body.batch_size || 1
       const nIter = body.n_iter || 1

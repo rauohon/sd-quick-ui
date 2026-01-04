@@ -2,7 +2,7 @@
  * API 클라이언트
  * Mock 모드를 지원하는 fetch 래퍼
  */
-import { getMockResponse } from './mockData'
+import { getMockResponse, startMockProgress } from './mockData'
 
 // Mock 모드 체크
 const IS_MOCK_MODE = import.meta.env.VITE_MOCK_API === 'true'
@@ -35,6 +35,8 @@ export async function apiCall(endpoint, options = {}) {
 
     // txt2img는 긴 지연 적용 (실제 생성 시간 시뮬레이션)
     if (endpoint === '/sdapi/v1/txt2img') {
+      // Progress 시뮬레이션 시작 (대기 전에 호출해야 progress polling이 작동함)
+      startMockProgress()
       await sleep(MOCK_GENERATION_DELAY)
     } else {
       // 일반 API는 짧은 지연

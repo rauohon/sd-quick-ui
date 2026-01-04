@@ -303,6 +303,7 @@ export default {
     allRemoved: '모든 항목이 제거되었습니다',
     retrying: '실패한 항목을 재시도합니다',
     itemFailed: '큐 아이템 실패: {id}',
+    combinationsAdded: '{count}개 조합이 큐에 추가되었습니다',
 
     // Dialogs
     addToQueue: '큐에 추가',
@@ -594,7 +595,11 @@ export default {
     interruptTooltip: '현재 생성 완전 중단',
     skip: '⏭️ 스킵',
     skipNextInfinite: '현재 이미지 건너뛰고 다음 생성',
-    skipNextBatch: '현재 이미지 건너뛰고 다음 (배치 {batchSize}개 중)'
+    skipNextBatch: '현재 이미지 건너뛰고 다음 (배치 {batchSize}개 중)',
+
+    // Combination mode
+    combinationMode: '조합',
+    combinationCount: '({count})'
   },
 
   // 파라미터 패널
@@ -622,7 +627,8 @@ export default {
   // 이미지 프리뷰
   imagePreview: {
     title: '이미지 (PNG Info)',
-    noImagePlaceholder: '이미지가 여기에 표시됩니다'
+    noImagePlaceholder: '이미지가 여기에 표시됩니다',
+    usedPrompt: '조합 결과'
   },
 
   // 버튼

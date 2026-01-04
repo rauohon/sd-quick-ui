@@ -7,6 +7,7 @@ import { useBookmarks } from './useBookmarks'
 import { useErrorHandler, ErrorCategory } from './useErrorHandler'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
+import { expandRandomCombination } from '../utils/promptCombination'
 import { get, post } from '../api/client'
 import {
   SEED_MAX,
@@ -55,6 +56,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
   const wasInterrupted = ref(false) // 스킵/중단 플래그
   const finalImageReceived = ref(false) // 최종 이미지 수신 플래그
   const generationStartTime = ref(null) // 생성 시작 시간 (소요시간 계산용)
+  const pendingUsedParams = ref(null) // progress 이미지 첫 등장 시 lastUsedParams로 설정될 파라미터
+  const hasShownProgressImage = ref(false) // progress 이미지가 표시되었는지 플래그
 
   const progressInterval = ref(null)
 
@@ -179,6 +182,12 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
           // 최종 이미지를 이미 받았으면 중간 이미지로 덮어쓰지 않음
           if (data.current_image && !finalImageReceived.value) {
             currentImage.value = `data:image/png;base64,${data.current_image}`
+
+            // 첫 progress 이미지가 나타나면 lastUsedParams 설정 (조합 결과 표시)
+            if (!hasShownProgressImage.value && pendingUsedParams.value) {
+              lastUsedParams.value = pendingUsedParams.value
+              hasShownProgressImage.value = true
+            }
           }
         }
       } catch (error) {
@@ -440,8 +449,11 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
 
   /**
    * 이미지 생성
+   * @param {Object} overrides - Optional overrides for prompt/negativePrompt (used by queue processor)
+   * @param {string} overrides.prompt - Override prompt (optional)
+   * @param {string} overrides.negativePrompt - Override negative prompt (optional)
    */
-  async function generateImage() {
+  async function generateImage(overrides = {}) {
     const {
       prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
       width, height, batchCount, batchSize, seed,
@@ -449,7 +461,16 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       adetailers, selectedModel
     } = params
 
-    if (!prompt.value.trim()) {
+    // Use override prompts if provided (for queue processing), otherwise use refs
+    const rawPrompt = overrides.prompt !== undefined ? overrides.prompt : prompt.value
+    const rawNegativePrompt = overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value
+
+    // Expand combination syntax {option1|option2|...} by randomly selecting one option
+    // This allows showing the combination result immediately when generation starts
+    const actualPrompt = expandRandomCombination(rawPrompt)
+    const actualNegativePrompt = expandRandomCombination(rawNegativePrompt)
+
+    if (!actualPrompt.trim()) {
       showToast(t('prompt.required'), 'error')
       return
     }
@@ -494,11 +515,12 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     progressState.value = t('generation.preparing')
     // currentImage는 초기화하지 않음 - progress에서 current_image가 올 때까지 직전 이미지 유지
     finalImageReceived.value = false // 플래그 리셋
+    hasShownProgressImage.value = false // progress 이미지 플래그 리셋
 
-    // Save parameters used for generation
+    // Save parameters used for generation (with expanded prompts)
     const usedParams = {
-      prompt: prompt.value,
-      negative_prompt: negativePrompt.value,
+      prompt: actualPrompt,
+      negative_prompt: actualNegativePrompt,
       steps: steps.value,
       sampler_name: samplerName.value,
       scheduler: scheduler.value,
@@ -515,9 +537,17 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       sd_model_name: selectedModel?.value || '',
       adetailers: cloneADetailers(adetailers.value),
     }
-    
-    // Update lastUsedParams immediately to clear "changed" indicator
-    lastUsedParams.value = usedParams
+
+    // Store expanded params for later (will be set when progress image first appears)
+    pendingUsedParams.value = usedParams
+
+    // Update lastUsedParams with raw prompts to clear "changed" indicator
+    // The expanded prompt will be set when progress image appears
+    lastUsedParams.value = {
+      ...usedParams,
+      prompt: rawPrompt,
+      negative_prompt: rawNegativePrompt
+    }
 
     try {
       // Start progress polling
@@ -525,8 +555,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
 
       // Prepare API payload
       const payload = {
-        prompt: prompt.value,
-        negative_prompt: negativePrompt.value,
+        prompt: actualPrompt,
+        negative_prompt: actualNegativePrompt,
         steps: steps.value,
         sampler_name: samplerName.value,
         scheduler: scheduler.value,

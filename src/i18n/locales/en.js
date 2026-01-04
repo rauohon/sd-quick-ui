@@ -303,6 +303,7 @@ export default {
     allRemoved: 'All items removed',
     retrying: 'Retrying failed items',
     itemFailed: 'Queue item failed: {id}',
+    combinationsAdded: '{count} combinations added to queue',
 
     // Dialogs
     addToQueue: 'Add to Queue',
@@ -594,7 +595,11 @@ export default {
     interruptTooltip: 'Completely interrupt current generation',
     skip: '⏭️ Skip',
     skipNextInfinite: 'Skip current image and generate next',
-    skipNextBatch: 'Skip current image and go to next (batch of {batchSize})'
+    skipNextBatch: 'Skip current image and go to next (batch of {batchSize})',
+
+    // Combination mode
+    combinationMode: 'Combo',
+    combinationCount: '({count})'
   },
 
   // Params Panel
@@ -622,7 +627,8 @@ export default {
   // Image Preview
   imagePreview: {
     title: 'Image (PNG Info)',
-    noImagePlaceholder: 'Image will be displayed here'
+    noImagePlaceholder: 'Image will be displayed here',
+    usedPrompt: 'Combination'
   },
 
   // Buttons

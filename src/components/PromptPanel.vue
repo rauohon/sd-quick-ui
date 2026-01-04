@@ -14,6 +14,18 @@
             <span style="font-size: 16px;">∞</span> ON
           </span>
         </button>
+        <label class="combination-checkbox" :title="$t('promptPanel.combinationMode')">
+          <input
+            type="checkbox"
+            :checked="combinationMode"
+            @change="$emit('update:combination-mode', $event.target.checked)"
+            :disabled="isGenerating"
+          >
+          <span class="combination-label">
+            {{ $t('promptPanel.combinationMode') }}
+            <span v-if="combinationCount > 1" class="combination-count">{{ $t('promptPanel.combinationCount', { count: combinationCount }) }}</span>
+          </span>
+        </label>
         <button
           class="generate-btn"
           @click="$emit('generate')"
@@ -175,6 +187,14 @@ defineProps({
   showPromptSelector: {
     type: Boolean,
     default: false
+  },
+  combinationMode: {
+    type: Boolean,
+    default: false
+  },
+  combinationCount: {
+    type: Number,
+    default: 1
   }
 })
 
@@ -188,7 +208,8 @@ defineEmits([
   'open-preset',
   'open-queue',
   'open-lora',
-  'open-prompts'
+  'open-prompts',
+  'update:combination-mode'
 ])
 </script>
 
@@ -287,6 +308,52 @@ defineEmits([
   opacity: 0.6;
   cursor: not-allowed;
   background: var(--color-text-secondary);
+}
+
+.combination-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.combination-checkbox:hover {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-primary);
+}
+
+.combination-checkbox:has(input:checked) {
+  background: #e0e7ff;
+  border-color: #818cf8;
+}
+
+.combination-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.combination-checkbox input:disabled {
+  cursor: not-allowed;
+}
+
+.combination-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.combination-count {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .progress-container {
