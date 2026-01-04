@@ -709,5 +709,45 @@ export default {
     upscaling: '업스케일 중...',
     upscaleComplete: '업스케일 완료',
     upscaleFailed: '업스케일 실패'
+  },
+
+  // Inpaint
+  inpaint: {
+    title: 'Inpaint',
+    // 도구
+    tools: '도구',
+    brush: '브러시',
+    eraser: '지우개',
+    brushSize: '브러시 크기',
+    // 마스크 편집
+    mask: '마스크',
+    fillMask: '마스크 채우기',
+    clearMask: '마스크 지우기',
+    invertMask: '마스크 반전',
+    undo: '실행 취소',
+    redo: '다시 실행',
+    // 마스크 설정
+    maskSettings: '마스크 설정',
+    maskBlur: '마스크 블러',
+    maskedContent: '마스크 영역 채우기',
+    maskedContentOriginal: '원본',
+    maskedContentFill: '단색 채우기',
+    maskedContentLatentNoise: 'Latent Noise',
+    maskedContentLatentNothing: 'Latent Nothing',
+    inpaintArea: 'Inpaint 영역',
+    inpaintAreaWholePicture: '전체 이미지',
+    inpaintAreaOnlyMasked: '마스크 영역만',
+    onlyMaskedPadding: '마스크 패딩',
+    // 캔버스
+    canvas: '캔버스',
+    zoomIn: '확대',
+    zoomOut: '축소',
+    fitToScreen: '화면에 맞추기',
+    resetView: '뷰 초기화',
+    // 메시지
+    noImageSelected: '이미지를 먼저 선택해주세요',
+    noMaskDrawn: '마스크를 그려주세요',
+    maskRequired: '⚠️ 마스크 필요',
+    imageRequired: '⚠️ 입력 이미지 필요'
   }
 }

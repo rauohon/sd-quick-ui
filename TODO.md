@@ -227,7 +227,23 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] Inpaint/Outpainting 기능 구현
+- [ ] Inpaint/Outpainting 기능 구현 (1단계 완료)
+
+### Inpaint 1단계 완료 ✅ (2026-01-04)
+- [x] InpaintView.vue 기본 구조 생성
+  - img2img 패턴 기반 3-컬럼 레이아웃 (280px / 300px / 1fr)
+  - 설정 패널 / 프롬프트 패널 / 캔버스+히스토리 영역
+  - App.vue에서 inpaint 탭 연결
+- [x] useInpaintGeneration.js 컴포저블 생성
+  - useImg2imgGeneration.js 기반
+  - mask 파라미터 추가 (base64)
+  - inpaint 전용 파라미터 (mask_blur, inpainting_fill 등)
+- [x] i18n 키 추가 (ko.js, en.js)
+  - inpaint 관련 라벨, 툴팁, 메시지
+- [x] constants.js에 Inpaint 상수 추가
+  - INPAINT_PARAM_RANGES, INPAINT_FILL_OPTIONS, INPAINT_AREA_OPTIONS
+- [x] img2img, inpaint 레이아웃 너비 통일
+  - txt2img와 동일한 고정 너비 (280px / 300px / 1fr)
 
 ### img2img 히스토리 패널 리팩토링 ✅ (2026-01-04)
 - [x] 1. useHistory 컴포저블 적용
@@ -248,17 +264,18 @@
 
 ### Inpaint/Outpainting 구현
 
-#### 1단계: 기본 구조 생성
-- [ ] 1.1 InpaintView.vue 생성
-  - img2img 패턴 기반 3-컬럼 레이아웃
+#### 1단계: 기본 구조 생성 ✅
+- [x] 1.1 InpaintView.vue 생성
+  - img2img 패턴 기반 3-컬럼 레이아웃 (280px / 300px / 1fr)
   - 설정 패널 / 프롬프트 패널 / 캔버스+히스토리 영역
   - App.vue에서 inpaint 탭 연결
-- [ ] 1.2 useInpaintGeneration.js 컴포저블 생성
+- [x] 1.2 useInpaintGeneration.js 컴포저블 생성
   - useImg2imgGeneration.js 기반
   - mask 파라미터 추가 (base64)
   - inpaint 전용 파라미터 (mask_blur, inpainting_fill 등)
-- [ ] 1.3 i18n 키 추가 (ko.js, en.js)
+- [x] 1.3 i18n 키 추가 (ko.js, en.js)
   - inpaint 관련 라벨, 툴팁, 메시지
+- [x] 1.4 constants.js에 Inpaint 상수 추가
 
 #### 2단계: 마스크 캔버스 컴포넌트
 - [ ] 2.1 MaskCanvas.vue 컴포넌트 생성

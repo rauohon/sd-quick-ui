@@ -1,26 +1,28 @@
 <script setup>
 import { ref, computed, onMounted, watch, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useImg2imgGeneration } from '../composables/useImg2imgGeneration'
+import { useInpaintGeneration } from '../composables/useInpaintGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
+import { useHistory } from '../composables/useHistory'
+import { useLocalStorage } from '../composables/useLocalStorage'
+import { useVirtualScroll } from '../composables/useVirtualScroll'
 import {
   NOTIFICATION_TYPES,
   SLOT_COUNT,
   ADETAILER_LABELS,
   ADETAILER_MODELS,
-  ASPECT_RATIOS,
   DEFAULT_ADETAILER,
-  IMG2IMG_PARAM_RANGES,
+  INPAINT_PARAM_RANGES,
+  INPAINT_FILL_OPTIONS,
   IMAGE_TYPES,
   INITIAL_LOAD_COUNT,
   LOAD_MORE_COUNT
 } from '../config/constants'
 
 // Components
-import ImageUploadPanel from '../components/ImageUploadPanel.vue'
 import PromptTextarea from '../components/PromptTextarea.vue'
 import ImagePreviewPanel from '../components/ImagePreviewPanel.vue'
 import HistoryPanel from '../components/HistoryPanel.vue'
@@ -35,9 +37,6 @@ import PresetManager from '../components/PresetManager.vue'
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
 import { usePresets } from '../composables/usePresets'
-import { useHistory } from '../composables/useHistory'
-import { useLocalStorage } from '../composables/useLocalStorage'
-import { useVirtualScroll } from '../composables/useVirtualScroll'
 
 const { t } = useI18n()
 
@@ -67,16 +66,20 @@ const seed = ref(-1)
 const seedVariationRange = ref(1000)
 const selectedModel = ref('')
 
-// img2img 전용 파라미터
+// Inpaint 전용 파라미터
 const initImage = ref(null)
 const initImageWidth = ref(0)
 const initImageHeight = ref(0)
-const denoisingStrength = ref(IMG2IMG_PARAM_RANGES.denoisingStrength.default)
+const mask = ref(null) // 마스크 이미지 (base64)
+const denoisingStrength = ref(INPAINT_PARAM_RANGES.denoisingStrength.default)
+const maskBlur = ref(INPAINT_PARAM_RANGES.maskBlur.default)
+const inpaintingFill = ref(INPAINT_FILL_OPTIONS.ORIGINAL)
+const inpaintFullRes = ref(false)
+const inpaintFullResPadding = ref(INPAINT_PARAM_RANGES.onlyMaskedPadding.default)
 
-// 업스케일 파라미터
-const enableUpscale = ref(false)
-const upscaler = ref('R-ESRGAN 4x+')
-const upscaleScale = ref(IMG2IMG_PARAM_RANGES.upscaleScale.default)
+// 마스크 도구 상태
+const activeTool = ref('brush') // 'brush' | 'eraser'
+const brushSize = ref(30)
 
 // ADetailer
 const adetailers = ref([
@@ -138,9 +141,9 @@ const indexedDB = useIndexedDB()
 const localStorage = useLocalStorage()
 
 // ===== Slot Management =====
-const IMG2IMG_SLOT_KEY = 'img2img-slots'
+const INPAINT_SLOT_KEY = 'inpaint-slots'
 
-// img2img 기본 설정
+// Inpaint 기본 설정
 const defaultSettings = {
   prompt: '',
   negativePrompt: '',
@@ -153,10 +156,11 @@ const defaultSettings = {
   batchCount: 1,
   batchSize: 1,
   seed: -1,
-  denoisingStrength: IMG2IMG_PARAM_RANGES.denoisingStrength.default,
-  enableUpscale: false,
-  upscaler: 'R-ESRGAN 4x+',
-  upscaleScale: IMG2IMG_PARAM_RANGES.upscaleScale.default
+  denoisingStrength: INPAINT_PARAM_RANGES.denoisingStrength.default,
+  maskBlur: INPAINT_PARAM_RANGES.maskBlur.default,
+  inpaintingFill: INPAINT_FILL_OPTIONS.ORIGINAL,
+  inpaintFullRes: false,
+  inpaintFullResPadding: INPAINT_PARAM_RANGES.onlyMaskedPadding.default
 }
 
 // 슬롯에 저장할 설정 refs
@@ -173,13 +177,14 @@ const SETTINGS_REFS = {
   batchSize,
   seed,
   denoisingStrength,
-  enableUpscale,
-  upscaler,
-  upscaleScale
+  maskBlur,
+  inpaintingFill,
+  inpaintFullRes,
+  inpaintFullResPadding
 }
 
-// 슬롯 관리 (img2img 전용 키 사용)
-const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, null, props.showToast, 'sd-img2img')
+// 슬롯 관리 (inpaint 전용 키 사용)
+const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, null, props.showToast, 'sd-inpaint')
 const {
   slots,
   activeSlot,
@@ -200,10 +205,9 @@ const generationParams = {
   prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
   width, height, batchCount, batchSize, seed, seedVariationRange,
   adetailers, selectedModel, notificationType, notificationVolume,
-  // img2img 전용
-  initImage, denoisingStrength,
-  // 업스케일
-  enableUpscale, upscaler, upscaleScale
+  // Inpaint 전용
+  initImage, mask, denoisingStrength,
+  maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding
 }
 
 // Image generation composable
@@ -221,7 +225,7 @@ const {
   skipCurrentImage,
   stopInfiniteModeOnly,
   toggleInfiniteMode
-} = useImg2imgGeneration(generationParams, enabledADetailers, props.showToast, t)
+} = useInpaintGeneration(generationParams, enabledADetailers, props.showToast, t)
 
 // ===== History Composable =====
 const historyRefs = {
@@ -298,7 +302,11 @@ watch([initImageWidth, initImageHeight], ([w, h]) => {
 // ===== Methods =====
 function handleGenerate() {
   if (!initImage.value) {
-    props.showToast(t('img2img.noImageSelected'), 'error')
+    props.showToast(t('inpaint.noImageSelected'), 'error')
+    return
+  }
+  if (!mask.value) {
+    props.showToast(t('inpaint.noMaskDrawn'), 'error')
     return
   }
   generateImage()
@@ -330,13 +338,33 @@ function loadParamsFromHistory(item) {
   if (params.height !== undefined) height.value = params.height
   if (params.sampler_name !== undefined) samplerName.value = params.sampler_name
   if (params.denoising_strength !== undefined) denoisingStrength.value = params.denoising_strength
+  if (params.mask_blur !== undefined) maskBlur.value = params.mask_blur
 
   props.showToast(t('history.loadParams'), 'success')
 }
 
 function handleCompareImage(item) {
-  // item은 객체이고, image 속성에 실제 이미지 URL이 있음
   props.openModal('comparison', item.image)
+}
+
+// ===== 마스크 도구 함수 =====
+function setActiveTool(tool) {
+  activeTool.value = tool
+}
+
+function clearMask() {
+  mask.value = null
+  props.showToast(t('inpaint.clearMask'), 'info')
+}
+
+function fillMask() {
+  // TODO: 전체 마스크 채우기 구현 (MaskCanvas에서 처리)
+  props.showToast(t('inpaint.fillMask'), 'info')
+}
+
+function invertMask() {
+  // TODO: 마스크 반전 구현 (MaskCanvas에서 처리)
+  props.showToast(t('inpaint.invertMask'), 'info')
 }
 
 // ===== ADetailer Functions =====
@@ -359,30 +387,6 @@ function updateADetailerModel(index, value) {
   adetailers.value[index].model = value
 }
 
-function updateADetailerConfidence(index, value) {
-  adetailers.value[index].confidence = value
-}
-
-function updateADetailerDilateErode(index, value) {
-  adetailers.value[index].dilateErode = value
-}
-
-function updateADetailerInpaintDenoising(index, value) {
-  adetailers.value[index].inpaintDenoising = value
-}
-
-function updateADetailerInpaintOnlyMasked(index, value) {
-  adetailers.value[index].inpaintOnlyMasked = value
-}
-
-function updateADetailerUseSeparateSteps(index, value) {
-  adetailers.value[index].useSeparateSteps = value
-}
-
-function updateADetailerSteps(index, value) {
-  adetailers.value[index].steps = value
-}
-
 function reorderADetailers(fromIndex, toIndex) {
   if (toIndex < 0 || toIndex >= adetailers.value.length) return
   const temp = adetailers.value[fromIndex]
@@ -390,7 +394,7 @@ function reorderADetailers(fromIndex, toIndex) {
   adetailers.value[toIndex] = temp
 }
 
-// History image selector modal (임시 구현)
+// History image selector modal
 const showHistorySelector = ref(false)
 
 function openHistorySelector() {
@@ -403,7 +407,6 @@ function closeHistorySelector() {
 
 function selectImageFromHistory(image) {
   initImage.value = image.image
-  // 이미지 크기 가져오기
   const img = new Image()
   img.onload = () => {
     initImageWidth.value = img.width
@@ -413,9 +416,27 @@ function selectImageFromHistory(image) {
   closeHistorySelector()
 }
 
+// 파일 업로드
+function handleFileUpload(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    initImage.value = e.target.result
+    const img = new Image()
+    img.onload = () => {
+      initImageWidth.value = img.width
+      initImageHeight.value = img.height
+    }
+    img.src = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
 // 시스템 설정 저장
 function saveAutoCorrectSetting() {
-  localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
+  window.localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
 }
 
 // ===== 북마크/프리셋 핸들러 =====
@@ -453,7 +474,6 @@ function applyBookmark({ prompt: newPrompt, negativePrompt: newNegativePrompt, m
 
 // 프리셋 적용
 function applyPreset(params) {
-  // 기본 파라미터
   if (params.steps !== undefined) steps.value = params.steps
   if (params.cfgScale !== undefined) cfgScale.value = params.cfgScale
   if (params.cfg_scale !== undefined) cfgScale.value = params.cfg_scale
@@ -463,23 +483,10 @@ function applyPreset(params) {
   if (params.width !== undefined) width.value = params.width
   if (params.height !== undefined) height.value = params.height
   if (params.seed !== undefined) seed.value = params.seed
-
-  // 배치 설정
   if (params.batchCount !== undefined) batchCount.value = params.batchCount
-  if (params.batch_count !== undefined) batchCount.value = params.batch_count
   if (params.batchSize !== undefined) batchSize.value = params.batchSize
-  if (params.batch_size !== undefined) batchSize.value = params.batch_size
-
-  // img2img 전용
   if (params.denoisingStrength !== undefined) denoisingStrength.value = params.denoisingStrength
   if (params.denoising_strength !== undefined) denoisingStrength.value = params.denoising_strength
-
-  // 업스케일
-  if (params.enableUpscale !== undefined) enableUpscale.value = params.enableUpscale
-  if (params.upscaler !== undefined) upscaler.value = params.upscaler
-  if (params.upscaleScale !== undefined) upscaleScale.value = params.upscaleScale
-
-  // ADetailer
   if (params.adetailers) {
     adetailers.value = JSON.parse(JSON.stringify(params.adetailers))
   }
@@ -497,9 +504,7 @@ const currentParams = computed(() => ({
   batchCount: batchCount.value,
   batchSize: batchSize.value,
   denoisingStrength: denoisingStrength.value,
-  enableUpscale: enableUpscale.value,
-  upscaler: upscaler.value,
-  upscaleScale: upscaleScale.value,
+  maskBlur: maskBlur.value,
   adetailers: JSON.parse(JSON.stringify(adetailers.value))
 }))
 
@@ -535,10 +540,9 @@ onMounted(async () => {
 
   // Load slots from IndexedDB
   try {
-    const loadedSlots = await indexedDB.loadSlots(IMG2IMG_SLOT_KEY)
+    const loadedSlots = await indexedDB.loadSlots(INPAINT_SLOT_KEY)
     slots.value = loadedSlots
 
-    // Load active slot from localStorage
     const savedActiveSlot = window.localStorage.getItem(localStorageKey)
     if (savedActiveSlot !== null) {
       const slotIndex = parseInt(savedActiveSlot, 10)
@@ -555,7 +559,7 @@ onMounted(async () => {
 watch(slots, async (newSlots) => {
   try {
     const plainSlots = JSON.parse(JSON.stringify(toRaw(newSlots)))
-    await indexedDB.saveSlots(plainSlots, IMG2IMG_SLOT_KEY)
+    await indexedDB.saveSlots(plainSlots, INPAINT_SLOT_KEY)
   } catch (error) {
     console.error('슬롯 IndexedDB 저장 실패:', error)
   }
@@ -565,18 +569,17 @@ watch(slots, async (newSlots) => {
 watch(
   [prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
    width, height, batchCount, batchSize, seed, denoisingStrength,
-   enableUpscale, upscaler, upscaleScale],
+   maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding],
   () => {
     if (activeSlot.value !== null) {
       startDebouncedSlotSave()
     }
   }
 )
-
 </script>
 
 <template>
-  <div class="img2img-view" :class="{ 'settings-collapsed': !showSettingsPanel }">
+  <div class="inpaint-view" :class="{ 'settings-collapsed': !showSettingsPanel }">
     <!-- 1열: 설정 패널 -->
     <div class="advanced-panel" :class="{ collapsed: !showSettingsPanel }">
       <div class="panel-header">
@@ -632,33 +635,61 @@ watch(
           <input
             type="range"
             v-model.number="denoisingStrength"
-            :min="IMG2IMG_PARAM_RANGES.denoisingStrength.min"
-            :max="IMG2IMG_PARAM_RANGES.denoisingStrength.max"
-            :step="IMG2IMG_PARAM_RANGES.denoisingStrength.step"
+            :min="INPAINT_PARAM_RANGES.denoisingStrength.min"
+            :max="INPAINT_PARAM_RANGES.denoisingStrength.max"
+            :step="INPAINT_PARAM_RANGES.denoisingStrength.step"
             :disabled="isGenerating"
           />
-          <span class="volume-display">{{ denoisingStrength.toFixed(2) }}</span>
+          <span class="value-display">{{ denoisingStrength.toFixed(2) }}</span>
         </div>
 
-        <!-- 업스케일 -->
+        <!-- Mask Blur -->
         <div class="form-group horizontal">
-          <label class="checkbox-inline">
-            <input type="checkbox" v-model="enableUpscale" :disabled="isGenerating" />
-            Upscale
-          </label>
+          <label>{{ t('inpaint.maskBlur') }}</label>
+          <input
+            type="range"
+            v-model.number="maskBlur"
+            :min="INPAINT_PARAM_RANGES.maskBlur.min"
+            :max="INPAINT_PARAM_RANGES.maskBlur.max"
+            :step="INPAINT_PARAM_RANGES.maskBlur.step"
+            :disabled="isGenerating"
+          />
+          <span class="value-display">{{ maskBlur }}</span>
         </div>
-        <template v-if="enableUpscale">
-          <div class="form-group horizontal">
-            <label>Upscaler</label>
-            <select v-model="upscaler" :disabled="isGenerating">
-              <option v-for="u in availableUpscalers" :key="u.name" :value="u.name">{{ u.name }}</option>
-            </select>
-          </div>
-          <div class="form-group horizontal">
-            <label>Scale</label>
-            <input type="number" v-model.number="upscaleScale" :min="1" :max="4" :step="0.5" :disabled="isGenerating" />
-          </div>
-        </template>
+
+        <!-- Masked Content -->
+        <div class="form-group horizontal">
+          <label>{{ t('inpaint.maskedContent') }}</label>
+          <select v-model="inpaintingFill" :disabled="isGenerating">
+            <option :value="0">{{ t('inpaint.maskedContentFill') }}</option>
+            <option :value="1">{{ t('inpaint.maskedContentOriginal') }}</option>
+            <option :value="2">{{ t('inpaint.maskedContentLatentNoise') }}</option>
+            <option :value="3">{{ t('inpaint.maskedContentLatentNothing') }}</option>
+          </select>
+        </div>
+
+        <!-- Inpaint Area -->
+        <div class="form-group horizontal">
+          <label>{{ t('inpaint.inpaintArea') }}</label>
+          <select v-model="inpaintFullRes" :disabled="isGenerating">
+            <option :value="false">{{ t('inpaint.inpaintAreaWholePicture') }}</option>
+            <option :value="true">{{ t('inpaint.inpaintAreaOnlyMasked') }}</option>
+          </select>
+        </div>
+
+        <!-- Only Masked Padding -->
+        <div v-if="inpaintFullRes" class="form-group horizontal">
+          <label>{{ t('inpaint.onlyMaskedPadding') }}</label>
+          <input
+            type="range"
+            v-model.number="inpaintFullResPadding"
+            :min="INPAINT_PARAM_RANGES.onlyMaskedPadding.min"
+            :max="INPAINT_PARAM_RANGES.onlyMaskedPadding.max"
+            :step="INPAINT_PARAM_RANGES.onlyMaskedPadding.step"
+            :disabled="isGenerating"
+          />
+          <span class="value-display">{{ inpaintFullResPadding }}px</span>
+        </div>
 
         <!-- Seed -->
         <div class="form-group horizontal">
@@ -686,32 +717,23 @@ watch(
           <label>Batch count</label>
           <input type="number" v-model.number="batchCount" min="1" :disabled="isGenerating" />
         </div>
-        <div class="form-group horizontal">
-          <label>Batch size</label>
-          <input type="number" v-model.number="batchSize" min="1" :disabled="isGenerating" />
-        </div>
 
         <!-- Notification -->
         <div class="section-divider"></div>
         <div class="form-group horizontal">
           <label>Notification</label>
           <select v-model="notificationType" :disabled="isGenerating" style="flex: 1;">
-            <option :value="NOTIFICATION_TYPES.NONE">🔇 None</option>
-            <option :value="NOTIFICATION_TYPES.SOUND">🔔 Sound</option>
-            <option :value="NOTIFICATION_TYPES.BROWSER">📬 Browser</option>
-            <option :value="NOTIFICATION_TYPES.BOTH">🔔📬 Both</option>
+            <option :value="NOTIFICATION_TYPES.NONE">None</option>
+            <option :value="NOTIFICATION_TYPES.SOUND">Sound</option>
+            <option :value="NOTIFICATION_TYPES.BROWSER">Browser</option>
+            <option :value="NOTIFICATION_TYPES.BOTH">Both</option>
           </select>
-        </div>
-        <div v-if="notificationType === NOTIFICATION_TYPES.SOUND || notificationType === NOTIFICATION_TYPES.BOTH" class="form-group horizontal">
-          <label>Volume</label>
-          <input type="range" v-model.number="notificationVolume" min="0" max="1" step="0.1" :disabled="isGenerating" />
-          <span class="volume-display">{{ Math.round(notificationVolume * 100) }}%</span>
         </div>
 
         <!-- ADetailer -->
         <div class="section-divider"></div>
         <div class="adetailer-group">
-          <div class="group-title">🎯 ADetailer</div>
+          <div class="group-title">ADetailer</div>
           <div v-for="(ad, index) in adetailers" :key="index" class="ad-row">
             <div class="ad-header-row">
               <div class="reorder-btns">
@@ -740,7 +762,7 @@ watch(
       <!-- System Settings Section -->
       <div v-if="showSettingsPanel" class="system-settings-section">
         <div class="system-settings-header" @click="isSystemSettingsExpanded = !isSystemSettingsExpanded">
-          <span class="system-settings-title">⚙️ {{ t('systemSettings.title') }}</span>
+          <span class="system-settings-title">{{ t('systemSettings.title') }}</span>
           <span class="toggle-icon">{{ isSystemSettingsExpanded ? '▲' : '▼' }}</span>
         </div>
 
@@ -755,26 +777,19 @@ watch(
               <label class="setting-label">{{ t('theme.title') }}</label>
               <div class="theme-toggle">
                 <button class="theme-btn" :class="{ active: !props.isDark }" @click="props.toggleTheme" :title="t('theme.light')">
-                  ☀️ {{ t('theme.light') }}
+                  {{ t('theme.light') }}
                 </button>
                 <button class="theme-btn" :class="{ active: props.isDark }" @click="props.toggleTheme" :title="t('theme.dark')">
-                  🌙 {{ t('theme.dark') }}
+                  {{ t('theme.dark') }}
                 </button>
               </div>
-            </div>
-
-            <div class="setting-group">
-              <label class="setting-label checkbox-label">
-                <input type="checkbox" v-model="autoCorrectDimensions" @change="saveAutoCorrectSetting" />
-                <span>{{ t('dimensionValidation.autoCorrect') }}</span>
-              </label>
             </div>
           </div>
         </transition>
       </div>
 
       <div v-if="showSettingsPanel" class="panel-footer">
-        <span class="footer-title">⚡ SD Quick UI</span>
+        <span class="footer-title">SD Quick UI</span>
         <button
           v-if="!apiConnected"
           class="footer-btn"
@@ -790,15 +805,16 @@ watch(
     <!-- 2열: 프롬프트 + 생성 -->
     <div class="prompt-panel">
       <div class="prompt-panel-header">
-        <h3 class="prompt-panel-title">{{ t('promptPanel.title') }}</h3>
+        <h3 class="prompt-panel-title">{{ t('inpaint.title') }}</h3>
         <div class="header-buttons">
           <button
             class="generate-btn"
             @click="handleGenerate"
-            :disabled="isGenerating || !apiConnected || !initImage"
+            :disabled="isGenerating || !apiConnected || !initImage || !mask"
           >
             <template v-if="isGenerating">{{ t('promptPanel.generating') }}</template>
-            <template v-else-if="!initImage">{{ t('img2img.imageRequired') }}</template>
+            <template v-else-if="!initImage">{{ t('inpaint.imageRequired') }}</template>
+            <template v-else-if="!mask">{{ t('inpaint.maskRequired') }}</template>
             <template v-else-if="!apiConnected">{{ t('promptPanel.apiConnectionRequired') }}</template>
             <template v-else>{{ t('promptPanel.generate') }}</template>
           </button>
@@ -880,22 +896,94 @@ watch(
       </div>
     </div>
 
-    <!-- 3열: 이미지 영역 OR 북마크/프리셋 매니저 -->
+    <!-- 3열: 캔버스 + 히스토리 영역 -->
     <div v-if="!showBookmarkManager && !showPresetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
-      <!-- 이미지 컬럼 (입력 + 출력 상하 분할) -->
-      <div class="image-column">
-        <!-- 입력 이미지 업로드 (상단) -->
-        <ImageUploadPanel
-          class="input-image-panel"
-          v-model="initImage"
-          :is-generating="isGenerating"
-          :generated-images="generatedImages"
-          @update:width="initImageWidth = $event"
-          @update:height="initImageHeight = $event"
-          @open-history-selector="openHistorySelector"
-        />
+      <!-- 캔버스 영역 (입력 이미지 + 마스크) -->
+      <div class="canvas-column">
+        <!-- 이미지 업로드 영역 (이미지가 없을 때) -->
+        <div v-if="!initImage" class="upload-area">
+          <div class="upload-content">
+            <div class="upload-icon">🖼️</div>
+            <p>{{ t('inpaint.noImageSelected') }}</p>
+            <div class="upload-buttons">
+              <label class="upload-btn">
+                <input type="file" accept="image/*" @change="handleFileUpload" hidden />
+                {{ t('img2img.selectFile') }}
+              </label>
+              <button class="upload-btn secondary" @click="openHistorySelector">
+                {{ t('img2img.selectFromHistory') }}
+              </button>
+            </div>
+          </div>
+        </div>
 
-        <!-- 출력 이미지 프리뷰 (하단) -->
+        <!-- 마스크 캔버스 (이미지가 있을 때) -->
+        <div v-else class="mask-canvas-container">
+          <!-- 마스크 도구바 -->
+          <div class="mask-toolbar">
+            <div class="tool-group">
+              <button
+                class="tool-btn"
+                :class="{ active: activeTool === 'brush' }"
+                @click="setActiveTool('brush')"
+                :title="t('inpaint.brush')"
+              >
+                🖌️
+              </button>
+              <button
+                class="tool-btn"
+                :class="{ active: activeTool === 'eraser' }"
+                @click="setActiveTool('eraser')"
+                :title="t('inpaint.eraser')"
+              >
+                🧹
+              </button>
+            </div>
+            <div class="tool-group">
+              <label class="brush-size-label">
+                {{ t('inpaint.brushSize') }}: {{ brushSize }}px
+              </label>
+              <input
+                type="range"
+                v-model.number="brushSize"
+                min="1"
+                max="200"
+                class="brush-size-slider"
+              />
+            </div>
+            <div class="tool-group">
+              <button class="action-btn" @click="fillMask" :title="t('inpaint.fillMask')">
+                {{ t('inpaint.fillMask') }}
+              </button>
+              <button class="action-btn" @click="clearMask" :title="t('inpaint.clearMask')">
+                {{ t('inpaint.clearMask') }}
+              </button>
+              <button class="action-btn" @click="invertMask" :title="t('inpaint.invertMask')">
+                {{ t('inpaint.invertMask') }}
+              </button>
+            </div>
+            <div class="tool-group">
+              <label class="upload-btn small">
+                <input type="file" accept="image/*" @change="handleFileUpload" hidden />
+                📁
+              </label>
+              <button class="action-btn small" @click="openHistorySelector">📋</button>
+            </div>
+          </div>
+
+          <!-- 캔버스 영역 (임시 - 이미지만 표시) -->
+          <div class="canvas-wrapper">
+            <img :src="initImage" alt="Input Image" class="canvas-image" />
+            <div v-if="mask" class="mask-overlay">
+              <!-- 마스크 오버레이 표시 -->
+            </div>
+            <p class="canvas-placeholder-text">
+              마스크 캔버스는 2단계에서 구현됩니다
+            </p>
+          </div>
+        </div>
+
+        <!-- 출력 이미지 프리뷰 -->
         <ImagePreviewPanel
           class="output-image-panel"
           :current-image="currentImage"
@@ -906,7 +994,7 @@ watch(
       </div>
 
       <!-- 히스토리 -->
-        <HistoryPanel
+      <HistoryPanel
         ref="historyPanelRef"
         :is-expanded="showHistoryPanel"
         :is-content-collapsed="isHistoryContentCollapsed"
@@ -1020,7 +1108,7 @@ watch(
 </template>
 
 <style scoped>
-.img2img-view {
+.inpaint-view {
   display: grid;
   grid-template-columns: 280px 300px 1fr;
   gap: 12px;
@@ -1031,7 +1119,7 @@ watch(
   overflow: hidden;
 }
 
-.img2img-view.settings-collapsed {
+.inpaint-view.settings-collapsed {
   grid-template-columns: 48px 300px 1fr;
 }
 
@@ -1140,26 +1228,11 @@ watch(
   padding: 0;
 }
 
-.volume-display {
-  flex: 0 0 40px;
+.value-display {
+  flex: 0 0 50px;
   font-size: 12px;
   color: var(--color-text-secondary);
   text-align: right;
-}
-
-.checkbox-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.checkbox-inline input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
 }
 
 .seed-random-btn {
@@ -1175,7 +1248,6 @@ watch(
 
 .seed-random-btn:hover:not(:disabled) {
   background: var(--color-success-dark);
-  transform: scale(1.05);
 }
 
 .seed-random-btn:disabled {
@@ -1192,7 +1264,6 @@ watch(
 /* ADetailer 그룹 */
 .adetailer-group {
   padding-top: 0;
-  margin-top: 0;
 }
 
 .adetailer-group .group-title {
@@ -1229,12 +1300,6 @@ watch(
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
 .reorder-btns {
   display: flex;
   flex-direction: column;
@@ -1254,10 +1319,6 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.reorder-btns button:hover:not(:disabled) {
-  background: var(--color-bg-hover);
 }
 
 .reorder-btns button:disabled {
@@ -1291,11 +1352,7 @@ watch(
   font-size: 12px;
 }
 
-.prompt-edit-btn:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-/* System Settings Section */
+/* System Settings */
 .system-settings-section {
   flex-shrink: 0;
   border-top: 1px solid var(--color-border-primary);
@@ -1308,21 +1365,12 @@ watch(
   justify-content: space-between;
   padding: 8px 12px;
   cursor: pointer;
-  user-select: none;
-  transition: background 0.2s;
-}
-
-.system-settings-header:hover {
-  background: var(--color-bg-hover);
 }
 
 .system-settings-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .toggle-icon {
@@ -1353,28 +1401,6 @@ watch(
   font-weight: 500;
 }
 
-.setting-label.checkbox-label {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.setting-label.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-}
-
-.setting-label.checkbox-label span {
-  font-size: 13px;
-  color: var(--color-text-primary);
-}
-
-/* Theme Toggle */
 .theme-toggle {
   display: flex;
   gap: 8px;
@@ -1391,16 +1417,6 @@ watch(
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.theme-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-bg-hover);
 }
 
 .theme-btn.active {
@@ -1409,7 +1425,6 @@ watch(
   color: var(--color-text-inverse);
 }
 
-/* Transition Animation */
 .expand-enter-active,
 .expand-leave-active {
   transition: all 0.3s ease;
@@ -1452,10 +1467,6 @@ watch(
   transition: all 0.2s;
 }
 
-.footer-btn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-}
-
 .footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1489,11 +1500,6 @@ watch(
   color: var(--color-text-primary);
 }
 
-.header-buttons {
-  display: flex;
-  gap: 8px;
-}
-
 .generate-btn {
   background: var(--gradient-primary);
   color: var(--color-text-inverse);
@@ -1504,11 +1510,6 @@ watch(
   font-size: 14px;
   font-weight: 600;
   transition: all 0.2s;
-}
-
-.generate-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
 }
 
 .generate-btn:disabled {
@@ -1581,19 +1582,9 @@ watch(
   color: var(--color-text-inverse);
 }
 
-.interrupt-btn:hover {
-  background: var(--color-error-dark);
-  transform: scale(1.02);
-}
-
 .skip-btn {
   background: var(--color-info);
   color: var(--color-text-inverse);
-}
-
-.skip-btn:hover {
-  background: var(--color-info-dark);
-  transform: scale(1.02);
 }
 
 .slot-section {
@@ -1646,14 +1637,6 @@ watch(
   color: var(--color-text-inverse);
 }
 
-.bookmark-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.preset-btn.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
 .slot-btn {
   flex: 1;
   display: flex;
@@ -1669,11 +1652,6 @@ watch(
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.slot-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-tertiary);
 }
 
 .slot-btn.active {
@@ -1712,8 +1690,12 @@ watch(
   overflow: hidden;
 }
 
-/* 이미지 컬럼 (입력 + 출력 상하 분할) */
-.image-column {
+.image-area.history-collapsed {
+  grid-template-columns: 1fr 40px;
+}
+
+/* 캔버스 컬럼 */
+.canvas-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1721,95 +1703,163 @@ watch(
   min-height: 0;
 }
 
-/* 입력 이미지 패널 (상단) */
-.input-image-panel {
-  flex: 0 0 auto;
-  max-height: 45%;
-  min-height: 150px;
-}
-
-/* 출력 이미지 패널 (하단) */
-.output-image-panel {
+/* 이미지 업로드 영역 */
+.upload-area {
   flex: 1;
-  min-height: 0;
-}
-
-/* 히스토리 패널 접힘 시 */
-.image-area.history-collapsed {
-  grid-template-columns: 1fr 40px;
-}
-
-.image-area.history-collapsed .history-panel {
-  width: 40px;
-}
-
-.image-area.history-collapsed .history-panel .panel-header {
-  flex-direction: column;
-  padding: 12px 8px;
+  display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.image-area.history-collapsed .history-panel .panel-title {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  margin: 0;
-  font-size: 13px;
-  white-space: nowrap;
-  order: 2;
-}
-
-.image-area.history-collapsed .history-panel .panel-header > div {
-  order: 1;
-}
-
-.image-area.history-collapsed .history-panel .toggle-content-btn,
-.image-area.history-collapsed .history-panel .filter-favorite-btn,
-.image-area.history-collapsed .history-panel .batch-btn,
-.image-area.history-collapsed .history-panel .clear-btn {
-  display: none;
-}
-
-.image-area.history-collapsed .history-panel .history-content,
-.image-area.history-collapsed .history-panel .panel-footer {
-  display: none;
-}
-
-/* History */
-.history-item {
-  position: relative;
-  aspect-ratio: 1;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-border-primary);
   border-radius: 8px;
-  overflow: hidden;
+  min-height: 300px;
+}
+
+.upload-content {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.upload-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.upload-content p {
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+
+.upload-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.upload-btn {
+  padding: 10px 20px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  border: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
   transition: all 0.2s;
 }
 
-.history-item:hover {
-  border-color: var(--color-primary);
+.upload-btn.secondary {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
 }
 
-.history-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.upload-btn.small {
+  padding: 6px 12px;
+  font-size: 14px;
 }
 
-.history-item.is-img2img {
-  border-color: var(--color-warning);
+/* 마스크 캔버스 컨테이너 */
+.mask-canvas-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 0;
 }
 
-.type-badge {
+.mask-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
+  flex-wrap: wrap;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brush-size-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.brush-size-slider {
+  width: 100px;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--color-bg-hover);
+}
+
+.action-btn.small {
+  padding: 6px 10px;
+}
+
+.canvas-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.canvas-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.mask-overlay {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: var(--color-warning);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.canvas-placeholder-text {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
   color: white;
-  font-size: 9px;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* 출력 이미지 패널 */
+.output-image-panel {
+  flex: 0 0 auto;
+  max-height: 35%;
+  min-height: 150px;
 }
 
 /* Modal */

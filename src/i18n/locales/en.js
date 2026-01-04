@@ -709,5 +709,45 @@ export default {
     upscaling: 'Upscaling...',
     upscaleComplete: 'Upscale complete',
     upscaleFailed: 'Upscale failed'
+  },
+
+  // Inpaint
+  inpaint: {
+    title: 'Inpaint',
+    // Tools
+    tools: 'Tools',
+    brush: 'Brush',
+    eraser: 'Eraser',
+    brushSize: 'Brush Size',
+    // Mask editing
+    mask: 'Mask',
+    fillMask: 'Fill Mask',
+    clearMask: 'Clear Mask',
+    invertMask: 'Invert Mask',
+    undo: 'Undo',
+    redo: 'Redo',
+    // Mask settings
+    maskSettings: 'Mask Settings',
+    maskBlur: 'Mask Blur',
+    maskedContent: 'Masked Content',
+    maskedContentOriginal: 'Original',
+    maskedContentFill: 'Fill',
+    maskedContentLatentNoise: 'Latent Noise',
+    maskedContentLatentNothing: 'Latent Nothing',
+    inpaintArea: 'Inpaint Area',
+    inpaintAreaWholePicture: 'Whole Picture',
+    inpaintAreaOnlyMasked: 'Only Masked',
+    onlyMaskedPadding: 'Masked Padding',
+    // Canvas
+    canvas: 'Canvas',
+    zoomIn: 'Zoom In',
+    zoomOut: 'Zoom Out',
+    fitToScreen: 'Fit to Screen',
+    resetView: 'Reset View',
+    // Messages
+    noImageSelected: 'Please select an image first',
+    noMaskDrawn: 'Please draw a mask',
+    maskRequired: '⚠️ Mask Required',
+    imageRequired: '⚠️ Input Image Required'
   }
 }

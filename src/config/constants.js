@@ -130,13 +130,35 @@ export const DEFAULT_NOTIFICATION_VOLUME = 0.5 // 0.0 ~ 1.0
 // ===== 이미지 타입 =====
 export const IMAGE_TYPES = {
   TXT2IMG: 'txt2img',
-  IMG2IMG: 'img2img'
+  IMG2IMG: 'img2img',
+  INPAINT: 'inpaint'
 }
 
 // ===== img2img 관련 =====
 export const IMG2IMG_PARAM_RANGES = {
   denoisingStrength: { min: 0, max: 1, default: 0.75, step: 0.01 },
   upscaleScale: { min: 1, max: 4, default: 2, step: 0.1 }
+}
+
+// ===== Inpaint 관련 =====
+export const INPAINT_PARAM_RANGES = {
+  denoisingStrength: { min: 0, max: 1, default: 0.75, step: 0.01 },
+  maskBlur: { min: 0, max: 64, default: 4, step: 1 },
+  onlyMaskedPadding: { min: 0, max: 256, default: 32, step: 4 }
+}
+
+// Inpaint 마스크 영역 채우기 옵션
+export const INPAINT_FILL_OPTIONS = {
+  FILL: 0,        // 단색 채우기
+  ORIGINAL: 1,    // 원본 이미지
+  LATENT_NOISE: 2,  // Latent noise
+  LATENT_NOTHING: 3 // Latent nothing
+}
+
+// Inpaint 영역 옵션
+export const INPAINT_AREA_OPTIONS = {
+  WHOLE_PICTURE: false,
+  ONLY_MASKED: true
 }
 
 // 지원하는 이미지 포맷

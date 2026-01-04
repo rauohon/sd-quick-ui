@@ -168,7 +168,7 @@ html, body {
 .tab-content {
   flex: 1;
   overflow: hidden;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   gap: 16px;
 }

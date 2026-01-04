@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, h, render } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Txt2ImgView from './views/Txt2ImgView.vue'
 import Img2ImgView from './views/Img2ImgView.vue'
+import InpaintView from './views/InpaintView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
 import { useDarkMode } from './composables/useDarkMode'
@@ -209,14 +210,16 @@ onUnmounted(() => {
         @updateCurrentImage="currentImage = $event"
       />
 
-      <!-- inpaint (placeholder) -->
-      <div v-else-if="activeTab === 'inpaint'" class="placeholder-view">
-        <div class="placeholder-content">
-          <span class="placeholder-icon">🎨</span>
-          <h2>{{ t('tabs.inpaint') }}</h2>
-          <p>{{ t('tabs.comingSoon') }}</p>
-        </div>
-      </div>
+      <!-- inpaint -->
+      <InpaintView
+        v-else-if="activeTab === 'inpaint'"
+        :showToast="showToast"
+        :openModal="openModal"
+        :showConfirm="showConfirm"
+        :isDark="isDark"
+        :toggleTheme="toggleTheme"
+        @updateCurrentImage="currentImage = $event"
+      />
 
       <!-- workflow (placeholder) -->
       <div v-else-if="activeTab === 'workflow'" class="placeholder-view">
