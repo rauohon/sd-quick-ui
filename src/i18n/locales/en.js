@@ -729,6 +729,8 @@ export default {
     redo: 'Redo',
     // Mask settings
     maskSettings: 'Mask Settings',
+    inpaintSettings: 'INPAINT SETTINGS',
+    generationParams: 'GENERATION PARAMS',
     maskBlur: 'Mask Blur',
     maskedContent: 'Masked Content',
     maskedContentOriginal: 'Original',

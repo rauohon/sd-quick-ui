@@ -630,14 +630,13 @@ watch(
         <div class="form-group horizontal">
           <label>Denoising</label>
           <input
-            type="range"
+            type="number"
             v-model.number="denoisingStrength"
             :min="IMG2IMG_PARAM_RANGES.denoisingStrength.min"
             :max="IMG2IMG_PARAM_RANGES.denoisingStrength.max"
             :step="IMG2IMG_PARAM_RANGES.denoisingStrength.step"
             :disabled="isGenerating"
           />
-          <span class="volume-display">{{ denoisingStrength.toFixed(2) }}</span>
         </div>
 
         <!-- 업스케일 -->
@@ -1477,7 +1476,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: var(--color-bg-elevated);
   border-bottom: 1px solid var(--color-border-primary);
 }

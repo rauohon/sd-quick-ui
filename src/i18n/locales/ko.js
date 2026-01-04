@@ -729,6 +729,8 @@ export default {
     redo: '다시 실행',
     // 마스크 설정
     maskSettings: '마스크 설정',
+    inpaintSettings: 'INPAINT 설정',
+    generationParams: '생성 파라미터',
     maskBlur: '마스크 블러',
     maskedContent: '마스크 영역 채우기',
     maskedContentOriginal: '원본',

@@ -835,7 +835,16 @@ watch(
           </select>
         </div>
 
+        <!-- 스케줄러 -->
+        <div class="form-group horizontal">
+          <label>Scheduler</label>
+          <select v-model="scheduler" :disabled="isGenerating">
+            <option v-for="s in availableSchedulers" :key="s.name" :value="s.name">{{ s.label }}</option>
+          </select>
+        </div>
+
         <!-- 크기 -->
+        <div class="section-divider"></div>
         <div class="form-group horizontal">
           <label>Width</label>
           <input type="number" v-model.number="width" min="64" max="2048" step="64" :disabled="isGenerating" />
@@ -845,32 +854,34 @@ watch(
           <input type="number" v-model.number="height" min="64" max="2048" step="64" :disabled="isGenerating" />
         </div>
 
+        <!-- Inpaint 설정 -->
+        <div class="section-divider"></div>
+        <div class="section-title">{{ t('inpaint.inpaintSettings') }}</div>
+
         <!-- Denoising Strength -->
         <div class="form-group horizontal">
           <label>Denoising</label>
           <input
-            type="range"
+            type="number"
             v-model.number="denoisingStrength"
             :min="INPAINT_PARAM_RANGES.denoisingStrength.min"
             :max="INPAINT_PARAM_RANGES.denoisingStrength.max"
             :step="INPAINT_PARAM_RANGES.denoisingStrength.step"
             :disabled="isGenerating"
           />
-          <span class="value-display">{{ denoisingStrength.toFixed(2) }}</span>
         </div>
 
         <!-- Mask Blur -->
         <div class="form-group horizontal">
           <label>{{ t('inpaint.maskBlur') }}</label>
           <input
-            type="range"
+            type="number"
             v-model.number="maskBlur"
             :min="INPAINT_PARAM_RANGES.maskBlur.min"
             :max="INPAINT_PARAM_RANGES.maskBlur.max"
             :step="INPAINT_PARAM_RANGES.maskBlur.step"
             :disabled="isGenerating"
           />
-          <span class="value-display">{{ maskBlur }}</span>
         </div>
 
         <!-- Masked Content -->
@@ -897,15 +908,18 @@ watch(
         <div v-if="inpaintFullRes" class="form-group horizontal">
           <label>{{ t('inpaint.onlyMaskedPadding') }}</label>
           <input
-            type="range"
+            type="number"
             v-model.number="inpaintFullResPadding"
             :min="INPAINT_PARAM_RANGES.onlyMaskedPadding.min"
             :max="INPAINT_PARAM_RANGES.onlyMaskedPadding.max"
             :step="INPAINT_PARAM_RANGES.onlyMaskedPadding.step"
             :disabled="isGenerating"
           />
-          <span class="value-display">{{ inpaintFullResPadding }}px</span>
         </div>
+
+        <!-- 생성 파라미터 -->
+        <div class="section-divider"></div>
+        <div class="section-title">{{ t('inpaint.generationParams') }}</div>
 
         <!-- Seed -->
         <div class="form-group horizontal">
@@ -1565,6 +1579,15 @@ watch(
   margin: 16px 0;
 }
 
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ADetailer 그룹 */
 .adetailer-group {
   padding-top: 0;
@@ -1792,7 +1815,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: var(--color-bg-elevated);
   border-bottom: 1px solid var(--color-border-primary);
 }

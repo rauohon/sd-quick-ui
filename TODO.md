@@ -227,7 +227,19 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] Inpaint/Outpainting 기능 구현 (3단계 완료)
+- [ ] Inpaint/Outpainting 기능 구현 (4단계 완료)
+
+### Inpaint 4단계 완료 ✅ (2026-01-05)
+- [x] 4.1 마스크 설정 UI
+  - Mask Blur, Masked Content, Inpaint Area
+  - Only Masked Padding (조건부 표시)
+- [x] 4.2 기본 생성 파라미터
+  - Checkpoint, Sampler, Scheduler 추가
+  - Width/Height, Denoising, Seed, Steps, CFG, Batch
+- [x] 4.3 UI 개선
+  - 섹션 구분 타이틀 추가 (INPAINT 설정, 생성 파라미터)
+  - 슬라이더 → 숫자 입력 변경 (Denoising, Mask Blur, Padding)
+  - 프롬프트 패널 헤더 높이 통일 (Inpaint, img2img)
 
 ### Inpaint 3단계 완료 ✅ (2026-01-05)
 - [x] 3.1 드래그앤드롭 강화
@@ -369,17 +381,19 @@
   - 이미지 정보 라벨
   - bookmark.manager 누락 수정
 
-#### 4단계: Inpaint 설정 UI
-- [ ] 4.1 마스크 설정
+#### 4단계: Inpaint 설정 UI ✅
+- [x] 4.1 마스크 설정
   - Mask blur (0~64px): 마스크 경계 블러
   - Masked content (original/fill/latent noise/latent nothing)
   - Inpaint area (Whole picture / Only masked)
-- [ ] 4.2 Only masked 설정
+- [x] 4.2 Only masked 설정
   - Only masked padding (0~256px)
   - 고해상도 inpaint를 위한 패딩
-- [ ] 4.3 기본 생성 파라미터
-  - img2img와 동일: steps, CFG, sampler, seed 등
+- [x] 4.3 기본 생성 파라미터
+  - img2img와 동일: steps, CFG, sampler, scheduler, seed 등
   - Denoising strength
+- [x] 4.4 UI 개선
+  - 섹션 구분 타이틀, 슬라이더→숫자입력, 헤더 높이 통일
 
 #### 5단계: Outpainting 기능
 - [ ] 5.1 캔버스 확장 UI
