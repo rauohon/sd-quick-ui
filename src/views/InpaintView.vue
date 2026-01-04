@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInpaintGeneration } from '../composables/useInpaintGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
@@ -71,7 +71,25 @@ const selectedModel = ref('')
 const initImage = ref(null)
 const initImageWidth = ref(0)
 const initImageHeight = ref(0)
+const initImageFormat = ref('')
 const mask = ref(null) // 마스크 이미지 (base64)
+
+// 이미지 정보 계산
+const initImageFileSize = computed(() => {
+  if (!initImage.value) return 0
+  // base64 데이터에서 실제 파일 크기 계산
+  const base64 = initImage.value.split(',')[1] || initImage.value
+  const padding = (base64.match(/=/g) || []).length
+  return Math.floor((base64.length * 3) / 4 - padding)
+})
+
+const initImageFileSizeFormatted = computed(() => {
+  const bytes = initImageFileSize.value
+  if (bytes === 0) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+})
 const denoisingStrength = ref(INPAINT_PARAM_RANGES.denoisingStrength.default)
 const maskBlur = ref(INPAINT_PARAM_RANGES.maskBlur.default)
 const inpaintingFill = ref(INPAINT_FILL_OPTIONS.ORIGINAL)
@@ -84,6 +102,16 @@ const brushSize = ref(30)
 const maskCanvasRef = ref(null)
 const canUndo = ref(false)
 const canRedo = ref(false)
+
+// 줌/패닝 상태
+const zoomLevel = ref(1)
+const panX = ref(0)
+const panY = ref(0)
+
+// 줌 범위 상수
+const MIN_ZOOM = 0.1
+const MAX_ZOOM = 5
+const ZOOM_STEP = 0.1
 
 // ADetailer
 const adetailers = ref([
@@ -102,6 +130,10 @@ const showSettingsPanel = ref(true)
 const showHistoryPanel = ref(true)
 const isHistoryContentCollapsed = ref(false)
 const showImagePanel = ref(true)
+
+// 드래그앤드롭 상태
+const isDragging = ref(false)
+const dragCounter = ref(0)
 
 // ADetailer 프롬프트 모달
 const showADetailerPrompt = ref(false)
@@ -385,6 +417,28 @@ function handleHistoryChange({ canUndo: undo, canRedo: redo }) {
   canRedo.value = redo
 }
 
+// ===== 줌/패닝 함수 =====
+function zoomIn() {
+  zoomLevel.value = Math.min(zoomLevel.value + ZOOM_STEP, MAX_ZOOM)
+}
+
+function zoomOut() {
+  zoomLevel.value = Math.max(zoomLevel.value - ZOOM_STEP, MIN_ZOOM)
+}
+
+function fitToScreen() {
+  zoomLevel.value = 1
+  panX.value = 0
+  panY.value = 0
+}
+
+function resetToActualSize() {
+  maskCanvasRef.value?.resetZoom?.()
+}
+
+// 줌 퍼센트 표시용 computed
+const zoomPercentage = computed(() => Math.round(zoomLevel.value * 100))
+
 // ===== ADetailer Functions =====
 function openADetailerPrompt(index) {
   editingADetailerIndex.value = index
@@ -423,12 +477,22 @@ function closeHistorySelector() {
   showHistorySelector.value = false
 }
 
-function selectImageFromHistory(image) {
+async function selectImageFromHistory(image) {
+  // 기존 이미지+마스크가 있으면 확인
+  if (initImage.value) {
+    const confirmed = await confirmImageReplace()
+    if (!confirmed) return
+  }
+
   initImage.value = image.image
+  // base64에서 포맷 감지
+  const formatMatch = image.image.match(/^data:image\/(\w+);/)
+  initImageFormat.value = formatMatch ? formatMatch[1].toUpperCase() : 'WEBP'
   const img = new Image()
   img.onload = () => {
     initImageWidth.value = img.width
     initImageHeight.value = img.height
+    props.showToast(t('inpaint.imageLoaded'), 'success')
   }
   img.src = image.image
   closeHistorySelector()
@@ -438,18 +502,144 @@ function selectImageFromHistory(image) {
 function handleFileUpload(event) {
   const file = event.target.files?.[0]
   if (!file) return
+  loadImageFile(file)
+}
+
+// 이미지 파일 로드 (공통 함수)
+const SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
+
+async function loadImageFile(file) {
+  if (!SUPPORTED_TYPES.includes(file.type)) {
+    props.showToast(t('inpaint.invalidFileType'), 'error')
+    return
+  }
+
+  // 기존 이미지+마스크가 있으면 확인
+  if (initImage.value) {
+    const confirmed = await confirmImageReplace()
+    if (!confirmed) return
+  }
 
   const reader = new FileReader()
   reader.onload = (e) => {
     initImage.value = e.target.result
+    // 포맷 감지
+    initImageFormat.value = file.type.split('/')[1]?.toUpperCase() || 'Unknown'
     const img = new Image()
     img.onload = () => {
       initImageWidth.value = img.width
       initImageHeight.value = img.height
+      props.showToast(t('inpaint.imageLoaded'), 'success')
     }
     img.src = e.target.result
   }
   reader.readAsDataURL(file)
+}
+
+// 드래그앤드롭 핸들러
+function handleDragEnter(e) {
+  e.preventDefault()
+  dragCounter.value++
+  isDragging.value = true
+}
+
+function handleDragLeave(e) {
+  e.preventDefault()
+  dragCounter.value--
+  if (dragCounter.value === 0) {
+    isDragging.value = false
+  }
+}
+
+function handleDragOver(e) {
+  e.preventDefault()
+}
+
+function handleDrop(e) {
+  e.preventDefault()
+  isDragging.value = false
+  dragCounter.value = 0
+
+  const files = e.dataTransfer?.files
+  if (files && files.length > 0) {
+    loadImageFile(files[0])
+  }
+}
+
+// 클립보드 붙여넣기 핸들러
+function handlePaste(e) {
+  // 입력 요소에서는 무시
+  const target = e.target
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+    return
+  }
+
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        loadImageFromClipboard(file)
+      }
+      return
+    }
+  }
+}
+
+async function loadImageFromClipboard(file) {
+  // 기존 이미지+마스크가 있으면 확인
+  if (initImage.value) {
+    const confirmed = await confirmImageReplace()
+    if (!confirmed) return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    initImage.value = e.target.result
+    // 포맷 감지
+    initImageFormat.value = file.type.split('/')[1]?.toUpperCase() || 'PNG'
+    const img = new Image()
+    img.onload = () => {
+      initImageWidth.value = img.width
+      initImageHeight.value = img.height
+      props.showToast(t('inpaint.imagePasted'), 'success')
+    }
+    img.src = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+// 이미지 제거
+function removeImage() {
+  initImage.value = null
+  initImageWidth.value = 0
+  initImageHeight.value = 0
+  initImageFormat.value = ''
+  mask.value = null
+  props.showToast(t('inpaint.imageRemoved'), 'info')
+}
+
+// 이미지 교체 전 마스크 확인
+async function confirmImageReplace() {
+  // 마스크가 있으면 확인 다이얼로그
+  if (mask.value && !maskCanvasRef.value?.isMaskEmpty?.()) {
+    const result = await props.showConfirm({
+      title: t('inpaint.replaceImage'),
+      message: t('inpaint.confirmMaskReset'),
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel')
+    })
+    if (!result?.confirmed) {
+      return false
+    }
+  }
+  // 마스크 초기화
+  mask.value = null
+  maskCanvasRef.value?.clearMask?.()
+  return true
 }
 
 // 시스템 설정 저장
@@ -528,6 +718,9 @@ const currentParams = computed(() => ({
 
 // ===== Lifecycle =====
 onMounted(async () => {
+  // 클립보드 붙여넣기 이벤트 등록
+  window.addEventListener('paste', handlePaste)
+
   await checkApiStatus()
   await loadModels()
 
@@ -571,6 +764,11 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load slots from IndexedDB:', error)
   }
+})
+
+onUnmounted(() => {
+  // 클립보드 붙여넣기 이벤트 해제
+  window.removeEventListener('paste', handlePaste)
 })
 
 // Slots → IndexedDB persistence
@@ -917,12 +1115,27 @@ watch(
     <!-- 3열: 캔버스 + 히스토리 영역 -->
     <div v-if="!showBookmarkManager && !showPresetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
       <!-- 캔버스 영역 (입력 이미지 + 마스크) -->
-      <div class="canvas-column">
+      <div
+        class="canvas-column"
+        @dragenter="handleDragEnter"
+        @dragleave="handleDragLeave"
+        @dragover="handleDragOver"
+        @drop="handleDrop"
+      >
+        <!-- 드래그앤드롭 오버레이 -->
+        <div v-if="isDragging" class="drop-overlay">
+          <div class="drop-content">
+            <div class="drop-icon">📁</div>
+            <p>{{ t('inpaint.dropImageHere') }}</p>
+          </div>
+        </div>
+
         <!-- 이미지 업로드 영역 (이미지가 없을 때) -->
         <div v-if="!initImage" class="upload-area">
           <div class="upload-content">
             <div class="upload-icon">🖼️</div>
             <p>{{ t('inpaint.noImageSelected') }}</p>
+            <p class="upload-hint">{{ t('inpaint.dropImageHere') }}</p>
             <div class="upload-buttons">
               <label class="upload-btn">
                 <input type="file" accept="image/*" @change="handleFileUpload" hidden />
@@ -1005,6 +1218,55 @@ watch(
               </label>
               <button class="action-btn small" @click="openHistorySelector">📋</button>
             </div>
+            <div class="tool-group zoom-group">
+              <button
+                class="action-btn"
+                @click="zoomOut"
+                :disabled="zoomLevel <= MIN_ZOOM"
+                :title="t('inpaint.zoomOut')"
+              >
+                ➖
+              </button>
+              <span class="zoom-display">{{ zoomPercentage }}%</span>
+              <button
+                class="action-btn"
+                @click="zoomIn"
+                :disabled="zoomLevel >= MAX_ZOOM"
+                :title="t('inpaint.zoomIn')"
+              >
+                ➕
+              </button>
+              <button
+                class="action-btn"
+                @click="fitToScreen"
+                :title="t('inpaint.fitToScreen')"
+              >
+                {{ t('inpaint.fit') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 이미지 정보 바 -->
+          <div class="image-info-bar">
+            <span class="info-item">
+              <span class="info-label">📐</span>
+              {{ initImageWidth }} × {{ initImageHeight }}
+            </span>
+            <span class="info-item">
+              <span class="info-label">📦</span>
+              {{ initImageFileSizeFormatted }}
+            </span>
+            <span class="info-item">
+              <span class="info-label">🖼️</span>
+              {{ initImageFormat }}
+            </span>
+            <button
+              class="remove-image-btn"
+              @click="removeImage"
+              :title="t('inpaint.removeImage')"
+            >
+              ✕ {{ t('inpaint.removeImage') }}
+            </button>
           </div>
 
           <!-- 마스크 캔버스 컴포넌트 -->
@@ -1014,8 +1276,14 @@ watch(
             :tool="activeTool"
             :brush-size="brushSize"
             :disabled="isGenerating"
+            :zoom="zoomLevel"
+            :pan-x="panX"
+            :pan-y="panY"
             @update:mask="handleMaskUpdate"
             @history-change="handleHistoryChange"
+            @update:zoom="(val) => zoomLevel = val"
+            @update:pan-x="(val) => panX = val"
+            @update:pan-y="(val) => panY = val"
           />
         </div>
 
@@ -1732,11 +2000,50 @@ watch(
 
 /* 캔버스 컬럼 */
 .canvas-column {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
   min-height: 0;
+}
+
+/* 드래그앤드롭 오버레이 */
+.drop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 8px;
+  border: 3px dashed #ffffff;
+  animation: dropPulse 1s ease-in-out infinite;
+}
+
+@keyframes dropPulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+
+.drop-content {
+  text-align: center;
+  color: #ffffff;
+}
+
+.drop-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.drop-content p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 /* 이미지 업로드 영역 */
@@ -1765,6 +2072,12 @@ watch(
 .upload-content p {
   margin: 0 0 16px;
   font-size: 14px;
+}
+
+.upload-hint {
+  font-size: 12px !important;
+  opacity: 0.7;
+  margin-bottom: 20px !important;
 }
 
 .upload-buttons {
@@ -1818,6 +2131,45 @@ watch(
   flex-wrap: wrap;
 }
 
+/* 이미지 정보 바 */
+.image-info-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 6px 12px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-primary);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label {
+  font-size: 14px;
+}
+
+.remove-image-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: var(--color-error);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-image-btn:hover {
+  opacity: 0.9;
+}
+
 .tool-group {
   display: flex;
   align-items: center;
@@ -1851,6 +2203,23 @@ watch(
 
 .action-btn.small {
   padding: 6px 10px;
+}
+
+/* 줌 컨트롤 */
+.zoom-group {
+  margin-left: auto;
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.zoom-display {
+  display: inline-block;
+  min-width: 50px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 /* MaskCanvas 컴포넌트가 flex: 1로 공간을 차지하도록 */

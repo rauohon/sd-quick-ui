@@ -95,6 +95,7 @@ export default {
   // 북마크
   bookmark: {
     title: '북마크',
+    manager: '🔖 북마크 관리자',
     promptBookmarks: '🔖 프롬프트 북마크',
     add: '북마크 추가',
     addNew: '➕ 새 북마크',
@@ -743,12 +744,32 @@ export default {
     zoomIn: '확대',
     zoomOut: '축소',
     fitToScreen: '화면에 맞추기',
+    fit: '맞춤',
     resetView: '뷰 초기화',
     // 메시지
     noImageSelected: '이미지를 먼저 선택해주세요',
     noMaskDrawn: '마스크를 그려주세요',
     maskRequired: '⚠️ 마스크 필요',
     imageRequired: '⚠️ 입력 이미지 필요',
-    uploadImageFirst: '이미지를 먼저 업로드해주세요'
+    uploadImageFirst: '이미지를 먼저 업로드해주세요',
+    // 드래그앤드롭
+    dropImageHere: '이미지를 여기에 놓으세요',
+    invalidFileType: '지원하지 않는 파일 형식입니다 (PNG, JPG, WebP만 가능)',
+    imageLoaded: '이미지가 로드되었습니다',
+    // 클립보드
+    pasteImage: '이미지 붙여넣기 (Ctrl+V)',
+    imagePasted: '클립보드에서 이미지를 붙여넣었습니다',
+    noImageInClipboard: '클립보드에 이미지가 없습니다',
+    // 이미지 관리
+    removeImage: '이미지 제거',
+    replaceImage: '이미지 교체',
+    confirmMaskReset: '이미지를 교체하면 현재 마스크가 초기화됩니다. 계속하시겠습니까?',
+    imageRemoved: '이미지가 제거되었습니다',
+    // 줌/뷰
+    zoom: '줌',
+    zoomLevel: '줌 레벨',
+    pan: '이동',
+    fitToWindow: '창에 맞추기',
+    actualSize: '실제 크기 (100%)'
   }
 }

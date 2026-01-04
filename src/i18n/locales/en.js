@@ -95,6 +95,7 @@ export default {
   // Bookmark
   bookmark: {
     title: 'Bookmarks',
+    manager: '🔖 Bookmark Manager',
     promptBookmarks: '🔖 Prompt Bookmarks',
     add: 'Add Bookmark',
     addNew: '➕ New Bookmark',
@@ -743,12 +744,32 @@ export default {
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
     fitToScreen: 'Fit to Screen',
+    fit: 'Fit',
     resetView: 'Reset View',
     // Messages
     noImageSelected: 'Please select an image first',
     noMaskDrawn: 'Please draw a mask',
     maskRequired: '⚠️ Mask Required',
     imageRequired: '⚠️ Input Image Required',
-    uploadImageFirst: 'Please upload an image first'
+    uploadImageFirst: 'Please upload an image first',
+    // Drag and drop
+    dropImageHere: 'Drop image here',
+    invalidFileType: 'Unsupported file format (PNG, JPG, WebP only)',
+    imageLoaded: 'Image loaded',
+    // Clipboard
+    pasteImage: 'Paste image (Ctrl+V)',
+    imagePasted: 'Image pasted from clipboard',
+    noImageInClipboard: 'No image in clipboard',
+    // Image management
+    removeImage: 'Remove image',
+    replaceImage: 'Replace image',
+    confirmMaskReset: 'Replacing the image will reset the current mask. Continue?',
+    imageRemoved: 'Image removed',
+    // Zoom/View
+    zoom: 'Zoom',
+    zoomLevel: 'Zoom level',
+    pan: 'Pan',
+    fitToWindow: 'Fit to window',
+    actualSize: 'Actual size (100%)'
   }
 }

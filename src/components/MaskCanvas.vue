@@ -30,10 +30,24 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  // 줌 레벨 (1 = 100%)
+  zoom: {
+    type: Number,
+    default: 1
+  },
+  // 패닝 오프셋
+  panX: {
+    type: Number,
+    default: 0
+  },
+  panY: {
+    type: Number,
+    default: 0
   }
 })
 
-const emit = defineEmits(['update:mask', 'historyChange'])
+const emit = defineEmits(['update:mask', 'historyChange', 'update:zoom', 'update:panX', 'update:panY'])
 
 // Refs
 const containerRef = ref(null)
@@ -47,7 +61,16 @@ const lastPoint = ref(null)
 const imageLoaded = ref(false)
 const canvasWidth = ref(512)
 const canvasHeight = ref(512)
-const scale = ref(1)
+const baseScale = ref(1)
+
+// 패닝 상태
+const isPanning = ref(false)
+const panStart = ref({ x: 0, y: 0 })
+const isSpacePressed = ref(false)
+
+// 줌 범위 상수
+const MIN_ZOOM = 0.1
+const MAX_ZOOM = 5
 
 // Undo/Redo 히스토리
 const MAX_HISTORY = 20
@@ -65,6 +88,9 @@ let cursorCtx = null
 // Computed
 const canUndo = computed(() => historyIndex.value > 0)
 const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+
+// 실제 표시 스케일 = 기본 스케일 × 줌 레벨
+const effectiveScale = computed(() => baseScale.value * props.zoom)
 
 // 이미지 로드 및 캔버스 초기화
 watch(() => props.image, async (newImage) => {
@@ -133,7 +159,31 @@ function calculateScale() {
   const scaleX = containerWidth / canvasWidth.value
   const scaleY = containerHeight / canvasHeight.value
 
-  scale.value = Math.min(scaleX, scaleY, 1) // 최대 1배율
+  baseScale.value = Math.min(scaleX, scaleY, 1) // 최대 1배율
+}
+
+// Fit to screen - 컨테이너에 맞게 줌/팬 리셋
+function fitToScreen() {
+  emit('update:zoom', 1)
+  emit('update:panX', 0)
+  emit('update:panY', 0)
+}
+
+// 100% view - 실제 크기로 보기
+function resetZoom() {
+  if (!containerRef.value) return
+
+  const containerWidth = containerRef.value.clientWidth
+  const containerHeight = containerRef.value.clientHeight
+  const scaleX = containerWidth / canvasWidth.value
+  const scaleY = containerHeight / canvasHeight.value
+  const fitScale = Math.min(scaleX, scaleY, 1)
+
+  // fitScale이 baseScale이므로, zoom = 1/fitScale이면 100%
+  const targetZoom = Math.min(Math.max(1 / fitScale, MIN_ZOOM), MAX_ZOOM)
+  emit('update:zoom', targetZoom)
+  emit('update:panX', 0)
+  emit('update:panY', 0)
 }
 
 function drawImage() {
@@ -162,8 +212,8 @@ function getCanvasPoint(e) {
   if (!maskCanvasRef.value) return null
 
   const rect = maskCanvasRef.value.getBoundingClientRect()
-  const x = (e.clientX - rect.left) / scale.value
-  const y = (e.clientY - rect.top) / scale.value
+  const x = (e.clientX - rect.left) / effectiveScale.value
+  const y = (e.clientY - rect.top) / effectiveScale.value
 
   return { x, y }
 }
@@ -258,6 +308,72 @@ function handleMouseLeave() {
   }
   if (isDrawing.value) {
     stopDrawing()
+  }
+  if (isPanning.value) {
+    isPanning.value = false
+  }
+}
+
+// 마우스 휠로 줌
+function handleWheel(e) {
+  if (props.disabled || !imageLoaded.value) return
+
+  e.preventDefault()
+
+  const delta = e.deltaY > 0 ? -0.1 : 0.1
+  const newZoom = Math.min(Math.max(props.zoom + delta, MIN_ZOOM), MAX_ZOOM)
+
+  emit('update:zoom', newZoom)
+}
+
+// 패닝 시작 (스페이스바 + 마우스 드래그)
+function startPanning(e) {
+  if (!isSpacePressed.value) return
+
+  isPanning.value = true
+  panStart.value = { x: e.clientX - props.panX, y: e.clientY - props.panY }
+}
+
+// 패닝 중
+function doPanning(e) {
+  if (!isPanning.value) return
+
+  const newPanX = e.clientX - panStart.value.x
+  const newPanY = e.clientY - panStart.value.y
+
+  emit('update:panX', newPanX)
+  emit('update:panY', newPanY)
+}
+
+// 패닝 종료
+function stopPanning() {
+  isPanning.value = false
+}
+
+// 마우스 다운 핸들러 (통합)
+function handleMouseDown(e) {
+  if (isSpacePressed.value) {
+    startPanning(e)
+  } else {
+    startDrawing(e)
+  }
+}
+
+// 마우스 업 핸들러 (통합)
+function handleMouseUp() {
+  if (isPanning.value) {
+    stopPanning()
+  } else {
+    stopDrawing()
+  }
+}
+
+// 마우스 이동 핸들러 (통합)
+function handleMouseMoveUnified(e) {
+  if (isPanning.value) {
+    doPanning(e)
+  } else {
+    handleMouseMove(e)
   }
 }
 
@@ -410,6 +526,20 @@ function handleKeyDown(e) {
     e.preventDefault()
     redo()
   }
+  // Spacebar: 패닝 모드
+  if (e.code === 'Space' && !e.repeat) {
+    e.preventDefault()
+    isSpacePressed.value = true
+  }
+}
+
+function handleKeyUp(e) {
+  if (e.code === 'Space') {
+    isSpacePressed.value = false
+    if (isPanning.value) {
+      stopPanning()
+    }
+  }
 }
 
 // 리사이즈 처리
@@ -419,11 +549,13 @@ function handleResize() {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
   window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
   window.removeEventListener('resize', handleResize)
 })
 
@@ -437,7 +569,9 @@ defineExpose({
   canUndo,
   canRedo,
   isMaskEmpty,
-  emitMask
+  emitMask,
+  fitToScreen,
+  resetZoom
 })
 </script>
 
@@ -458,17 +592,19 @@ defineExpose({
       v-else
       class="canvas-wrapper"
       :style="{
-        width: canvasWidth * scale + 'px',
-        height: canvasHeight * scale + 'px'
+        width: canvasWidth * effectiveScale + 'px',
+        height: canvasHeight * effectiveScale + 'px',
+        transform: `translate(${panX}px, ${panY}px)`
       }"
+      @wheel.prevent="handleWheel"
     >
       <!-- 이미지 레이어 (하단) -->
       <canvas
         ref="imageCanvasRef"
         class="canvas-layer image-layer"
         :style="{
-          width: canvasWidth * scale + 'px',
-          height: canvasHeight * scale + 'px'
+          width: canvasWidth * effectiveScale + 'px',
+          height: canvasHeight * effectiveScale + 'px'
         }"
       />
 
@@ -477,8 +613,8 @@ defineExpose({
         ref="maskCanvasRef"
         class="canvas-layer mask-layer"
         :style="{
-          width: canvasWidth * scale + 'px',
-          height: canvasHeight * scale + 'px'
+          width: canvasWidth * effectiveScale + 'px',
+          height: canvasHeight * effectiveScale + 'px'
         }"
       />
 
@@ -486,14 +622,15 @@ defineExpose({
       <canvas
         ref="cursorCanvasRef"
         class="canvas-layer cursor-layer"
+        :class="{ 'panning-mode': isSpacePressed }"
         :style="{
-          width: canvasWidth * scale + 'px',
-          height: canvasHeight * scale + 'px',
-          cursor: disabled ? 'not-allowed' : 'none'
+          width: canvasWidth * effectiveScale + 'px',
+          height: canvasHeight * effectiveScale + 'px',
+          cursor: disabled ? 'not-allowed' : (isSpacePressed ? (isPanning ? 'grabbing' : 'grab') : 'none')
         }"
-        @mousedown="startDrawing"
-        @mousemove="handleMouseMove"
-        @mouseup="stopDrawing"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMoveUnified"
+        @mouseup="handleMouseUp"
         @mouseleave="handleMouseLeave"
       />
     </div>
