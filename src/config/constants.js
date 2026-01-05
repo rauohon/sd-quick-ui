@@ -163,3 +163,60 @@ export const INPAINT_AREA_OPTIONS = {
 
 // 지원하는 이미지 포맷
 export const SUPPORTED_IMAGE_FORMATS = ['image/png', 'image/jpeg', 'image/webp']
+
+// ===== ControlNet 관련 =====
+export const CONTROLNET_MAX_UNITS = 3 // 최대 ControlNet 유닛 수
+
+// Resize 모드
+export const CONTROLNET_RESIZE_MODES = {
+  JUST_RESIZE: 0,      // Just Resize
+  CROP_AND_RESIZE: 1,  // Crop and Resize
+  RESIZE_AND_FILL: 2   // Resize and Fill
+}
+
+// Control 모드
+export const CONTROLNET_CONTROL_MODES = {
+  BALANCED: 0,           // Balanced
+  MY_PROMPT: 1,          // My prompt is more important
+  CONTROLNET: 2          // ControlNet is more important
+}
+
+// 기본 ControlNet 유닛 설정
+export const CONTROLNET_DEFAULT_UNIT = {
+  enabled: false,
+  module: 'none',           // 프리프로세서
+  model: 'None',            // ControlNet 모델
+  image: null,              // 컨트롤 이미지 (Base64)
+  preprocessedImage: null,  // 전처리된 이미지 (미리보기)
+  weight: 1.0,
+  resizeMode: CONTROLNET_RESIZE_MODES.CROP_AND_RESIZE,
+  controlMode: CONTROLNET_CONTROL_MODES.BALANCED,
+  guidanceStart: 0.0,
+  guidanceEnd: 1.0,
+  processorRes: 512,
+  thresholdA: -1,           // 프리프로세서별 파라미터 (-1 = 기본값 사용)
+  thresholdB: -1,
+  pixelPerfect: false
+}
+
+// ControlNet 파라미터 범위
+export const CONTROLNET_PARAM_RANGES = {
+  weight: { min: 0, max: 2, default: 1.0, step: 0.05 },
+  guidanceStart: { min: 0, max: 1, default: 0, step: 0.01 },
+  guidanceEnd: { min: 0, max: 1, default: 1, step: 0.01 },
+  processorRes: { min: 64, max: 2048, default: 512, step: 8 }
+}
+
+// 자주 사용하는 프리프로세서 (빠른 선택용)
+export const CONTROLNET_COMMON_MODULES = [
+  'none',
+  'canny',
+  'depth_anything_v2',
+  'openpose',
+  'openpose_full',
+  'lineart',
+  'softedge_pidinet',
+  'tile_resample',
+  'reference_only',
+  'ip-adapter_clip_sd15'
+]

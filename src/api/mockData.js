@@ -333,6 +333,174 @@ export const mockResponses = {
         html_info: `Upscaled with ${body.upscaler_1 || 'Unknown'} x${body.upscaling_resize || 2}`
       }
     }
+  },
+
+  // ===== ControlNet Mock API =====
+
+  // GET /controlnet/model_list
+  'GET:/controlnet/model_list': {
+    status: 200,
+    data: {
+      model_list: [
+        'control_v11p_sd15_openpose_fp16 [73c2b67d]',
+        'control_v11p_sd15_canny_fp16 [b18e0966]',
+        'control_v11f1p_sd15_depth_fp16 [4b72d323]',
+        'control_v11p_sd15_lineart_fp16 [5c23b17d]',
+        'control_v11p_sd15_softedge_fp16 [f616a34f]'
+      ]
+    }
+  },
+
+  // GET /controlnet/module_list
+  'GET:/controlnet/module_list': {
+    status: 200,
+    data: {
+      module_list: [
+        'none', 'canny', 'depth', 'depth_anything', 'depth_anything_v2',
+        'openpose', 'openpose_full', 'openpose_face', 'openpose_hand',
+        'lineart', 'lineart_anime', 'lineart_coarse',
+        'softedge_pidinet', 'softedge_hed', 'softedge_teed',
+        'tile_resample', 'tile_colorfix',
+        'reference_only', 'reference_adain', 'reference_adain+attn',
+        'ip-adapter_clip_sd15', 'ip-adapter_face_id',
+        'inpaint', 'inpaint_only'
+      ],
+      module_detail: {
+        'none': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'canny': {
+          model_free: false,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Low Threshold', value: 100, min: 1, max: 255, step: 1 },
+            { name: 'High Threshold', value: 200, min: 1, max: 255, step: 1 }
+          ]
+        },
+        'depth': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'depth_anything': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'depth_anything_v2': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'openpose': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'openpose_full': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'openpose_face': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'openpose_hand': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'lineart': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'lineart_anime': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'lineart_coarse': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'softedge_pidinet': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'softedge_hed': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'softedge_teed': {
+          model_free: false,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Safe Steps', value: 2, min: 0, max: 10, step: 1 }
+          ]
+        },
+        'tile_resample': {
+          model_free: false,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Down Sampling Rate', value: 1.0, min: 1.0, max: 8.0, step: 0.01 }
+          ]
+        },
+        'tile_colorfix': {
+          model_free: false,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Variation', value: 8.0, min: 3.0, max: 32.0, step: 1.0 }
+          ]
+        },
+        'reference_only': {
+          model_free: true,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Style Fidelity', value: 0.5, min: 0.0, max: 1.0, step: 0.01 }
+          ]
+        },
+        'reference_adain': {
+          model_free: true,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Style Fidelity', value: 0.5, min: 0.0, max: 1.0, step: 0.01 }
+          ]
+        },
+        'reference_adain+attn': {
+          model_free: true,
+          sliders: [
+            { name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 },
+            { name: 'Style Fidelity', value: 0.5, min: 0.0, max: 1.0, step: 0.01 }
+          ]
+        },
+        'ip-adapter_clip_sd15': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'ip-adapter_face_id': { model_free: false, sliders: [{ name: 'Resolution', value: 512, min: 64, max: 2048, step: 8 }] },
+        'inpaint': { model_free: false, sliders: [] },
+        'inpaint_only': { model_free: false, sliders: [] }
+      }
+    }
+  },
+
+  // POST /controlnet/detect (프리프로세서 미리보기)
+  'POST:/controlnet/detect': {
+    status: 200,
+    data: () => {
+      // Mock: 처리된 이미지 시뮬레이션 (흑백 엣지 느낌의 그라디언트)
+      const canvas = document.createElement('canvas')
+      canvas.width = 512
+      canvas.height = 512
+      const ctx = canvas.getContext('2d')
+
+      // 검정 배경
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(0, 0, 512, 512)
+
+      // 흰색 라인 패턴 (엣지/포즈 느낌)
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 2
+
+      // 랜덤 라인들
+      for (let i = 0; i < 20; i++) {
+        ctx.beginPath()
+        ctx.moveTo(Math.random() * 512, Math.random() * 512)
+        ctx.lineTo(Math.random() * 512, Math.random() * 512)
+        ctx.stroke()
+      }
+
+      // 중앙에 사람 모양 (스틱 피규어)
+      ctx.lineWidth = 3
+      // 머리
+      ctx.beginPath()
+      ctx.arc(256, 100, 30, 0, Math.PI * 2)
+      ctx.stroke()
+      // 몸통
+      ctx.beginPath()
+      ctx.moveTo(256, 130)
+      ctx.lineTo(256, 280)
+      ctx.stroke()
+      // 팔
+      ctx.beginPath()
+      ctx.moveTo(256, 180)
+      ctx.lineTo(180, 240)
+      ctx.moveTo(256, 180)
+      ctx.lineTo(332, 240)
+      ctx.stroke()
+      // 다리
+      ctx.beginPath()
+      ctx.moveTo(256, 280)
+      ctx.lineTo(200, 400)
+      ctx.moveTo(256, 280)
+      ctx.lineTo(312, 400)
+      ctx.stroke()
+
+      // "MOCK DETECT" 텍스트
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+      ctx.font = 'bold 24px Arial'
+      ctx.textAlign = 'center'
+      ctx.fillText('MOCK DETECT', 256, 480)
+
+      const dataUrl = canvas.toDataURL('image/png')
+      return {
+        images: [dataUrl.split(',')[1]],
+        info: 'Mock preprocessor detection'
+      }
+    }
   }
 }
 
