@@ -152,6 +152,19 @@ export function useControlNet() {
     return detail?.model_free === true
   }
 
+  // API에서 기대하는 문자열 값으로 변환
+  const RESIZE_MODE_STRINGS = {
+    0: 'Just Resize',
+    1: 'Crop and Resize',
+    2: 'Resize and Fill'
+  }
+
+  const CONTROL_MODE_STRINGS = {
+    0: 'Balanced',
+    1: 'My prompt is more important',
+    2: 'ControlNet is more important'
+  }
+
   /**
    * ControlNet API 요청용 args 배열 생성
    * @param {Array} units - ControlNet 유닛 배열
@@ -166,8 +179,8 @@ export function useControlNet() {
         model: unit.model || 'None',
         image: unit.image, // Base64
         weight: unit.weight,
-        resize_mode: unit.resizeMode,
-        control_mode: unit.controlMode,
+        resize_mode: RESIZE_MODE_STRINGS[unit.resizeMode] || 'Crop and Resize',
+        control_mode: CONTROL_MODE_STRINGS[unit.controlMode] || 'Balanced',
         guidance_start: unit.guidanceStart,
         guidance_end: unit.guidanceEnd,
         processor_res: unit.processorRes,
