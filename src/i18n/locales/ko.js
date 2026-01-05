@@ -799,5 +799,28 @@ export default {
     // 생성 관련
     preparingOutpaint: 'Outpaint 이미지 준비 중...',
     preparationFailed: '이미지 준비에 실패했습니다'
+  },
+
+  // ControlNet
+  controlnet: {
+    title: 'ControlNet',
+    enable: '활성화',
+    reset: '리셋',
+    model: '모델',
+    preprocessor: '프리프로세서',
+    weight: 'Weight',
+    guidance: 'Guidance',
+    controlMode: 'Control Mode',
+    resizeMode: 'Resize Mode',
+    dropImage: '이미지를 드래그하거나 붙여넣기',
+    selectFile: '파일 선택',
+    preprocessResult: '전처리 결과',
+    useAsInput: '입력으로 사용',
+    imageLoaded: '이미지가 로드되었습니다',
+    loadFailed: 'ControlNet 데이터 로드 실패',
+    invalidFileType: '지원하지 않는 파일 형식입니다',
+    selectModuleFirst: '먼저 프리프로세서를 선택하세요',
+    preprocessDone: '전처리가 완료되었습니다',
+    preprocessFailed: '전처리에 실패했습니다'
   }
 }

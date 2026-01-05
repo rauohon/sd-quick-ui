@@ -17,20 +17,21 @@
   - [x] 기본값 및 상수 정의 (`src/config/constants.js`에 추가)
   - [x] Mock API 지원 (`src/api/mockData.js`에 추가)
 
-#### Phase 2: UI 컴포넌트 개발
-- [ ] `src/components/ControlNetPanel.vue` 생성
-  - [ ] 유닛 탭 (Unit 0, 1, 2) 또는 아코디언 UI
-  - [ ] Enable 토글
-  - [ ] 컨트롤 이미지 업로드 (드래그앤드롭, 클립보드)
-  - [ ] 모델 선택 드롭다운
-  - [ ] 프리프로세서(Module) 선택 드롭다운
-  - [ ] 동적 슬라이더 (프리프로세서별 설정)
-    - Resolution, Threshold 등 module_detail 기반
-  - [ ] Weight 슬라이더 (0-2)
-  - [ ] Guidance Start/End 슬라이더 (0-1)
-  - [ ] Control Mode 선택 (Balanced/My prompt/ControlNet)
-  - [ ] Resize Mode 선택 (Resize/Crop/Fill)
-  - [ ] 프리프로세서 미리보기 버튼 + 결과 표시
+#### Phase 2: UI 컴포넌트 개발 ✅
+- [x] `src/components/ControlNetPanel.vue` 생성
+  - [x] 유닛 탭 (Unit 0, 1, 2)
+  - [x] Enable 토글
+  - [x] 컨트롤 이미지 업로드 (드래그앤드롭, 클립보드)
+  - [x] 모델 선택 드롭다운
+  - [x] 프리프로세서(Module) 선택 드롭다운 (카테고리별 그룹핑)
+  - [x] 동적 슬라이더 (프리프로세서별 설정)
+  - [x] Weight 슬라이더 (0-2)
+  - [x] Guidance Start/End 슬라이더 (0-1)
+  - [x] Control Mode 선택
+  - [x] Resize Mode 선택
+  - [x] Pixel Perfect 옵션
+  - [x] 프리프로세서 미리보기 버튼 + 결과 표시
+  - [x] i18n 번역 (ko.js, en.js)
 
 #### Phase 3: 생성 로직 통합
 - [ ] `useImageGeneration.js` 수정
@@ -121,4 +122,4 @@
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-05 (ControlNet Phase 1 완료)
+Last updated: 2026-01-05 (ControlNet Phase 2 완료)

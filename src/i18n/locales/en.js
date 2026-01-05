@@ -799,5 +799,28 @@ export default {
     // Generation related
     preparingOutpaint: 'Preparing outpaint image...',
     preparationFailed: 'Failed to prepare image'
+  },
+
+  // ControlNet
+  controlnet: {
+    title: 'ControlNet',
+    enable: 'Enable',
+    reset: 'Reset',
+    model: 'Model',
+    preprocessor: 'Preprocessor',
+    weight: 'Weight',
+    guidance: 'Guidance',
+    controlMode: 'Control Mode',
+    resizeMode: 'Resize Mode',
+    dropImage: 'Drag & drop or paste image',
+    selectFile: 'Select File',
+    preprocessResult: 'Preprocess Result',
+    useAsInput: 'Use as Input',
+    imageLoaded: 'Image loaded',
+    loadFailed: 'Failed to load ControlNet data',
+    invalidFileType: 'Unsupported file type',
+    selectModuleFirst: 'Please select a preprocessor first',
+    preprocessDone: 'Preprocessing complete',
+    preprocessFailed: 'Preprocessing failed'
   }
 }
