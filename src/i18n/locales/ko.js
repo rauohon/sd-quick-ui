@@ -859,6 +859,28 @@ export default {
     modelNotFound: '{preset}에 맞는 모델이 없습니다. 모델을 직접 선택해주세요.',
     prompt: '프롬프트',
     promptHint: '선택사항',
-    promptPlaceholder: '비워두면 메인 프롬프트 사용'
+    promptPlaceholder: '비워두면 메인 프롬프트 사용',
+    // Intensity presets
+    intensity: '강도',
+    weak: '약함',
+    normal: '보통',
+    strong: '강함',
+    intensityApplied: '강도가 적용되었습니다',
+    noIntensityPreset: '이 모듈에는 강도 프리셋이 없습니다',
+    // Module descriptions
+    moduleDesc: {
+      openpose: '자세를 얼마나 정확히 따를지 조절',
+      depth: '입체감/볼륨을 얼마나 유지할지 조절',
+      canny: '외곽선을 얼마나 따를지 조절',
+      lineart: '선화를 얼마나 따를지 조절',
+      tile: '디테일을 얼마나 유지할지 조절'
+    },
+    // Intensity descriptions
+    intensityDesc: {
+      weak: '약함: 프롬프트 자유도 높음, 참조 이미지 영향 적음',
+      normal: '보통: 균형 잡힌 설정',
+      strong: '강함: 참조 이미지를 강하게 따름'
+    },
+    intensityHint: '약함: 프롬프트 자유도 ↑ · 강함: 참조 이미지 영향 ↑'
   }
 }

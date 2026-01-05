@@ -859,6 +859,28 @@ export default {
     modelNotFound: 'No matching model found for {preset}. Please select model manually.',
     prompt: 'Prompt',
     promptHint: 'optional',
-    promptPlaceholder: 'Leave empty to use main prompt'
+    promptPlaceholder: 'Leave empty to use main prompt',
+    // Intensity presets
+    intensity: 'Intensity',
+    weak: 'Weak',
+    normal: 'Normal',
+    strong: 'Strong',
+    intensityApplied: 'intensity applied',
+    noIntensityPreset: 'No intensity preset for this module',
+    // Module descriptions
+    moduleDesc: {
+      openpose: 'How closely to follow the pose',
+      depth: 'How much to preserve depth/volume',
+      canny: 'How closely to follow the edges',
+      lineart: 'How closely to follow the lineart',
+      tile: 'How much detail to preserve'
+    },
+    // Intensity descriptions
+    intensityDesc: {
+      weak: 'Weak: High prompt freedom, less reference influence',
+      normal: 'Normal: Balanced setting',
+      strong: 'Strong: Closely follows reference image'
+    },
+    intensityHint: 'Weak: More prompt freedom · Strong: More reference influence'
   }
 }

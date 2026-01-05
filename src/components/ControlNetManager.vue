@@ -63,6 +63,76 @@ const quickPresets = [
   { id: 'tile', name: 'Tile', module: 'tile_resample', icon: '🔲' }
 ]
 
+// 강도 프리셋 (모듈별 weight, guidanceEnd 값)
+const intensityPresets = {
+  openpose: {
+    weak: { weight: 0.6, guidanceEnd: 0.7 },
+    normal: { weight: 0.7, guidanceEnd: 0.8 },
+    strong: { weight: 0.9, guidanceEnd: 1.0 }
+  },
+  depth: {
+    weak: { weight: 0.5, guidanceEnd: 0.6, controlMode: CONTROLNET_CONTROL_MODES.MY_PROMPT },
+    normal: { weight: 0.7, guidanceEnd: 0.8, controlMode: CONTROLNET_CONTROL_MODES.BALANCED },
+    strong: { weight: 0.9, guidanceEnd: 1.0, controlMode: CONTROLNET_CONTROL_MODES.CONTROLNET }
+  },
+  canny: {
+    weak: { weight: 0.4, guidanceEnd: 0.6 },
+    normal: { weight: 0.6, guidanceEnd: 0.8 },
+    strong: { weight: 0.8, guidanceEnd: 1.0 }
+  },
+  lineart: {
+    weak: { weight: 0.4, guidanceEnd: 0.6 },
+    normal: { weight: 0.6, guidanceEnd: 0.8 },
+    strong: { weight: 0.8, guidanceEnd: 1.0 }
+  },
+  tile: {
+    weak: { weight: 0.3, guidanceEnd: 0.5 },
+    normal: { weight: 0.5, guidanceEnd: 0.7 },
+    strong: { weight: 0.7, guidanceEnd: 0.9 }
+  }
+}
+
+// 모듈 이름에서 프리셋 키 추출
+function getPresetKeyFromModule(moduleName) {
+  if (!moduleName || moduleName === 'none') return null
+  const lower = moduleName.toLowerCase()
+  if (lower.includes('openpose')) return 'openpose'
+  if (lower.includes('depth')) return 'depth'
+  if (lower.includes('canny')) return 'canny'
+  if (lower.includes('lineart') || lower.includes('line_art')) return 'lineart'
+  if (lower.includes('tile')) return 'tile'
+  return null
+}
+
+// 강도 적용
+function applyIntensity(unitIndex, intensity) {
+  const unit = units.value[unitIndex]
+  const presetKey = getPresetKeyFromModule(unit.module)
+
+  if (!presetKey || !intensityPresets[presetKey]) {
+    props.showToast?.(t('controlnet.noIntensityPreset'), 'warning')
+    return
+  }
+
+  const preset = intensityPresets[presetKey][intensity]
+  if (!preset) return
+
+  const updates = {
+    weight: preset.weight,
+    guidanceEnd: preset.guidanceEnd
+  }
+
+  // Depth의 경우 controlMode도 설정
+  if (preset.controlMode !== undefined) {
+    updates.controlMode = preset.controlMode
+  }
+
+  updateUnit(unitIndex, updates)
+
+  const intensityLabels = { weak: t('controlnet.weak'), normal: t('controlnet.normal'), strong: t('controlnet.strong') }
+  props.showToast?.(`${intensityLabels[intensity]} ${t('controlnet.intensityApplied')}`, 'success')
+}
+
 // Resize Mode 라벨
 const resizeModeLabels = {
   [CONTROLNET_RESIZE_MODES.JUST_RESIZE]: 'Just Resize',
@@ -443,6 +513,38 @@ function close() {
                   />
                   <span class="slider-value">{{ unit.weight.toFixed(2) }}</span>
                 </div>
+              </div>
+
+              <!-- 강도 프리셋 버튼 -->
+              <div v-if="getPresetKeyFromModule(unit.module)" class="intensity-section">
+                <div class="intensity-desc">{{ t(`controlnet.moduleDesc.${getPresetKeyFromModule(unit.module)}`) }}</div>
+                <div class="intensity-buttons">
+                  <button
+                    class="intensity-btn weak"
+                    :class="{ active: unit.weight <= 0.5 }"
+                    @click="applyIntensity(index, 'weak')"
+                    :disabled="isGenerating"
+                  >
+                    {{ t('controlnet.weak') }}
+                  </button>
+                  <button
+                    class="intensity-btn normal"
+                    :class="{ active: unit.weight > 0.5 && unit.weight <= 0.75 }"
+                    @click="applyIntensity(index, 'normal')"
+                    :disabled="isGenerating"
+                  >
+                    {{ t('controlnet.normal') }}
+                  </button>
+                  <button
+                    class="intensity-btn strong"
+                    :class="{ active: unit.weight > 0.75 }"
+                    @click="applyIntensity(index, 'strong')"
+                    :disabled="isGenerating"
+                  >
+                    {{ t('controlnet.strong') }}
+                  </button>
+                </div>
+                <div class="intensity-hint">{{ t('controlnet.intensityHint') }}</div>
               </div>
 
               <!-- Prompt (선택) -->
@@ -1168,6 +1270,91 @@ function close() {
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* Intensity Section */
+.intensity-section {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 10px;
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.intensity-desc {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.intensity-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.intensity-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.intensity-btn {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.intensity-btn:hover:not(:disabled) {
+  border-color: #667eea;
+}
+
+.intensity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.intensity-btn.weak {
+  border-color: #60a5fa;
+}
+
+.intensity-btn.weak.active,
+.intensity-btn.weak:hover:not(:disabled) {
+  background: #60a5fa;
+  color: white;
+  border-color: #60a5fa;
+}
+
+.intensity-btn.normal {
+  border-color: #34d399;
+}
+
+.intensity-btn.normal.active,
+.intensity-btn.normal:hover:not(:disabled) {
+  background: #34d399;
+  color: white;
+  border-color: #34d399;
+}
+
+.intensity-btn.strong {
+  border-color: #f97316;
+}
+
+.intensity-btn.strong.active,
+.intensity-btn.strong:hover:not(:disabled) {
+  background: #f97316;
+  color: white;
+  border-color: #f97316;
 }
 
 /* Footer */
