@@ -189,6 +189,7 @@ export const CONTROLNET_DEFAULT_UNIT = {
   image: null,              // 컨트롤 이미지 (Base64)
   preprocessedImage: null,  // 전처리된 이미지 (미리보기)
   weight: 1.0,
+  prompt: '',               // 유닛별 프롬프트 (비어있으면 메인 프롬프트 사용)
   resizeMode: CONTROLNET_RESIZE_MODES.CROP_AND_RESIZE,
   controlMode: CONTROLNET_CONTROL_MODES.BALANCED,
   guidanceStart: 0.0,

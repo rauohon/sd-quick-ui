@@ -191,6 +191,11 @@ function handleModuleChange(unitIndex, moduleName) {
   const sliders = getModuleSliders(moduleName)
   const updates = { module: moduleName }
 
+  // 프리프로세서가 none이면 모델도 None으로
+  if (moduleName === 'none') {
+    updates.model = 'None'
+  }
+
   sliders.forEach((slider, idx) => {
     if (slider.name === 'Resolution' || slider.name.includes('Resolution')) {
       updates.processorRes = slider.value
@@ -214,9 +219,12 @@ function applyPreset(preset, unitIndex) {
   )
   if (matchingModel) {
     updateUnit(unitIndex, { model: matchingModel })
+    props.showToast?.(`${preset.name} ${t('controlnet.presetApplied')}`, 'success')
+  } else {
+    // 모델이 없으면 None으로 설정하고 경고 표시
+    updateUnit(unitIndex, { model: 'None' })
+    props.showToast?.(t('controlnet.modelNotFound', { preset: preset.name }), 'warning')
   }
-
-  props.showToast?.(`${preset.name} ${t('controlnet.presetApplied')}`, 'success')
 }
 
 // 모델 자동 매칭
@@ -431,6 +439,19 @@ function close() {
                   />
                   <span class="slider-value">{{ unit.weight.toFixed(2) }}</span>
                 </div>
+              </div>
+
+              <!-- Prompt (선택) -->
+              <div class="form-group">
+                <label>{{ t('controlnet.prompt') }} <span class="optional-hint">({{ t('controlnet.promptHint') }})</span></label>
+                <textarea
+                  :value="unit.prompt"
+                  @input="updateUnit(index, { prompt: $event.target.value })"
+                  :placeholder="t('controlnet.promptPlaceholder')"
+                  :disabled="isGenerating"
+                  class="prompt-textarea"
+                  rows="2"
+                ></textarea>
               </div>
 
               <!-- 고급 설정 토글 -->
@@ -983,19 +1004,45 @@ function close() {
   color: var(--color-text-secondary);
 }
 
-.form-group select {
+.form-group select,
+.form-group textarea {
   padding: 8px 10px;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border-primary);
   border-radius: 4px;
   font-size: 13px;
   color: var(--color-text-primary);
+}
+
+.form-group select {
   cursor: pointer;
 }
 
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.prompt-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 50px;
+  max-height: 120px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.prompt-textarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.optional-hint {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
 }
 
 .select-with-btn {

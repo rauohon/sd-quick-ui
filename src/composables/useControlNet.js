@@ -173,21 +173,28 @@ export function useControlNet() {
   function buildControlNetArgs(units) {
     return units
       .filter(unit => unit.enabled && unit.image)
-      .map(unit => ({
-        enabled: true,
-        module: unit.module || 'none',
-        model: unit.model || 'None',
-        image: unit.image, // Base64
-        weight: unit.weight,
-        resize_mode: RESIZE_MODE_STRINGS[unit.resizeMode] || 'Crop and Resize',
-        control_mode: CONTROL_MODE_STRINGS[unit.controlMode] || 'Balanced',
-        guidance_start: unit.guidanceStart,
-        guidance_end: unit.guidanceEnd,
-        processor_res: unit.processorRes,
-        threshold_a: unit.thresholdA,
-        threshold_b: unit.thresholdB,
-        pixel_perfect: unit.pixelPerfect || false
-      }))
+      .map(unit => {
+        const args = {
+          enabled: true,
+          module: unit.module || 'none',
+          model: unit.model || 'None',
+          image: unit.image, // Base64
+          weight: unit.weight,
+          resize_mode: RESIZE_MODE_STRINGS[unit.resizeMode] || 'Crop and Resize',
+          control_mode: CONTROL_MODE_STRINGS[unit.controlMode] || 'Balanced',
+          guidance_start: unit.guidanceStart,
+          guidance_end: unit.guidanceEnd,
+          processor_res: unit.processorRes,
+          threshold_a: unit.thresholdA,
+          threshold_b: unit.thresholdB,
+          pixel_perfect: unit.pixelPerfect || false
+        }
+        // 프롬프트가 있으면 추가 (비어있으면 메인 프롬프트 사용)
+        if (unit.prompt && unit.prompt.trim()) {
+          args.prompt = unit.prompt.trim()
+        }
+        return args
+      })
   }
 
   /**

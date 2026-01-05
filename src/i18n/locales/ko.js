@@ -838,6 +838,10 @@ export default {
     noImage: '이미지 없음',
     selectPreprocessor: '프리프로세서 선택',
     noUnitsEnabled: 'ControlNet 유닛이 활성화되지 않음',
-    unitsEnabled: '개 유닛 활성화됨'
+    unitsEnabled: '개 유닛 활성화됨',
+    modelNotFound: '{preset}에 맞는 모델이 없습니다. 모델을 직접 선택해주세요.',
+    prompt: '프롬프트',
+    promptHint: '선택사항',
+    promptPlaceholder: '비워두면 메인 프롬프트 사용'
   }
 }

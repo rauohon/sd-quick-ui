@@ -838,6 +838,10 @@ export default {
     noImage: 'No image',
     selectPreprocessor: 'Select preprocessor',
     noUnitsEnabled: 'No ControlNet units enabled',
-    unitsEnabled: 'unit(s) enabled'
+    unitsEnabled: 'unit(s) enabled',
+    modelNotFound: 'No matching model found for {preset}. Please select model manually.',
+    prompt: 'Prompt',
+    promptHint: 'optional',
+    promptPlaceholder: 'Leave empty to use main prompt'
   }
 }
