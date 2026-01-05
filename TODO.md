@@ -1,6 +1,6 @@
 # TODO - SD Vue UI
 
-> 완료된 작업은 COMPLETED.md 참조
+> 완료된 작업은 TODO_COMPLETED.md 참조
 
 ## Planned
 
@@ -23,7 +23,7 @@
 - Use `[ ]` for pending tasks
 - Add dates when completing tasks for reference
 - Keep this file updated across Claude Code sessions
-- 완료된 작업은 COMPLETED.md로 이동하여 토큰 절약
+- 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
 Last updated: 2026-01-05
