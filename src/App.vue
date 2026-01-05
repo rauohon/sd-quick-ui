@@ -7,6 +7,7 @@ import InpaintView from './views/InpaintView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
 import { useDarkMode } from './composables/useDarkMode'
+import { usePipeline } from './composables/usePipeline'
 
 // i18n
 const { t } = useI18n()
@@ -28,6 +29,39 @@ const activeTab = ref(tabs.some(t => t.id === savedTab) ? savedTab : 'txt2img')
 function setActiveTab(tabId) {
   activeTab.value = tabId
   localStorage.setItem('sd-active-tab', tabId)
+}
+
+// Pipeline integration
+const pipeline = usePipeline()
+pipeline.setSwitchTabCallback(setActiveTab)
+
+// Pipeline controls
+function createPipelineTxt2ImgToImg2Img() {
+  pipeline.createTxt2ImgToImg2Img()
+}
+
+function createPipelineTxt2ImgToInpaint() {
+  pipeline.createTxt2ImgToInpaint()
+}
+
+function createPipelineFullPipeline() {
+  pipeline.createFullPipeline()
+}
+
+function startPipeline() {
+  pipeline.startPipeline()
+}
+
+function stopPipeline() {
+  pipeline.stopPipeline()
+}
+
+function clearPipeline() {
+  pipeline.clearSteps()
+}
+
+function removeStep(stepId) {
+  pipeline.removeStep(stepId)
 }
 
 // Modal state
@@ -57,6 +91,9 @@ function showToast(message, type = 'info') {
     }
   }, duration)
 }
+
+// Set pipeline toast callback (after showToast is defined)
+pipeline.setShowToastCallback(showToast)
 
 /**
  * Remove toast manually
@@ -224,12 +261,85 @@ onUnmounted(() => {
         @switch-tab="setActiveTab"
       />
 
-      <!-- workflow (placeholder) -->
-      <div v-else-if="activeTab === 'workflow'" class="placeholder-view">
-        <div class="placeholder-content">
-          <span class="placeholder-icon">⚙️</span>
-          <h2>{{ t('tabs.workflow') }}</h2>
-          <p>{{ t('tabs.comingSoon') }}</p>
+      <!-- Pipeline / Workflow -->
+      <div v-else-if="activeTab === 'workflow'" class="pipeline-view">
+        <div class="pipeline-content">
+          <h2>{{ t('pipeline.title') }}</h2>
+          <p class="pipeline-description">{{ t('pipeline.description') }}</p>
+
+          <!-- Quick Pipeline Templates -->
+          <div class="pipeline-templates">
+            <h3>{{ t('pipeline.quickStart') }}</h3>
+            <div class="template-buttons">
+              <button @click="createPipelineTxt2ImgToImg2Img" class="template-btn">
+                txt2img → img2img
+              </button>
+              <button @click="createPipelineTxt2ImgToInpaint" class="template-btn">
+                txt2img → inpaint
+              </button>
+              <button @click="createPipelineFullPipeline" class="template-btn">
+                txt2img → img2img → inpaint
+              </button>
+            </div>
+          </div>
+
+          <!-- Current Pipeline Steps -->
+          <div class="pipeline-steps" v-if="pipeline.hasSteps.value">
+            <h3>{{ t('pipeline.steps') }} ({{ pipeline.steps.value.length }})</h3>
+            <div class="steps-list">
+              <div
+                v-for="(step, index) in pipeline.steps.value"
+                :key="step.id"
+                class="step-item"
+                :class="{ 'step-running': step.status === 'running', 'step-completed': step.status === 'completed' }"
+              >
+                <span class="step-number">{{ index + 1 }}</span>
+                <span class="step-type">{{ step.type }}</span>
+                <span class="step-status" :class="`status-${step.status}`">
+                  {{ step.status === 'pending' ? '⏳' : step.status === 'running' ? '🔄' : step.status === 'completed' ? '✅' : '❌' }}
+                </span>
+                <button @click="removeStep(step.id)" class="remove-step-btn" :disabled="pipeline.isRunning.value">✕</button>
+              </div>
+            </div>
+
+            <!-- Pipeline Controls -->
+            <div class="pipeline-controls">
+              <button
+                @click="startPipeline"
+                class="start-btn"
+                :disabled="pipeline.isRunning.value || !pipeline.hasSteps.value"
+              >
+                {{ pipeline.isRunning.value ? t('pipeline.running') : t('pipeline.start') }}
+              </button>
+              <button
+                @click="stopPipeline"
+                class="stop-btn"
+                :disabled="!pipeline.isRunning.value"
+              >
+                {{ t('pipeline.stop') }}
+              </button>
+              <button
+                @click="clearPipeline"
+                class="clear-btn"
+                :disabled="pipeline.isRunning.value"
+              >
+                {{ t('pipeline.clear') }}
+              </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="pipeline-progress" v-if="pipeline.isRunning.value">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: pipeline.progress.value + '%' }"></div>
+              </div>
+              <span class="progress-text">{{ pipeline.progress.value }}%</span>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="pipeline-empty">
+            <p>{{ t('pipeline.empty') }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -385,6 +495,212 @@ onUnmounted(() => {
   margin: 0;
   font-size: 14px;
   opacity: 0.7;
+}
+
+/* Pipeline View */
+.pipeline-view {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: var(--color-bg-primary);
+  overflow-y: auto;
+}
+
+.pipeline-content {
+  max-width: 600px;
+  width: 100%;
+}
+
+.pipeline-content h2 {
+  margin: 0 0 8px;
+  color: var(--color-text-primary);
+}
+
+.pipeline-description {
+  color: var(--color-text-secondary);
+  margin: 0 0 24px;
+}
+
+.pipeline-templates h3,
+.pipeline-steps h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.template-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.template-btn {
+  padding: 8px 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-btn:hover {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.step-item.step-running {
+  border-color: var(--color-accent);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.step-item.step-completed {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  background: var(--color-accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-type {
+  flex: 1;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.step-status {
+  font-size: 16px;
+}
+
+.remove-step-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.remove-step-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.remove-step-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pipeline-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.start-btn, .stop-btn, .clear-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.start-btn {
+  background: var(--color-accent);
+  color: white;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.stop-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.stop-btn:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.clear-btn {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.clear-btn:hover:not(:disabled) {
+  background: var(--color-bg-tertiary);
+}
+
+.start-btn:disabled, .stop-btn:disabled, .clear-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pipeline-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  min-width: 40px;
+  text-align: right;
+}
+
+.pipeline-empty {
+  text-align: center;
+  padding: 48px;
+  color: var(--color-text-secondary);
 }
 
 /* Universal Modal */

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useInpaintGeneration } from '../composables/useInpaintGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { usePipelineImage } from '../composables/usePipelineImage'
+import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
@@ -362,7 +363,8 @@ const {
   interruptGeneration,
   skipCurrentImage,
   stopInfiniteModeOnly,
-  toggleInfiniteMode
+  toggleInfiniteMode,
+  setOnComplete
 } = useInpaintGeneration(generationParams, enabledADetailers, props.showToast, t)
 
 // ===== History Composable =====
@@ -727,8 +729,40 @@ function handleKeyDown(e) {
   }
 }
 
+// ===== Pipeline Integration =====
+const pipeline = usePipeline()
+
+function setInputImageFromPipeline(imageData) {
+  initImage.value = imageData
+  // base64에서 포맷 감지
+  const formatMatch = imageData.match(/^data:image\/(\w+);/)
+  initImageFormat.value = formatMatch ? formatMatch[1].toUpperCase() : 'WEBP'
+  // Get image dimensions
+  const img = new Image()
+  img.onload = () => {
+    initImageWidth.value = img.width
+    initImageHeight.value = img.height
+  }
+  img.src = imageData
+}
+
+function registerPipelineView() {
+  pipeline.registerView('inpaint', {
+    generate: generateImage,
+    setInputImage: setInputImageFromPipeline
+  })
+
+  // Set completion callback for pipeline
+  setOnComplete((outputImage) => {
+    pipeline.onStepComplete('inpaint', outputImage)
+  })
+}
+
 // ===== Lifecycle =====
 onMounted(async () => {
+  // Register with pipeline
+  registerPipelineView()
+
   // Initialize panel visibility (load from localStorage)
   initPanelVisibility()
 
@@ -797,9 +831,16 @@ onMounted(async () => {
       props.showToast(t('inpaint.imageReceived', { from: pending.sourceTab || 'unknown' }), 'success')
     }
   }
+
+  // Mark view as ready for pipeline
+  pipeline.setViewReady('inpaint', true)
 })
 
 onUnmounted(() => {
+  // Unregister from pipeline
+  pipeline.unregisterView('inpaint')
+  setOnComplete(null)
+
   // 키보드 단축키 이벤트 해제
   window.removeEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 해제

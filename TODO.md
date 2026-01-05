@@ -10,6 +10,21 @@
 
 ## Recently Completed
 
+### 파이프라인 Phase 2: 실행 엔진 & UI ✅ (2026-01-05)
+> Workflow 탭에서 파이프라인 자동 실행 가능
+
+**구현 내용:**
+- `usePipeline.js` composable: 파이프라인 데이터 구조 & 실행 엔진
+- 각 뷰에 `setOnComplete` 콜백 추가 (생성 완료 감지)
+- 뷰 `setViewReady` 상태로 초기화 완료 대기
+- Workflow 탭 UI: 템플릿 선택, 스텝 표시, 실행/중지/초기화
+- 이미지 전달 시 토스트: "이미지 전달: txt2img → img2img"
+
+**템플릿:**
+- txt2img → img2img
+- txt2img → inpaint
+- txt2img → img2img → inpaint
+
 ### 파이프라인 Phase 1: 이미지 전달 메커니즘 ✅ (2026-01-05)
 > 탭 간 이미지 전송 기능 구현 완료
 
@@ -66,22 +81,15 @@ txt2img (기본 생성) → img2img + ControlNet (포즈 보정) → inpaint (�
   - 히스토리 패널 "Send to" 버튼 (📤, 🖌️)
   - 탭 자동 전환 + 이미지 자동 로드
 
-- [ ] Phase 2: 파이프라인 데이터 구조
-  - `usePipeline.js` composable 생성
-  - 스텝 순차 실행 로직
-  - 탭 자동 전환 (`setActiveTab`)
-  - 생성 완료 감지 → 다음 스텝 트리거
+- [x] Phase 2: 파이프라인 실행 엔진 & UI ✅
+  - `usePipeline.js` composable (데이터 구조, 실행 로직)
+  - 뷰별 `setOnComplete` 콜백, `setViewReady` 상태
+  - Workflow 탭 UI (템플릿, 스텝 표시, 실행 컨트롤)
 
-- [ ] Phase 3: WorkflowView UI
-  - 스텝 추가/제거/순서 변경
-  - 각 스텝별 설정 (프롬프트, 파라미터, ControlNet 등)
+- [ ] Phase 3: 고급 기능 (선택사항)
+  - 스텝별 설정 오버라이드 (프롬프트, 파라미터)
   - 파이프라인 저장/불러오기
-  - 실행 버튼 및 진행 상황 표시
-
-**현재 구조 참고**:
-- `workflow` 탭 placeholder 이미 존재 (App.vue)
-- 각 뷰는 `initImage` ref 사용
-- 뷰 간 이미지 전달 메커니즘 필요
+  - 커스텀 스텝 추가/제거
 
 ## Backlog
 - [ ]
@@ -94,4 +102,4 @@ txt2img (기본 생성) → img2img + ControlNet (포즈 보정) → inpaint (�
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-05 (파이프라인 Phase 1 완료)
+Last updated: 2026-01-05 (파이프라인 Phase 2 완료)

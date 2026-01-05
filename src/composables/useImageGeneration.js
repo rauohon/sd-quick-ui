@@ -59,6 +59,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
   const generationStartTime = ref(null) // 생성 시작 시간 (소요시간 계산용)
   const pendingUsedParams = ref(null) // progress 이미지 첫 등장 시 lastUsedParams로 설정될 파라미터
   const hasShownProgressImage = ref(false) // progress 이미지가 표시되었는지 플래그
+  const onCompleteCallback = ref(null) // 생성 완료 콜백 (파이프라인용)
 
   const progressInterval = ref(null)
 
@@ -757,6 +758,11 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
             }
           })
         }
+
+        // 파이프라인 콜백 호출 (중단되지 않은 경우만)
+        if (!newImages[0].interrupted && onCompleteCallback.value) {
+          onCompleteCallback.value(generatedImages.value[0].image)
+        }
       }
     } catch (error) {
       console.error(t('message.error.generationFailed'), error)
@@ -833,6 +839,11 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     window.removeEventListener('beforeunload', handleBeforeUnload)
   })
 
+  // 파이프라인용 완료 콜백 설정
+  function setOnComplete(callback) {
+    onCompleteCallback.value = callback
+  }
+
   return {
     isGenerating,
     progress,
@@ -850,5 +861,6 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     startProgressPolling,
     stopProgressPolling,
     checkOngoingGeneration,
+    setOnComplete,
   }
 }

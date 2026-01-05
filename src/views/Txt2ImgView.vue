@@ -45,6 +45,7 @@ import { useAspectRatio } from '../composables/useAspectRatio'
 import { useParamsApplication } from '../composables/useParamsApplication'
 import { useHistory } from '../composables/useHistory'
 import { usePipelineImage } from '../composables/usePipelineImage'
+import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useModals } from '../composables/useModals'
@@ -311,6 +312,7 @@ const {
   startProgressPolling,
   stopProgressPolling,
   checkOngoingGeneration,
+  setOnComplete,
 } = imageGeneration
 
 // Combination mode
@@ -604,8 +606,27 @@ watch(selectedModel, async (newModel, oldModel) => {
   await changeModel(newModel)
 })
 
+// Pipeline integration
+const pipeline = usePipeline()
+
+// Register view with pipeline
+function registerPipelineView() {
+  pipeline.registerView('txt2img', {
+    generate: handleGenerate,
+    setInputImage: null  // txt2img doesn't have input image
+  })
+
+  // Set completion callback for pipeline
+  setOnComplete((outputImage) => {
+    pipeline.onStepComplete('txt2img', outputImage)
+  })
+}
+
 // Lifecycle
 onMounted(async () => {
+  // Register with pipeline
+  registerPipelineView()
+
   // Load bookmarks from localStorage
   loadBookmarks()
 
@@ -631,15 +652,20 @@ onMounted(async () => {
     await loadModels()
   }
 
-  // Mark initial load as complete
+  // Mark initial load as complete and notify pipeline
   setTimeout(() => {
     isInitialLoad.value = false
+    pipeline.setViewReady('txt2img', true)
   }, 1000)
 })
 
 onUnmounted(() => {
   stopProgressPolling()
   stopQueue() // Clean up queue processor interval
+
+  // Unregister from pipeline
+  pipeline.unregisterView('txt2img')
+  setOnComplete(null)
 
   // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
   slotManagement.cancelDebouncedSlotSave()

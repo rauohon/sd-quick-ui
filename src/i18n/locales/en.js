@@ -690,6 +690,19 @@ export default {
     comingSoon: 'Coming Soon'
   },
 
+  // Pipeline
+  pipeline: {
+    title: 'Pipeline',
+    description: 'Automatically connect multiple steps to generate images.',
+    quickStart: 'Quick Start',
+    steps: 'Steps',
+    start: 'Start',
+    running: 'Running...',
+    stop: 'Stop',
+    clear: 'Clear',
+    empty: 'Select a template above to start a pipeline.'
+  },
+
   // img2img
   img2img: {
     title: 'img2img',

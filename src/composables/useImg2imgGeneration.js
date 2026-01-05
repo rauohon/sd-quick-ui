@@ -55,6 +55,7 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
   const generationStartTime = ref(null)
   const pendingUsedParams = ref(null)
   const hasShownProgressImage = ref(false)
+  const onCompleteCallback = ref(null) // 생성 완료 콜백 (파이프라인용)
 
   const progressInterval = ref(null)
 
@@ -652,6 +653,11 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
             }
           })
         }
+
+        // 파이프라인 콜백 호출 (중단되지 않은 경우만)
+        if (!newImages[0].interrupted && onCompleteCallback.value) {
+          onCompleteCallback.value(generatedImages.value[0].image)
+        }
       }
     } catch (error) {
       console.error(t('message.error.generationFailed'), error)
@@ -722,6 +728,11 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
     window.removeEventListener('beforeunload', handleBeforeUnload)
   })
 
+  // 파이프라인용 완료 콜백 설정
+  function setOnComplete(callback) {
+    onCompleteCallback.value = callback
+  }
+
   return {
     isGenerating,
     progress,
@@ -738,5 +749,6 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
     toggleInfiniteMode,
     startProgressPolling,
     stopProgressPolling,
+    setOnComplete,
   }
 }

@@ -690,6 +690,19 @@ export default {
     comingSoon: '준비 중입니다'
   },
 
+  // 파이프라인
+  pipeline: {
+    title: '파이프라인',
+    description: '여러 단계를 자동으로 연결하여 이미지를 생성합니다.',
+    quickStart: '빠른 시작',
+    steps: '스텝',
+    start: '실행',
+    running: '실행 중...',
+    stop: '중지',
+    clear: '초기화',
+    empty: '위의 템플릿을 선택하여 파이프라인을 시작하세요.'
+  },
+
   // img2img
   img2img: {
     title: 'img2img',
