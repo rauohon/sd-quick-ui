@@ -13,6 +13,7 @@ export function useModals() {
   const showBookmarkManager = ref(false)
   const showPresetManager = ref(false)
   const showQueueManager = ref(false)
+  const showControlNetManager = ref(false)
   const showADetailerPrompt = ref(false)
   const editingADetailerIndex = ref(-1)
 
@@ -22,7 +23,8 @@ export function useModals() {
     prompt: showPromptSelector,
     bookmark: showBookmarkManager,
     preset: showPresetManager,
-    queue: showQueueManager
+    queue: showQueueManager,
+    controlnet: showControlNetManager
   }
 
   /**
@@ -100,6 +102,15 @@ export function useModals() {
     closeModal('queue')
   }
 
+  // ControlNet Manager handlers
+  function openControlNetManager() {
+    toggleModal('controlnet')
+  }
+
+  function closeControlNetManager() {
+    closeModal('controlnet')
+  }
+
   // ADetailer Prompt handlers
   function openADetailerPrompt(index) {
     showADetailerPrompt.value = true
@@ -118,6 +129,7 @@ export function useModals() {
     showBookmarkManager,
     showPresetManager,
     showQueueManager,
+    showControlNetManager,
     showADetailerPrompt,
     editingADetailerIndex,
 
@@ -134,6 +146,8 @@ export function useModals() {
     closePresetManager,
     openQueueManager,
     closeQueueManager,
+    openControlNetManager,
+    closeControlNetManager,
     openADetailerPrompt,
     closeADetailerPrompt,
   }

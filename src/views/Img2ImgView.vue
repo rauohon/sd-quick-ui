@@ -32,6 +32,8 @@ import SystemSettingsSection from '../components/SystemSettingsSection.vue'
 import BookmarkManager from '../components/BookmarkManager.vue'
 import PresetManager from '../components/PresetManager.vue'
 import HistorySelectorModal from '../components/HistorySelectorModal.vue'
+import ControlNetPanel from '../components/ControlNetPanel.vue'
+import ControlNetManager from '../components/ControlNetManager.vue'
 
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
@@ -42,6 +44,7 @@ import { useVirtualScroll } from '../composables/useVirtualScroll'
 import { usePanelVisibility } from '../composables/usePanelVisibility'
 import { useADetailerHandlers } from '../composables/useADetailerHandlers'
 import { useBookmarkPresetHandlers } from '../composables/useBookmarkPresetHandlers'
+import { useControlNetUnits } from '../composables/useControlNet'
 
 const { t } = useI18n()
 
@@ -106,6 +109,9 @@ const {
   initPanelVisibility
 } = usePanelVisibility('img2img')
 
+// ControlNet
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+
 // ADetailer 핸들러 (composable)
 const {
   showADetailerPrompt,
@@ -139,6 +145,19 @@ const {
     batchCount, batchSize, denoisingStrength, adetailers,
     enableUpscale, upscaler, upscaleScale }
 )
+
+// ControlNet 매니저 상태
+const showControlNetManager = ref(false)
+
+function openControlNetManager() {
+  showBookmarkManager.value = false
+  showPresetManager.value = false
+  showControlNetManager.value = !showControlNetManager.value
+}
+
+function closeControlNetManager() {
+  showControlNetManager.value = false
+}
 
 // 북마크/프리셋 composables
 const {
@@ -235,7 +254,9 @@ const generationParams = {
   // img2img 전용
   initImage, denoisingStrength,
   // 업스케일
-  enableUpscale, upscaler, upscaleScale
+  enableUpscale, upscaler, upscaleScale,
+  // ControlNet
+  controlnetUnits
 }
 
 // Image generation composable
@@ -579,23 +600,6 @@ watch(
           <input type="number" v-model.number="batchSize" min="1" :disabled="isGenerating" />
         </div>
 
-        <!-- Notification -->
-        <div class="section-divider"></div>
-        <div class="form-group horizontal">
-          <label>Notification</label>
-          <select v-model="notificationType" :disabled="isGenerating" style="flex: 1;">
-            <option :value="NOTIFICATION_TYPES.NONE">🔇 None</option>
-            <option :value="NOTIFICATION_TYPES.SOUND">🔔 Sound</option>
-            <option :value="NOTIFICATION_TYPES.BROWSER">📬 Browser</option>
-            <option :value="NOTIFICATION_TYPES.BOTH">🔔📬 Both</option>
-          </select>
-        </div>
-        <div v-if="notificationType === NOTIFICATION_TYPES.SOUND || notificationType === NOTIFICATION_TYPES.BOTH" class="form-group horizontal">
-          <label>Volume</label>
-          <input type="range" v-model.number="notificationVolume" min="0" max="1" step="0.1" :disabled="isGenerating" />
-          <span class="volume-display">{{ Math.round(notificationVolume * 100) }}%</span>
-        </div>
-
         <!-- ADetailer -->
         <div class="section-divider"></div>
         <div class="adetailer-group">
@@ -623,6 +627,22 @@ watch(
             </template>
           </div>
         </div>
+
+        <!-- ControlNet 버튼 -->
+        <div class="section-divider"></div>
+        <div class="controlnet-section">
+          <button
+            class="controlnet-btn"
+            :class="{ active: showControlNetManager }"
+            @click="openControlNetManager"
+            :disabled="isGenerating"
+          >
+            <span class="controlnet-icon">🎛️</span>
+            <span class="controlnet-label">ControlNet</span>
+            <span v-if="controlnetEnabledCount > 0" class="controlnet-badge">{{ controlnetEnabledCount }}</span>
+            <span class="controlnet-arrow">{{ showControlNetManager ? '✕' : '▶' }}</span>
+          </button>
+        </div>
       </div>
 
       <!-- System Settings Section -->
@@ -630,6 +650,11 @@ watch(
         v-if="showSettingsPanel"
         :isDark="props.isDark"
         :toggleTheme="props.toggleTheme"
+        :notificationType="notificationType"
+        :notificationVolume="notificationVolume"
+        :isGenerating="isGenerating"
+        @update:notificationType="notificationType = $event"
+        @update:notificationVolume="notificationVolume = $event"
       />
 
       <div v-if="showSettingsPanel" class="panel-footer">
@@ -739,8 +764,8 @@ watch(
       </div>
     </div>
 
-    <!-- 3열: 이미지 영역 OR 북마크/프리셋 매니저 -->
-    <div v-if="!showBookmarkManager && !showPresetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
+    <!-- 3열: 이미지 영역 OR 북마크/프리셋/ControlNet 매니저 -->
+    <div v-if="!showBookmarkManager && !showPresetManager && !showControlNetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
       <!-- 이미지 컬럼 (입력 + 출력 상하 분할) -->
       <div class="image-column">
         <!-- 입력 이미지 업로드 (상단) -->
@@ -859,6 +884,16 @@ watch(
       @apply-preset="applyPreset"
       @close="closePresetManager"
     />
+
+    <!-- ControlNet Manager (replaces image area) -->
+    <ControlNetManager
+      v-if="showControlNetManager"
+      class="image-area"
+      :is-generating="isGenerating"
+      :showToast="props.showToast"
+      @close="closeControlNetManager"
+      @update:units="(units) => controlnetUnits = units"
+    />
   </div>
 </template>
 
@@ -875,12 +910,6 @@ watch(
   flex: 0 0 auto;
   max-height: 45%;
   min-height: 150px;
-}
-
-/* 출력 이미지 패널 - Img2Img 전용 오버라이드 */
-.img2img-view .output-image-panel {
-  flex: 1;
-  min-height: 0;
 }
 
 /* 히스토리 패널 접힘 시 추가 스타일 */
@@ -955,5 +984,64 @@ watch(
   padding: 2px 4px;
   border-radius: 3px;
   font-weight: 600;
+}
+
+/* ControlNet Button */
+.controlnet-section {
+  margin-top: 4px;
+}
+
+.controlnet-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+.controlnet-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  border-color: #667eea;
+}
+
+.controlnet-btn.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.controlnet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controlnet-icon {
+  font-size: 16px;
+}
+
+.controlnet-label {
+  flex: 1;
+  text-align: left;
+}
+
+.controlnet-badge {
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.controlnet-arrow {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 </style>

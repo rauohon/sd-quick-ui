@@ -18,43 +18,42 @@
   - [x] Mock API 지원 (`src/api/mockData.js`에 추가)
 
 #### Phase 2: UI 컴포넌트 개발 ✅
-- [x] `src/components/ControlNetPanel.vue` 생성
-  - [x] 유닛 탭 (Unit 0, 1, 2)
-  - [x] Enable 토글
-  - [x] 컨트롤 이미지 업로드 (드래그앤드롭, 클립보드)
-  - [x] 모델 선택 드롭다운
-  - [x] 프리프로세서(Module) 선택 드롭다운 (카테고리별 그룹핑)
-  - [x] 동적 슬라이더 (프리프로세서별 설정)
-  - [x] Weight 슬라이더 (0-2)
-  - [x] Guidance Start/End 슬라이더 (0-1)
-  - [x] Control Mode 선택
-  - [x] Resize Mode 선택
-  - [x] Pixel Perfect 옵션
-  - [x] 프리프로세서 미리보기 버튼 + 결과 표시
+- [x] `src/components/ControlNetPanel.vue` 생성 (고급설정 내 간단 패널)
+- [x] `src/components/ControlNetManager.vue` 생성 (별도 넓은 공간 패널)
+  - [x] 빠른 프리셋 버튼 (OpenPose, Canny, Depth, Lineart, Tile)
+  - [x] 유닛 카드 UI (확장/축소)
+  - [x] 이미지 업로드 (드래그앤드롭, 클립보드)
+  - [x] 프리프로세서/모델 선택
+  - [x] Weight 슬라이더 (라이트/다크 모드 가시성 개선)
+  - [x] 고급 설정 토글 (Guidance, Control Mode, Resize Mode 등)
   - [x] i18n 번역 (ko.js, en.js)
 
-#### Phase 3: 생성 로직 통합
-- [ ] `useImageGeneration.js` 수정
-  - [ ] `alwayson_scripts.controlnet` 파라미터 구성
-  - [ ] 이미지 Base64 인코딩 처리
-  - [ ] 다중 유닛 지원
-- [ ] img2img, inpaint API 호출에도 ControlNet 적용
+#### Phase 3: 생성 로직 통합 ✅
+- [x] `useImageGeneration.js` 수정
+  - [x] `alwayson_scripts.controlnet` 파라미터 구성
+  - [x] 이미지 Base64 인코딩 처리
+  - [x] 다중 유닛 지원
+- [x] `useImg2imgGeneration.js`에 ControlNet 적용
+- [x] `useInpaintGeneration.js`에 ControlNet 적용
 
-#### Phase 4: 뷰 통합
-- [ ] `Txt2ImgView.vue`에 ControlNetPanel 추가
-  - [ ] AdvancedSettingsPanel 내부 또는 별도 섹션
-- [ ] `Img2ImgView.vue`에 ControlNetPanel 추가
-- [ ] `InpaintView.vue`에 ControlNetPanel 추가
+#### Phase 4: 뷰 통합 ✅
+- [x] `Txt2ImgView.vue`에 ControlNet 버튼 + Manager 추가
+- [x] `Img2ImgView.vue`에 ControlNet 버튼 + Manager 추가
+- [x] `InpaintView.vue`에 ControlNet 버튼 + Manager 추가
+- [x] 고급설정 패널에 ControlNet 버튼 배치 (복잡한 설정 숨김 효과)
 
 #### Phase 5: 슬롯 & 프리셋 연동
 - [ ] 슬롯 저장 시 ControlNet 설정 포함
 - [ ] 프리셋 저장 시 ControlNet 설정 포함 (선택적)
 - [ ] PNG Info에서 ControlNet 파라미터 파싱 (있을 경우)
 
-#### Phase 6: i18n & 테스트
-- [ ] 번역 키 추가 (`en.js`, `ko.js`)
-- [ ] Mock API 지원 (`src/mocks/controlnetMock.js`)
-- [ ] 수동 테스트 및 버그 수정
+#### Phase 6: i18n & 테스트 ✅
+- [x] 번역 키 추가 (`en.js`, `ko.js`)
+- [x] Mock API 지원 (`src/api/mockData.js`)
+- [x] 버그 수정:
+  - [x] notificationType prop 타입 불일치 수정 (String → Number)
+  - [x] 드래그앤드롭 오버레이 겹침 문제 수정
+  - [x] Weight 슬라이더 라이트모드 가시성 개선
 
 #### 기술 참고사항
 ```javascript
@@ -122,4 +121,4 @@
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-05 (ControlNet Phase 2 완료)
+Last updated: 2026-01-05 (ControlNet Manager UI & 버그 수정 완료)

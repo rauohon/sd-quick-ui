@@ -40,12 +40,15 @@ import MaskCanvas from '../components/MaskCanvas.vue'
 import HistorySelectorModal from '../components/HistorySelectorModal.vue'
 import OutpaintToolbar from '../components/OutpaintToolbar.vue'
 import MaskToolbar from '../components/MaskToolbar.vue'
+import ControlNetPanel from '../components/ControlNetPanel.vue'
+import ControlNetManager from '../components/ControlNetManager.vue'
 
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
 import { usePresets } from '../composables/usePresets'
 import { useOutpaint } from '../composables/useOutpaint'
 import { useImageUpload } from '../composables/useImageUpload'
+import { useControlNetUnits } from '../composables/useControlNet'
 
 const { t } = useI18n()
 
@@ -159,6 +162,9 @@ const {
   initPanelVisibility
 } = usePanelVisibility('inpaint')
 
+// ControlNet
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+
 // 이미지 업로드 composable (드래그앤드롭, 파일 업로드, 클립보드)
 const {
   isDragging,
@@ -205,6 +211,19 @@ const {
   { steps, cfgScale, samplerName, scheduler, width, height, seed,
     batchCount, batchSize, denoisingStrength, adetailers, maskBlur }
 )
+
+// ControlNet 매니저 상태
+const showControlNetManager = ref(false)
+
+function openControlNetManager() {
+  showBookmarkManager.value = false
+  showPresetManager.value = false
+  showControlNetManager.value = !showControlNetManager.value
+}
+
+function closeControlNetManager() {
+  showControlNetManager.value = false
+}
 
 // 북마크/프리셋 composables
 const {
@@ -310,7 +329,9 @@ const generationParams = {
   adetailers, selectedModel, notificationType, notificationVolume,
   // Inpaint 전용
   initImage, mask, denoisingStrength,
-  maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding
+  maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding,
+  // ControlNet
+  controlnetUnits
 }
 
 // Image generation composable
@@ -935,18 +956,6 @@ watch(
           <input type="number" v-model.number="batchSize" min="1" max="8" :disabled="isGenerating" />
         </div>
 
-        <!-- Notification -->
-        <div class="section-divider"></div>
-        <div class="form-group horizontal">
-          <label>Notification</label>
-          <select v-model="notificationType" :disabled="isGenerating" style="flex: 1;">
-            <option :value="NOTIFICATION_TYPES.NONE">None</option>
-            <option :value="NOTIFICATION_TYPES.SOUND">Sound</option>
-            <option :value="NOTIFICATION_TYPES.BROWSER">Browser</option>
-            <option :value="NOTIFICATION_TYPES.BOTH">Both</option>
-          </select>
-        </div>
-
         <!-- ADetailer -->
         <div class="section-divider"></div>
         <div class="adetailer-group">
@@ -974,6 +983,22 @@ watch(
             </template>
           </div>
         </div>
+
+        <!-- ControlNet 버튼 -->
+        <div class="section-divider"></div>
+        <div class="controlnet-section">
+          <button
+            class="controlnet-btn"
+            :class="{ active: showControlNetManager }"
+            @click="openControlNetManager"
+            :disabled="isGenerating"
+          >
+            <span class="controlnet-icon">🎛️</span>
+            <span class="controlnet-label">ControlNet</span>
+            <span v-if="controlnetEnabledCount > 0" class="controlnet-badge">{{ controlnetEnabledCount }}</span>
+            <span class="controlnet-arrow">{{ showControlNetManager ? '✕' : '▶' }}</span>
+          </button>
+        </div>
       </div>
 
       <!-- System Settings Section -->
@@ -982,7 +1007,12 @@ watch(
         ref="systemSettingsRef"
         :isDark="props.isDark"
         :toggleTheme="props.toggleTheme"
+        :notificationType="notificationType"
+        :notificationVolume="notificationVolume"
+        :isGenerating="isGenerating"
         @update:autoCorrect="handleAutoCorrectChange"
+        @update:notificationType="notificationType = $event"
+        @update:notificationVolume="notificationVolume = $event"
       />
 
       <div v-if="showSettingsPanel" class="panel-footer">
@@ -1094,7 +1124,7 @@ watch(
     </div>
 
     <!-- 3열: 캔버스 + 히스토리 영역 -->
-    <div v-if="!showBookmarkManager && !showPresetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
+    <div v-if="!showBookmarkManager && !showPresetManager && !showControlNetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
       <!-- 캔버스 영역 (입력 이미지 + 마스크) -->
       <div
         class="canvas-column"
@@ -1334,6 +1364,16 @@ watch(
       :current-params="currentParams"
       @apply-preset="applyPreset"
       @close="closePresetManager"
+    />
+
+    <!-- ControlNet Manager (replaces image area) -->
+    <ControlNetManager
+      v-if="showControlNetManager"
+      class="image-area"
+      :is-generating="isGenerating"
+      :showToast="props.showToast"
+      @close="closeControlNetManager"
+      @update:units="(units) => controlnetUnits = units"
     />
   </div>
 </template>

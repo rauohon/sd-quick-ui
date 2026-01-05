@@ -5,6 +5,7 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useErrorHandler } from './useErrorHandler'
+import { useControlNet } from './useControlNet'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
@@ -59,6 +60,7 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
 
   const { saveImage } = useIndexedDB()
   const { network, storage, generation } = useErrorHandler({ showToast, t })
+  const { buildControlNetScript } = useControlNet()
 
   const consecutiveErrors = ref(0)
   let isInfiniteLoopRunning = false
@@ -348,7 +350,9 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
       // img2img 전용 파라미터
       initImage, denoisingStrength,
       // 업스케일 파라미터
-      enableUpscale, upscaler, upscaleScale
+      enableUpscale, upscaler, upscaleScale,
+      // ControlNet
+      controlnetUnits
     } = params
 
     // 입력 이미지 체크
@@ -479,6 +483,17 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
         payload.alwayson_scripts = {
           "ADetailer": {
             "args": adetailerArgs
+          }
+        }
+      }
+
+      // ControlNet 추가
+      if (controlnetUnits?.value) {
+        const controlnetScript = buildControlNetScript(controlnetUnits.value)
+        if (controlnetScript) {
+          payload.alwayson_scripts = {
+            ...payload.alwayson_scripts,
+            ...controlnetScript
           }
         }
       }

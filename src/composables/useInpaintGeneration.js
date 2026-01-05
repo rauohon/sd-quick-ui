@@ -5,6 +5,7 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useErrorHandler } from './useErrorHandler'
+import { useControlNet } from './useControlNet'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
@@ -59,6 +60,7 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
 
   const { saveImage } = useIndexedDB()
   const { network, storage, generation } = useErrorHandler({ showToast, t })
+  const { buildControlNetScript } = useControlNet()
 
   const consecutiveErrors = ref(0)
   let isInfiniteLoopRunning = false
@@ -354,7 +356,9 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
       adetailers, selectedModel,
       // Inpaint 전용 파라미터
       initImage, mask, denoisingStrength,
-      maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding
+      maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding,
+      // ControlNet
+      controlnetUnits
     } = params
 
     // 이미지/마스크 오버라이드 (Outpaint 모드용)
@@ -507,6 +511,17 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
         payload.alwayson_scripts = {
           "ADetailer": {
             "args": adetailerArgs
+          }
+        }
+      }
+
+      // ControlNet 추가
+      if (controlnetUnits?.value) {
+        const controlnetScript = buildControlNetScript(controlnetUnits.value)
+        if (controlnetScript) {
+          payload.alwayson_scripts = {
+            ...payload.alwayson_scripts,
+            ...controlnetScript
           }
         }
       }

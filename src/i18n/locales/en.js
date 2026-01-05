@@ -480,6 +480,12 @@ export default {
 
   // Notification
   notification: {
+    title: 'Notification',
+    none: 'None',
+    sound: 'Sound',
+    browser: 'Browser',
+    both: 'Both',
+    volume: 'Volume',
     unsupported: 'This browser does not support notifications',
     permissionDenied: 'Notification permission denied',
     generationComplete: 'Image generation completed',
@@ -805,6 +811,7 @@ export default {
   controlnet: {
     title: 'ControlNet',
     enable: 'Enable',
+    enabled: 'enabled',
     reset: 'Reset',
     model: 'Model',
     preprocessor: 'Preprocessor',
@@ -821,6 +828,16 @@ export default {
     invalidFileType: 'Unsupported file type',
     selectModuleFirst: 'Please select a preprocessor first',
     preprocessDone: 'Preprocessing complete',
-    preprocessFailed: 'Preprocessing failed'
+    preprocessFailed: 'Preprocessing failed',
+    // Manager panel
+    quickPresets: 'Quick Presets',
+    presetApplied: 'preset applied',
+    advancedSettings: 'Advanced Settings',
+    runPreprocess: 'Run Preprocessor',
+    disabled: 'Disabled',
+    noImage: 'No image',
+    selectPreprocessor: 'Select preprocessor',
+    noUnitsEnabled: 'No ControlNet units enabled',
+    unitsEnabled: 'unit(s) enabled'
   }
 }

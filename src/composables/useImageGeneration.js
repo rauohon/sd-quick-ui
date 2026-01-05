@@ -9,6 +9,7 @@ import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
 import { get, post } from '../api/client'
+import { useControlNet } from './useControlNet'
 import {
   SEED_MAX,
   MAX_CONSECUTIVE_ERRORS,
@@ -453,12 +454,15 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
    * @param {string} overrides.prompt - Override prompt (optional)
    * @param {string} overrides.negativePrompt - Override negative prompt (optional)
    */
+  // ControlNet helper
+  const { buildControlNetScript } = useControlNet()
+
   async function generateImage(overrides = {}) {
     const {
       prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
       width, height, batchCount, batchSize, seed,
       enableHr, hrUpscaler, hrSteps, denoisingStrength, hrUpscale,
-      adetailers, selectedModel
+      adetailers, selectedModel, controlnetUnits
     } = params
 
     // Use override prompts if provided (for queue processing), otherwise use refs
@@ -580,6 +584,9 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         override_settings_restore_afterwards: false,
       }
 
+      // Initialize alwayson_scripts
+      payload.alwayson_scripts = {}
+
       // Add ADetailer if any enabled
       if (enabledADetailers.value.length > 0) {
         // ADetailer expects ALL model slots (4 total)
@@ -599,11 +606,25 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
           "ad_steps": ad.useSeparateSteps ? ad.steps : steps.value,
         }))
 
-        payload.alwayson_scripts = {
-          "ADetailer": {
-            "args": adetailerArgs
+        payload.alwayson_scripts["ADetailer"] = {
+          "args": adetailerArgs
+        }
+      }
+
+      // Add ControlNet if any units enabled
+      if (controlnetUnits?.value) {
+        const controlnetScript = buildControlNetScript(controlnetUnits.value)
+        if (controlnetScript) {
+          payload.alwayson_scripts = {
+            ...payload.alwayson_scripts,
+            ...controlnetScript
           }
         }
+      }
+
+      // Remove empty alwayson_scripts
+      if (Object.keys(payload.alwayson_scripts).length === 0) {
+        delete payload.alwayson_scripts
       }
 
       const response = await post('/sdapi/v1/txt2img', payload)

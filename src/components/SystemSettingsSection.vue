@@ -7,6 +7,41 @@
 
     <transition name="expand">
       <div v-if="isExpanded" class="system-settings-content">
+        <!-- Notification -->
+        <div class="setting-group">
+          <label class="setting-label">{{ t('notification.title') }}</label>
+          <select
+            :value="notificationType"
+            @change="$emit('update:notificationType', Number($event.target.value))"
+            :disabled="isGenerating"
+            class="notification-select"
+          >
+            <option :value="0">🔇 {{ t('notification.none') }}</option>
+            <option :value="1">🔔 {{ t('notification.sound') }}</option>
+            <option :value="2">📬 {{ t('notification.browser') }}</option>
+            <option :value="3">🔔📬 {{ t('notification.both') }}</option>
+          </select>
+        </div>
+
+        <!-- Volume (if sound enabled) -->
+        <div v-if="notificationType === 1 || notificationType === 3" class="setting-group">
+          <label class="setting-label">{{ t('notification.volume') }}</label>
+          <div class="volume-control">
+            <input
+              type="range"
+              :value="notificationVolume"
+              @input="$emit('update:notificationVolume', Number($event.target.value))"
+              min="0"
+              max="1"
+              step="0.1"
+              :disabled="isGenerating"
+            />
+            <span class="volume-value">{{ Math.round(notificationVolume * 100) }}%</span>
+          </div>
+        </div>
+
+        <div class="setting-divider"></div>
+
         <!-- Language -->
         <div class="setting-group">
           <label class="setting-label">{{ t('settings.language') }}</label>
@@ -67,10 +102,22 @@ const props = defineProps({
   toggleTheme: {
     type: Function,
     required: true
+  },
+  notificationType: {
+    type: Number,
+    default: 0
+  },
+  notificationVolume: {
+    type: Number,
+    default: 0.5
+  },
+  isGenerating: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:autoCorrect'])
+const emit = defineEmits(['update:autoCorrect', 'update:notificationType', 'update:notificationVolume'])
 
 // State
 const isExpanded = ref(false)
@@ -171,6 +218,46 @@ defineExpose({
   cursor: pointer;
 }
 
+.notification-select {
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  width: 100%;
+}
+
+.notification-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-control input[type="range"] {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+}
+
+.volume-value {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-width: 35px;
+  text-align: right;
+}
+
+.setting-divider {
+  border-top: 1px solid var(--color-border);
+  margin: 4px 0;
+}
+
 .theme-toggle {
   display: flex;
   gap: 4px;
@@ -215,7 +302,7 @@ defineExpose({
 .expand-enter-to,
 .expand-leave-from {
   opacity: 1;
-  max-height: 200px;
+  max-height: 350px;
 }
 
 /* LanguageSwitcher override */

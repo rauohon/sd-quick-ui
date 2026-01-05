@@ -480,6 +480,12 @@ export default {
 
   // 알림
   notification: {
+    title: '알림',
+    none: '없음',
+    sound: '소리',
+    browser: '브라우저',
+    both: '둘 다',
+    volume: '볼륨',
     unsupported: '이 브라우저는 알림을 지원하지 않습니다',
     permissionDenied: '알림 권한이 거부되었습니다',
     generationComplete: '이미지 생성이 완료되었습니다',
@@ -805,6 +811,7 @@ export default {
   controlnet: {
     title: 'ControlNet',
     enable: '활성화',
+    enabled: '활성화됨',
     reset: '리셋',
     model: '모델',
     preprocessor: '프리프로세서',
@@ -821,6 +828,16 @@ export default {
     invalidFileType: '지원하지 않는 파일 형식입니다',
     selectModuleFirst: '먼저 프리프로세서를 선택하세요',
     preprocessDone: '전처리가 완료되었습니다',
-    preprocessFailed: '전처리에 실패했습니다'
+    preprocessFailed: '전처리에 실패했습니다',
+    // Manager panel
+    quickPresets: '빠른 프리셋',
+    presetApplied: '프리셋 적용됨',
+    advancedSettings: '고급 설정',
+    runPreprocess: '전처리 실행',
+    disabled: '비활성화',
+    noImage: '이미지 없음',
+    selectPreprocessor: '프리프로세서 선택',
+    noUnitsEnabled: 'ControlNet 유닛이 활성화되지 않음',
+    unitsEnabled: '개 유닛 활성화됨'
   }
 }

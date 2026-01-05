@@ -119,10 +119,10 @@ export const TOAST_DURATION = {
 
 // ===== 알림 설정 =====
 export const NOTIFICATION_TYPES = {
-  NONE: 'none',
-  SOUND: 'sound',
-  BROWSER: 'browser',
-  BOTH: 'both'
+  NONE: 0,
+  SOUND: 1,
+  BROWSER: 2,
+  BOTH: 3
 }
 
 export const DEFAULT_NOTIFICATION_VOLUME = 0.5 // 0.0 ~ 1.0

@@ -36,7 +36,10 @@ import HistoryPanel from '../components/HistoryPanel.vue'
 import ParamsPanel from '../components/ParamsPanel.vue'
 import AdvancedSettingsPanel from '../components/AdvancedSettingsPanel.vue'
 import PromptPanel from '../components/PromptPanel.vue'
+import ControlNetPanel from '../components/ControlNetPanel.vue'
+import ControlNetManager from '../components/ControlNetManager.vue'
 import { useQueue } from '../composables/useQueue'
+import { useControlNetUnits } from '../composables/useControlNet'
 import { usePngInfo } from '../composables/usePngInfo'
 import { useAspectRatio } from '../composables/useAspectRatio'
 import { useParamsApplication } from '../composables/useParamsApplication'
@@ -97,6 +100,7 @@ const {
   showBookmarkManager,
   showPresetManager,
   showQueueManager,
+  showControlNetManager,
   showADetailerPrompt,
   editingADetailerIndex,
   toggleModal,
@@ -111,6 +115,8 @@ const {
   closePresetManager,
   openQueueManager,
   closeQueueManager,
+  openControlNetManager,
+  closeControlNetManager,
   openADetailerPrompt,
   closeADetailerPrompt,
 } = modalSystem
@@ -256,12 +262,16 @@ function reorderADetailers(fromIndex, toIndex) {
   adetailers.value = newArray
 }
 
+// ControlNet
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+
 const imageGeneration = useImageGeneration(
   {
     prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
     width, height, batchCount, batchSize, seed, seedVariationRange,
     enableHr, hrUpscaler, hrSteps, denoisingStrength, hrUpscale,
-    adetailers, notificationType, notificationVolume, selectedModel
+    adetailers, notificationType, notificationVolume, selectedModel,
+    controlnetUnits
   },
   enabledADetailers,
   props.showToast,
@@ -659,6 +669,8 @@ onUnmounted(() => {
         :adetailer-labels="ADETAILER_LABELS"
         :show-confirm="showConfirm"
         :show-toast="showToast"
+        :show-controlnet-manager="showControlNetManager"
+        :controlnet-enabled-count="controlnetEnabledCount"
         @toggle-panel="toggleAdvancedPanel"
         @check-api="checkApiStatus"
         @update:selectedModel="selectedModel = $event"
@@ -676,6 +688,7 @@ onUnmounted(() => {
         @update:notificationType="notificationType = $event"
         @test-notification="testNotification"
         @update:notificationVolume="notificationVolume = $event"
+        @open-controlnet="openControlNetManager"
       />
 
       <!-- 2단: 파라미터 설정 -->
@@ -801,8 +814,8 @@ onUnmounted(() => {
       title="Drag to resize"
     ></div>
 
-    <!-- 4단: 이미지 프리뷰 + 히스토리 OR Easy Prompt Selector OR Bookmark Manager OR Preset Manager OR Queue Manager OR LoRA Selector -->
-    <div v-if="!showPromptSelector && !showBookmarkManager && !showPresetManager && !showQueueManager && !showLoraSelector" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
+    <!-- 4단: 이미지 프리뷰 + 히스토리 OR Easy Prompt Selector OR Bookmark Manager OR Preset Manager OR Queue Manager OR LoRA Selector OR ControlNet Manager -->
+    <div v-if="!showPromptSelector && !showBookmarkManager && !showPresetManager && !showQueueManager && !showLoraSelector && !showControlNetManager" :class="['image-area', { 'history-collapsed': !showHistoryPanel }]">
       <ImagePreviewPanel
         :current-image="currentImage"
         :is-loading="isLoadingPngInfo"
@@ -909,6 +922,16 @@ onUnmounted(() => {
       @selectLora="handleSelectLora"
     />
 
+    <!-- ControlNet Manager (replaces image area) -->
+    <ControlNetManager
+      v-if="showControlNetManager"
+      class="image-area"
+      :is-generating="isGenerating"
+      :showToast="showToast"
+      @close="closeControlNetManager"
+      @update:units="(units) => controlnetUnits = units"
+    />
+
     <!-- PNG Info Preview Modal -->
     <PngInfoPreviewModal
       v-model="showPngInfoPreview"
@@ -943,8 +966,8 @@ onUnmounted(() => {
       @update:negativePrompt="adetailers[editingADetailerIndex].negativePrompt = $event"
     />
 
-    <!-- Drag and Drop Overlay -->
-    <div v-if="isDragging" class="drag-drop-overlay">
+    <!-- Drag and Drop Overlay (hide when ControlNetManager is open) -->
+    <div v-if="isDragging && !showControlNetManager" class="drag-drop-overlay">
       <div class="drag-drop-content">
         <div class="drag-drop-icon">📁</div>
         <div class="drag-drop-text">{{ $t('dragDrop.dropHere') }}</div>

@@ -44,9 +44,9 @@ onMounted(() => {
 
 .lang-btn {
   padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -54,14 +54,13 @@ onMounted(() => {
 }
 
 .lang-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
 }
 
 .lang-btn.active {
-  background: rgba(99, 102, 241, 0.3);
-  color: #fff;
-  border-color: rgba(99, 102, 241, 0.5);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
 }
 </style>

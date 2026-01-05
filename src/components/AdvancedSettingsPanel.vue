@@ -163,46 +163,23 @@
         >
       </div>
 
-      <!-- Notification Settings -->
-      <div class="section-divider"></div>
-      <div class="form-group horizontal">
-        <label>Notification</label>
-        <div style="flex: 1; display: flex; gap: 6px;">
-          <select
-            :value="notificationType"
-            @change="$emit('update:notificationType', $event.target.value)"
-            :disabled="isGenerating"
-            style="flex: 1;"
-          >
-            <option :value="notificationTypes.NONE">🔇 None</option>
-            <option :value="notificationTypes.SOUND">🔔 Sound</option>
-            <option :value="notificationTypes.BROWSER">📬 Browser</option>
-            <option :value="notificationTypes.BOTH">🔔📬 Both</option>
-          </select>
-          <button
-            class="test-notification-btn"
-            @click="$emit('test-notification')"
-            :disabled="isGenerating || notificationType === notificationTypes.NONE"
-            title="Test notification"
-          >
-            🔔
-          </button>
-        </div>
-      </div>
-
-      <div v-if="notificationType === notificationTypes.SOUND || notificationType === notificationTypes.BOTH" class="form-group horizontal">
-        <label>Volume</label>
-        <input
-          type="range"
-          :value="notificationVolume"
-          @input="$emit('update:notificationVolume', Number($event.target.value))"
-          min="0"
-          max="1"
-          step="0.1"
+      <!-- ControlNet 버튼 -->
+      <div class="form-group controlnet-section">
+        <button
+          class="controlnet-btn"
+          :class="{ active: showControlNetManager }"
+          @click="$emit('open-controlnet')"
           :disabled="isGenerating"
         >
-        <span class="volume-display">{{ Math.round(notificationVolume * 100) }}%</span>
+          <span class="controlnet-icon">🎛️</span>
+          <span class="controlnet-label">ControlNet</span>
+          <span v-if="controlnetEnabledCount > 0" class="controlnet-badge">{{ controlnetEnabledCount }}</span>
+          <span class="controlnet-arrow">{{ showControlNetManager ? '✕' : '▶' }}</span>
+        </button>
       </div>
+
+      <!-- Extension slot -->
+      <slot />
 
       <!-- 마지막 생성 설정값 표시 -->
       <LastParamsSection
@@ -218,6 +195,11 @@
       v-if="isExpanded"
       :isDark="isDark"
       :toggleTheme="toggleTheme"
+      :notificationType="notificationType"
+      :notificationVolume="notificationVolume"
+      :isGenerating="isGenerating"
+      @update:notificationType="$emit('update:notificationType', $event)"
+      @update:notificationVolume="$emit('update:notificationVolume', $event)"
     />
 
     <div v-if="isExpanded" class="panel-footer">
@@ -328,8 +310,8 @@ const props = defineProps({
     default: 0
   },
   notificationType: {
-    type: String,
-    default: 'none'
+    type: Number,
+    default: 0
   },
   notificationTypes: {
     type: Object,
@@ -362,6 +344,14 @@ const props = defineProps({
   showToast: {
     type: Function,
     required: true
+  },
+  showControlNetManager: {
+    type: Boolean,
+    default: false
+  },
+  controlnetEnabledCount: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -382,7 +372,8 @@ const emit = defineEmits([
   'update:seedVariationRange',
   'update:notificationType',
   'test-notification',
-  'update:notificationVolume'
+  'update:notificationVolume',
+  'open-controlnet'
 ])
 
 // Local state for debounced width/height
@@ -656,5 +647,66 @@ function updateHeight(value) {
 .footer-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ControlNet Button */
+.controlnet-section {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.controlnet-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+.controlnet-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  border-color: #667eea;
+}
+
+.controlnet-btn.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.controlnet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controlnet-icon {
+  font-size: 16px;
+}
+
+.controlnet-label {
+  flex: 1;
+  text-align: left;
+}
+
+.controlnet-badge {
+  background: #667eea;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.controlnet-arrow {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 </style>
