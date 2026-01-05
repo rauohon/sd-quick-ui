@@ -234,6 +234,9 @@
 - [x] 6.2 API 페이로드 구성 (override 파라미터 지원)
 - [x] 6.3 Mock API 개선 (요청 크기로 이미지 생성)
 - [x] 6.4 결과 표시 개선 (생성 중 예상 크기 표시)
+- [x] 6.5 Batch size UI 추가 (1~8)
+- [x] 6.6 테스트 시나리오 완료
+  - 일반 Inpaint, Outpaint, Batch 생성, Interrupt/Skip
 - [x] initImage 덮어쓰기 버그 수정 (캔버스 768→1024 문제)
 
 ### Inpaint 4단계 완료 ✅ (2026-01-05)

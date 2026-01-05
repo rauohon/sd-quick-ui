@@ -1179,7 +1179,11 @@ watch(
         <!-- Batch -->
         <div class="form-group horizontal">
           <label>Batch count</label>
-          <input type="number" v-model.number="batchCount" min="1" :disabled="isGenerating" />
+          <input type="number" v-model.number="batchCount" min="1" max="100" :disabled="isGenerating" />
+        </div>
+        <div class="form-group horizontal">
+          <label>Batch size</label>
+          <input type="number" v-model.number="batchSize" min="1" max="8" :disabled="isGenerating" />
         </div>
 
         <!-- Notification -->
