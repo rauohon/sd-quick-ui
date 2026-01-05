@@ -191,7 +191,6 @@ const {
   showADetailerPrompt,
   editingADetailerIndex,
   openADetailerPrompt,
-  updateADetailerPrompts,
   updateADetailerEnable,
   updateADetailerModel,
   reorderADetailers
@@ -577,8 +576,8 @@ function handleApplyExpansion() {
 
 // 확장된 마스크 가져오기 (API 전송용)
 function getExpandedMask() {
-  const mask = maskCanvasRef.value?.getMaskBase64?.()
-  return mask || maskData.value
+  const canvasMask = maskCanvasRef.value?.getMaskBase64?.()
+  return canvasMask || mask.value
 }
 
 // History image selector modal
@@ -659,7 +658,7 @@ async function confirmImageReplace() {
 
 // 시스템 설정 저장
 function saveAutoCorrectSetting() {
-  window.localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectDimensions.value))
+  window.localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectEnabled.value))
 }
 
 // 현재 파라미터 (프리셋 저장용)
@@ -780,7 +779,7 @@ onMounted(async () => {
   // Load auto-correct setting
   const savedAutoCorrect = window.localStorage.getItem('sd-auto-correct-dimensions')
   if (savedAutoCorrect === 'true') {
-    autoCorrectDimensions.value = true
+    autoCorrectEnabled.value = true
   }
 
   // Load existing images from IndexedDB

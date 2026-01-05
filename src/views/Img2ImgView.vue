@@ -121,12 +121,6 @@ const {
   updateADetailerPrompts,
   updateADetailerEnable,
   updateADetailerModel,
-  updateADetailerConfidence,
-  updateADetailerDilateErode,
-  updateADetailerInpaintDenoising,
-  updateADetailerInpaintOnlyMasked,
-  updateADetailerUseSeparateSteps,
-  updateADetailerSteps,
   reorderADetailers
 } = useADetailerHandlers(adetailers)
 
