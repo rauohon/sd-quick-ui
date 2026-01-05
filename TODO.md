@@ -11,12 +11,18 @@
 ## Recently Completed
 
 ### Img2ImgView / InpaintView 리팩토링 ✅ (2026-01-05)
-> 4,616줄 → 2,935줄 (1,681줄, 36% 절감)
+> **최종: 4,616줄 → 2,303줄 (2,313줄, 50% 절감)**
 
+**Phase 1-5:**
 - 공통 스타일 추출 (`src/styles/generation-view.css`)
-- Composables 생성: `useADetailerHandlers.js`, `useBookmarkPresetHandlers.js`
+- Composables: `useADetailerHandlers.js`, `useBookmarkPresetHandlers.js`
 - 공통 컴포넌트: `HistorySelectorModal.vue`
 - `usePanelVisibility` 동적 prefix 지원
+
+**Phase 6:**
+- Composables: `useOutpaint.js`, `useImageUpload.js`
+- 컴포넌트: `OutpaintToolbar.vue`, `MaskToolbar.vue`
+- InpaintView.vue: 2,887줄 → 1,346줄 (53% 감소)
 
 ---
 

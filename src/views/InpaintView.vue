@@ -38,10 +38,14 @@ import BookmarkManager from '../components/BookmarkManager.vue'
 import PresetManager from '../components/PresetManager.vue'
 import MaskCanvas from '../components/MaskCanvas.vue'
 import HistorySelectorModal from '../components/HistorySelectorModal.vue'
+import OutpaintToolbar from '../components/OutpaintToolbar.vue'
+import MaskToolbar from '../components/MaskToolbar.vue'
 
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
 import { usePresets } from '../composables/usePresets'
+import { useOutpaint } from '../composables/useOutpaint'
+import { useImageUpload } from '../composables/useImageUpload'
 
 const { t } = useI18n()
 
@@ -117,18 +121,19 @@ const MIN_ZOOM = 0.1
 const MAX_ZOOM = 5
 const ZOOM_STEP = 0.1
 
-// Outpaint 확장 상태
-const expandTop = ref(0)
-const expandBottom = ref(0)
-const expandLeft = ref(0)
-const expandRight = ref(0)
-const isExpanded = ref(false) // 확장이 적용되었는지 여부
-const expandFillMode = ref('fill') // 'fill' | 'noise'
-const expandFillColor = ref('#000000') // 단색 채우기 색상
-
-// 확장 프리셋 값들
-const EXPAND_PRESETS = [64, 128, 256, 512]
-const EXPAND_FILL_COLORS = ['#000000', '#808080', '#ffffff'] // 검정, 회색, 흰색
+// Outpaint composable
+const {
+  expandTop, expandBottom, expandLeft, expandRight,
+  isExpanded, expandFillMode, expandFillColor,
+  EXPAND_PRESETS, EXPAND_FILL_COLORS,
+  expandedSize, hasExpansion,
+  applyPresetToAll, applyExpansion, resetExpansion, resetExpansionState,
+  generateExpandedImage
+} = useOutpaint(
+  { initImage, initImageWidth, initImageHeight },
+  { showToast: props.showToast },
+  t
+)
 
 // ADetailer
 const adetailers = ref([
@@ -154,9 +159,25 @@ const {
   initPanelVisibility
 } = usePanelVisibility('inpaint')
 
-// 드래그앤드롭 상태
-const isDragging = ref(false)
-const dragCounter = ref(0)
+// 이미지 업로드 composable (드래그앤드롭, 파일 업로드, 클립보드)
+const {
+  isDragging,
+  handleFileUpload,
+  loadImageFile,
+  handleDragEnter,
+  handleDragLeave,
+  handleDragOver,
+  handleDrop,
+  registerPasteListener,
+  unregisterPasteListener
+} = useImageUpload(
+  { initImage, initImageWidth, initImageHeight, initImageFormat },
+  {
+    showToast: props.showToast,
+    confirmReplace: confirmImageReplace
+  },
+  t
+)
 
 // ADetailer 핸들러 (composable)
 const {
@@ -504,104 +525,6 @@ function resetToActualSize() {
 // 줌 퍼센트 표시용 computed
 const zoomPercentage = computed(() => Math.round(zoomLevel.value * 100))
 
-// ===== Outpaint 확장 함수 =====
-// 프리셋 값을 모든 방향에 적용
-function applyPresetToAll(value) {
-  expandTop.value = value
-  expandBottom.value = value
-  expandLeft.value = value
-  expandRight.value = value
-}
-
-// 특정 방향에 프리셋 적용
-function applyPresetToDirection(direction, value) {
-  switch (direction) {
-    case 'top': expandTop.value = value; break
-    case 'bottom': expandBottom.value = value; break
-    case 'left': expandLeft.value = value; break
-    case 'right': expandRight.value = value; break
-  }
-}
-
-// 8의 배수로 보정
-function correctTo8Multiple(value) {
-  return Math.round(value / 8) * 8
-}
-
-// 확장 적용 - 8의 배수 검증 포함
-function applyExpansion() {
-  const hasExpansion = expandTop.value > 0 || expandBottom.value > 0 ||
-                       expandLeft.value > 0 || expandRight.value > 0
-
-  if (!hasExpansion) {
-    props.showToast(t('inpaint.noExpansion'), 'warning')
-    return
-  }
-
-  // 확장 후 크기 계산
-  const newWidth = initImageWidth.value + expandLeft.value + expandRight.value
-  const newHeight = initImageHeight.value + expandTop.value + expandBottom.value
-
-  // 8의 배수 검증
-  const needsWidthCorrection = newWidth % 8 !== 0
-  const needsHeightCorrection = newHeight % 8 !== 0
-  const needsCorrection = needsWidthCorrection || needsHeightCorrection
-
-  // 자동 보정이 활성화된 경우에만 보정 적용
-  if (needsCorrection && autoCorrectEnabled.value) {
-    if (needsWidthCorrection) {
-      const correctedWidth = correctTo8Multiple(newWidth)
-      const diff = correctedWidth - newWidth
-      expandRight.value = Math.max(0, expandRight.value + diff)
-    }
-
-    if (needsHeightCorrection) {
-      const correctedHeight = correctTo8Multiple(newHeight)
-      const diff = correctedHeight - newHeight
-      expandBottom.value = Math.max(0, expandBottom.value + diff)
-    }
-
-    isExpanded.value = true
-    const finalWidth = initImageWidth.value + expandLeft.value + expandRight.value
-    const finalHeight = initImageHeight.value + expandTop.value + expandBottom.value
-    props.showToast(t('inpaint.expansionCorrected', { width: finalWidth, height: finalHeight }), 'info')
-  } else if (needsCorrection) {
-    // 자동 보정 비활성화: 경고만 표시하고 그대로 적용
-    isExpanded.value = true
-    props.showToast(t('inpaint.expansionNot8Multiple', { size: `${newWidth}×${newHeight}` }), 'warning')
-  } else {
-    // 보정 불필요: 그대로 적용
-    isExpanded.value = true
-    props.showToast(t('inpaint.expansionApplied'), 'success')
-  }
-}
-
-// 확장 리셋 (UI 버튼용 - 토스트 표시)
-function resetExpansion() {
-  resetExpansionState()
-  props.showToast(t('inpaint.expansionReset'), 'info')
-}
-
-// 확장 상태만 초기화 (내부용 - 토스트 없음)
-function resetExpansionState() {
-  expandTop.value = 0
-  expandBottom.value = 0
-  expandLeft.value = 0
-  expandRight.value = 0
-  isExpanded.value = false
-}
-
-// 총 확장 픽셀 계산
-const totalExpansion = computed(() => ({
-  width: expandLeft.value + expandRight.value,
-  height: expandTop.value + expandBottom.value
-}))
-
-// 확장 후 예상 크기
-const expandedSize = computed(() => ({
-  width: initImageWidth.value + totalExpansion.value.width,
-  height: initImageHeight.value + totalExpansion.value.height
-}))
 
 // 생성 시 예상 출력 크기 (Outpaint면 expandedSize, 아니면 width/height)
 const expectedOutputSize = computed(() => {
@@ -611,63 +534,13 @@ const expectedOutputSize = computed(() => {
   return { width: width.value, height: height.value }
 })
 
-// 확장된 이미지 생성 (API 전송용)
-function generateExpandedImage() {
-  return new Promise((resolve, reject) => {
-    if (!initImage.value || !isExpanded.value) {
-      resolve(initImage.value)
-      return
-    }
-
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-
-      const newWidth = expandedSize.value.width
-      const newHeight = expandedSize.value.height
-
-      canvas.width = newWidth
-      canvas.height = newHeight
-
-      // 확장 영역 채우기
-      if (expandFillMode.value === 'fill') {
-        // 단색 채우기
-        ctx.fillStyle = expandFillColor.value
-        ctx.fillRect(0, 0, newWidth, newHeight)
-      } else if (expandFillMode.value === 'noise') {
-        // 노이즈 채우기
-        const imageData = ctx.createImageData(newWidth, newHeight)
-        const data = imageData.data
-        for (let i = 0; i < data.length; i += 4) {
-          const noise = Math.floor(Math.random() * 256)
-          data[i] = noise     // R
-          data[i + 1] = noise // G
-          data[i + 2] = noise // B
-          data[i + 3] = 255   // A
-        }
-        ctx.putImageData(imageData, 0, 0)
-      }
-
-      // 원본 이미지를 올바른 위치에 배치
-      ctx.drawImage(img, expandLeft.value, expandTop.value)
-
-      // Base64로 변환
-      const base64 = canvas.toDataURL('image/png')
-      resolve(base64)
-    }
-    img.onerror = () => {
-      reject(new Error('Failed to load image for expansion'))
-    }
-    img.src = initImage.value
-  })
+// 확장 적용 핸들러 (autoCorrectEnabled 전달)
+function handleApplyExpansion() {
+  applyExpansion(autoCorrectEnabled.value)
 }
 
 // 확장된 마스크 가져오기 (API 전송용)
-// 확장 시 확장 영역은 자동으로 마스크됨 (흰색 = inpaint 대상)
 function getExpandedMask() {
-  // MaskCanvas에서 직접 Base64 마스크 가져오기
   const mask = maskCanvasRef.value?.getMaskBase64?.()
   return mask || maskData.value
 }
@@ -697,120 +570,6 @@ async function selectImageFromHistory(image) {
     props.showToast(t('inpaint.imageLoaded'), 'success')
   }
   img.src = image.image
-}
-
-// 파일 업로드
-function handleFileUpload(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  loadImageFile(file)
-}
-
-// 이미지 파일 로드 (공통 함수)
-const SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
-
-async function loadImageFile(file) {
-  if (!SUPPORTED_TYPES.includes(file.type)) {
-    props.showToast(t('inpaint.invalidFileType'), 'error')
-    return
-  }
-
-  // 기존 이미지+마스크가 있으면 확인
-  if (initImage.value) {
-    const confirmed = await confirmImageReplace()
-    if (!confirmed) return
-  }
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    initImage.value = e.target.result
-    // 포맷 감지
-    initImageFormat.value = file.type.split('/')[1]?.toUpperCase() || 'Unknown'
-    const img = new Image()
-    img.onload = () => {
-      initImageWidth.value = img.width
-      initImageHeight.value = img.height
-      props.showToast(t('inpaint.imageLoaded'), 'success')
-    }
-    img.src = e.target.result
-  }
-  reader.readAsDataURL(file)
-}
-
-// 드래그앤드롭 핸들러
-function handleDragEnter(e) {
-  e.preventDefault()
-  dragCounter.value++
-  isDragging.value = true
-}
-
-function handleDragLeave(e) {
-  e.preventDefault()
-  dragCounter.value--
-  if (dragCounter.value === 0) {
-    isDragging.value = false
-  }
-}
-
-function handleDragOver(e) {
-  e.preventDefault()
-}
-
-function handleDrop(e) {
-  e.preventDefault()
-  isDragging.value = false
-  dragCounter.value = 0
-
-  const files = e.dataTransfer?.files
-  if (files && files.length > 0) {
-    loadImageFile(files[0])
-  }
-}
-
-// 클립보드 붙여넣기 핸들러
-function handlePaste(e) {
-  // 입력 요소에서는 무시
-  const target = e.target
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
-    return
-  }
-
-  const items = e.clipboardData?.items
-  if (!items) return
-
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      e.preventDefault()
-      const file = item.getAsFile()
-      if (file) {
-        loadImageFromClipboard(file)
-      }
-      return
-    }
-  }
-}
-
-async function loadImageFromClipboard(file) {
-  // 기존 이미지+마스크가 있으면 확인
-  if (initImage.value) {
-    const confirmed = await confirmImageReplace()
-    if (!confirmed) return
-  }
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    initImage.value = e.target.result
-    // 포맷 감지
-    initImageFormat.value = file.type.split('/')[1]?.toUpperCase() || 'PNG'
-    const img = new Image()
-    img.onload = () => {
-      initImageWidth.value = img.width
-      initImageHeight.value = img.height
-      props.showToast(t('inpaint.imagePasted'), 'success')
-    }
-    img.src = e.target.result
-  }
-  reader.readAsDataURL(file)
 }
 
 // 이미지 제거
@@ -941,7 +700,7 @@ onMounted(async () => {
   // 키보드 단축키 이벤트 등록
   window.addEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 등록
-  window.addEventListener('paste', handlePaste)
+  registerPasteListener()
 
   await checkApiStatus()
   await loadModels()
@@ -992,7 +751,7 @@ onUnmounted(() => {
   // 키보드 단축키 이벤트 해제
   window.removeEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 해제
-  window.removeEventListener('paste', handlePaste)
+  unregisterPasteListener()
 })
 
 // Slots → IndexedDB persistence
@@ -1373,224 +1132,54 @@ watch(
         <!-- 마스크 캔버스 (이미지가 있을 때) -->
         <div v-else class="mask-canvas-container">
           <!-- Outpaint 확장 컨트롤 바 -->
-          <div class="expand-toolbar">
-            <div class="expand-title">
-              <span class="expand-icon">🔲</span>
-              {{ t('inpaint.expand') }}
-            </div>
-
-            <!-- 방향별 픽셀 입력 -->
-            <div class="expand-inputs">
-              <div class="expand-input-group">
-                <label>{{ t('inpaint.expandTop') }}</label>
-                <input
-                  type="number"
-                  v-model.number="expandTop"
-                  min="0"
-                  max="1024"
-                  step="8"
-                  :disabled="isGenerating || isExpanded"
-                />
-              </div>
-              <div class="expand-input-group">
-                <label>{{ t('inpaint.expandBottom') }}</label>
-                <input
-                  type="number"
-                  v-model.number="expandBottom"
-                  min="0"
-                  max="1024"
-                  step="8"
-                  :disabled="isGenerating || isExpanded"
-                />
-              </div>
-              <div class="expand-input-group">
-                <label>{{ t('inpaint.expandLeft') }}</label>
-                <input
-                  type="number"
-                  v-model.number="expandLeft"
-                  min="0"
-                  max="1024"
-                  step="8"
-                  :disabled="isGenerating || isExpanded"
-                />
-              </div>
-              <div class="expand-input-group">
-                <label>{{ t('inpaint.expandRight') }}</label>
-                <input
-                  type="number"
-                  v-model.number="expandRight"
-                  min="0"
-                  max="1024"
-                  step="8"
-                  :disabled="isGenerating || isExpanded"
-                />
-              </div>
-            </div>
-
-            <!-- 프리셋 버튼 -->
-            <div class="expand-presets">
-              <span class="preset-label">{{ t('inpaint.expandAll') }}:</span>
-              <button
-                v-for="preset in EXPAND_PRESETS"
-                :key="preset"
-                class="preset-btn"
-                @click="applyPresetToAll(preset)"
-                :disabled="isGenerating || isExpanded"
-              >
-                {{ preset }}
-              </button>
-            </div>
-
-            <!-- 채우기 옵션 -->
-            <div class="expand-fill-options">
-              <span class="fill-label">{{ t('inpaint.expandFill') }}:</span>
-              <select
-                v-model="expandFillMode"
-                :disabled="isGenerating || isExpanded"
-                class="fill-mode-select"
-              >
-                <option value="fill">{{ t('inpaint.fillSolid') }}</option>
-                <option value="noise">{{ t('inpaint.fillNoise') }}</option>
-              </select>
-              <div v-if="expandFillMode === 'fill'" class="fill-colors">
-                <button
-                  v-for="color in EXPAND_FILL_COLORS"
-                  :key="color"
-                  class="color-btn"
-                  :class="{ active: expandFillColor === color }"
-                  :style="{ backgroundColor: color }"
-                  @click="expandFillColor = color"
-                  :disabled="isGenerating || isExpanded"
-                  :title="color"
-                />
-              </div>
-            </div>
-
-            <!-- 확장 적용/리셋 버튼 -->
-            <div class="expand-actions">
-              <button
-                class="expand-apply-btn"
-                @click="applyExpansion"
-                :disabled="isGenerating || isExpanded || (expandTop === 0 && expandBottom === 0 && expandLeft === 0 && expandRight === 0)"
-              >
-                {{ t('inpaint.applyExpansion') }}
-              </button>
-              <button
-                class="expand-reset-btn"
-                @click="resetExpansion"
-                :disabled="isGenerating || (!isExpanded && expandTop === 0 && expandBottom === 0 && expandLeft === 0 && expandRight === 0)"
-              >
-                {{ t('inpaint.resetExpansion') }}
-              </button>
-            </div>
-
-            <!-- 확장 미리보기 정보 -->
-            <div v-if="expandTop > 0 || expandBottom > 0 || expandLeft > 0 || expandRight > 0" class="expand-preview-info">
-              <span class="preview-label">{{ t('inpaint.expandPreview') }}:</span>
-              <span class="preview-size">
-                {{ initImageWidth }} × {{ initImageHeight }}
-                →
-                {{ expandedSize.width }} × {{ expandedSize.height }}
-              </span>
-              <span v-if="isExpanded" class="expand-status applied">✓</span>
-            </div>
-          </div>
+          <OutpaintToolbar
+            :expand-top="expandTop"
+            :expand-bottom="expandBottom"
+            :expand-left="expandLeft"
+            :expand-right="expandRight"
+            :expand-fill-mode="expandFillMode"
+            :expand-fill-color="expandFillColor"
+            :is-expanded="isExpanded"
+            :is-generating="isGenerating"
+            :image-width="initImageWidth"
+            :image-height="initImageHeight"
+            :expanded-width="expandedSize.width"
+            :expanded-height="expandedSize.height"
+            :presets="EXPAND_PRESETS"
+            :fill-colors="EXPAND_FILL_COLORS"
+            @update:expand-top="expandTop = $event"
+            @update:expand-bottom="expandBottom = $event"
+            @update:expand-left="expandLeft = $event"
+            @update:expand-right="expandRight = $event"
+            @update:expand-fill-mode="expandFillMode = $event"
+            @update:expand-fill-color="expandFillColor = $event"
+            @apply-preset="applyPresetToAll"
+            @apply="handleApplyExpansion"
+            @reset="resetExpansion"
+          />
 
           <!-- 마스크 도구바 -->
-          <div class="mask-toolbar">
-            <div class="tool-group">
-              <button
-                class="tool-btn"
-                :class="{ active: activeTool === 'brush' }"
-                @click="setActiveTool('brush')"
-                :title="t('inpaint.brush')"
-              >
-                🖌️
-              </button>
-              <button
-                class="tool-btn"
-                :class="{ active: activeTool === 'eraser' }"
-                @click="setActiveTool('eraser')"
-                :title="t('inpaint.eraser')"
-              >
-                🧹
-              </button>
-            </div>
-            <div class="tool-group">
-              <label class="brush-size-label">
-                {{ t('inpaint.brushSize') }}: {{ brushSize }}px
-              </label>
-              <input
-                type="range"
-                v-model.number="brushSize"
-                min="1"
-                max="200"
-                class="brush-size-slider"
-              />
-            </div>
-            <div class="tool-group">
-              <button class="action-btn" @click="fillMask" :title="t('inpaint.fillMask')">
-                {{ t('inpaint.fillMask') }}
-              </button>
-              <button class="action-btn" @click="clearMask" :title="t('inpaint.clearMask')">
-                {{ t('inpaint.clearMask') }}
-              </button>
-              <button class="action-btn" @click="invertMask" :title="t('inpaint.invertMask')">
-                {{ t('inpaint.invertMask') }}
-              </button>
-            </div>
-            <div class="tool-group">
-              <button
-                class="action-btn"
-                @click="undo"
-                :disabled="!canUndo"
-                :title="t('inpaint.undo') + ' (Ctrl+Z)'"
-              >
-                ↩️ {{ t('inpaint.undo') }}
-              </button>
-              <button
-                class="action-btn"
-                @click="redo"
-                :disabled="!canRedo"
-                :title="t('inpaint.redo') + ' (Ctrl+Y)'"
-              >
-                ↪️ {{ t('inpaint.redo') }}
-              </button>
-            </div>
-            <div class="tool-group">
-              <label class="upload-btn small">
-                <input type="file" accept="image/*" @change="handleFileUpload" hidden />
-                📁
-              </label>
-              <button class="action-btn small" @click="openHistorySelector">📋</button>
-            </div>
-            <div class="tool-group zoom-group">
-              <button
-                class="action-btn"
-                @click="zoomOut"
-                :disabled="zoomLevel <= MIN_ZOOM"
-                :title="t('inpaint.zoomOut')"
-              >
-                ➖
-              </button>
-              <span class="zoom-display">{{ zoomPercentage }}%</span>
-              <button
-                class="action-btn"
-                @click="zoomIn"
-                :disabled="zoomLevel >= MAX_ZOOM"
-                :title="t('inpaint.zoomIn')"
-              >
-                ➕
-              </button>
-              <button
-                class="action-btn"
-                @click="fitToScreen"
-                :title="t('inpaint.fitToScreen')"
-              >
-                {{ t('inpaint.fit') }}
-              </button>
-            </div>
-          </div>
+          <MaskToolbar
+            :active-tool="activeTool"
+            :brush-size="brushSize"
+            :can-undo="canUndo"
+            :can-redo="canRedo"
+            :zoom-level="zoomLevel"
+            :min-zoom="MIN_ZOOM"
+            :max-zoom="MAX_ZOOM"
+            @update:active-tool="setActiveTool"
+            @update:brush-size="brushSize = $event"
+            @fill-mask="fillMask"
+            @clear-mask="clearMask"
+            @invert-mask="invertMask"
+            @undo="undo"
+            @redo="redo"
+            @zoom-in="zoomIn"
+            @zoom-out="zoomOut"
+            @fit-to-screen="fitToScreen"
+            @file-upload="handleFileUpload"
+            @open-history="openHistorySelector"
+          />
 
           <!-- 이미지 정보 바 -->
           <div class="image-info-bar">
@@ -1754,227 +1343,4 @@ watch(
 @import '../styles/generation-view.css';
 </style>
 
-<style scoped>
-/* ===== Inpaint 고유 스타일 ===== */
-
-/* ===== Outpaint 확장 컨트롤 ===== */
-.expand-toolbar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 12px;
-  background: var(--color-bg-tertiary);
-  border-bottom: 1px solid var(--color-border-primary);
-  flex-wrap: wrap;
-}
-
-.expand-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-}
-
-.expand-icon {
-  font-size: 16px;
-}
-
-.expand-inputs {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.expand-input-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.expand-input-group label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  min-width: 30px;
-}
-
-.expand-input-group input {
-  width: 60px;
-  padding: 4px 6px;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 4px;
-  font-size: 12px;
-  text-align: center;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
-
-.expand-input-group input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.expand-presets {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.preset-label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.preset-btn {
-  padding: 4px 8px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.preset-btn:hover:not(:disabled) {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.preset-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.expand-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.expand-apply-btn {
-  padding: 6px 12px;
-  background: var(--color-success);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.expand-apply-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.expand-apply-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.expand-reset-btn {
-  padding: 6px 12px;
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.expand-reset-btn:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-.expand-reset-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.expand-preview-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  background: var(--color-bg-elevated);
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.preview-label {
-  font-weight: 500;
-}
-
-.preview-size {
-  font-family: monospace;
-  color: var(--color-text-primary);
-}
-
-.expand-status.applied {
-  color: var(--color-success);
-  font-weight: 600;
-}
-
-/* 채우기 옵션 */
-.expand-fill-options {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fill-label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.fill-mode-select {
-  padding: 4px 8px;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 4px;
-  font-size: 11px;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.fill-mode-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.fill-colors {
-  display: flex;
-  gap: 4px;
-}
-
-.color-btn {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--color-border-secondary);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.color-btn:hover:not(:disabled) {
-  transform: scale(1.1);
-}
-
-.color-btn.active {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
-}
-
-.color-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-</style>
+<!-- Inpaint 고유 스타일은 generation-view.css로 이동됨 -->

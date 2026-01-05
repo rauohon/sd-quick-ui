@@ -933,3 +933,224 @@
   background: var(--color-error);
   color: var(--color-text-inverse);
 }
+
+/* ===== Outpaint 확장 컨트롤 ===== */
+.expand-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-primary);
+  flex-wrap: wrap;
+}
+
+.expand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.expand-icon {
+  font-size: 16px;
+}
+
+.expand-inputs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.expand-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.expand-input-group label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-width: 30px;
+}
+
+.expand-input-group input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.expand-input-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preset-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.preset-btn {
+  padding: 4px 8px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preset-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.preset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.expand-apply-btn {
+  padding: 6px 12px;
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-apply-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.expand-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-reset-btn {
+  padding: 6px 12px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-reset-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.expand-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.expand-preview-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.preview-label {
+  font-weight: 500;
+}
+
+.preview-size {
+  font-family: monospace;
+  color: var(--color-text-primary);
+}
+
+.expand-status.applied {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* 채우기 옵션 */
+.expand-fill-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fill-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.fill-mode-select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.fill-mode-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fill-colors {
+  display: flex;
+  gap: 4px;
+}
+
+.color-btn {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.color-btn.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.color-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
