@@ -1,9 +1,6 @@
 import { ref, computed } from 'vue'
-import {
-  NOTIFICATION_TYPES,
-  DEFAULT_NOTIFICATION_VOLUME,
-  createADetailerPreset
-} from '../config/constants'
+import { createADetailerPreset } from '../config/constants'
+import { useNotificationSettings } from './useNotificationSettings'
 
 /**
  * 이미지 생성 파라미터 상태 관리 composable
@@ -44,9 +41,8 @@ export function useGenerationState() {
     createADetailerPreset('face_yolov8n.pt'),
   ])
 
-  // ===== Notification settings =====
-  const notificationType = ref(NOTIFICATION_TYPES.NONE)
-  const notificationVolume = ref(DEFAULT_NOTIFICATION_VOLUME)
+  // ===== Notification settings (global singleton) =====
+  const { notificationType, notificationVolume } = useNotificationSettings()
 
   // ===== Default settings object =====
   const defaultSettings = {
@@ -67,8 +63,6 @@ export function useGenerationState() {
     hrSteps: 10,
     denoisingStrength: 0.7,
     hrUpscale: 2,
-    notificationType: NOTIFICATION_TYPES.NONE,
-    notificationVolume: DEFAULT_NOTIFICATION_VOLUME,
     adetailers: [
       createADetailerPreset('face_yolov8n.pt'),
       createADetailerPreset('hand_yolov8n.pt'),
@@ -78,11 +72,11 @@ export function useGenerationState() {
   }
 
   // ===== Settings refs mapping (for slot management) =====
+  // Note: notificationType, notificationVolume are global settings (not per-slot)
   const SETTINGS_REFS = {
     prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
     width, height, batchCount, batchSize, seed, seedVariationRange,
-    selectedModel, hrUpscaler, hrSteps, denoisingStrength, hrUpscale,
-    notificationType, notificationVolume
+    selectedModel, hrUpscaler, hrSteps, denoisingStrength, hrUpscale
   }
 
   // ===== Computed values =====

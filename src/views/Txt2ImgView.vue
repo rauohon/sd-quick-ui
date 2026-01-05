@@ -542,12 +542,9 @@ watch(
 
 // Number fields (500ms debounce - faster feedback)
 watch(
-  [steps, cfgScale, width, height, batchCount, batchSize, seed, hrSteps, denoisingStrength, hrUpscale, notificationVolume],
+  [steps, cfgScale, width, height, batchCount, batchSize, seed, hrSteps, denoisingStrength, hrUpscale],
   () => startDebouncedSlotSave(DEBOUNCE_NUMBER_INPUT)
 )
-
-// Notification type (text-like select)
-watch(notificationType, () => startDebouncedSlotSave(DEBOUNCE_TEXT_INPUT))
 
 // ADetailer (computed string to avoid expensive deep watch)
 watch(

@@ -9,7 +9,6 @@ import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
 import {
-  NOTIFICATION_TYPES,
   SLOT_COUNT,
   ADETAILER_LABELS,
   ADETAILER_MODELS,
@@ -47,6 +46,7 @@ import { usePanelVisibility } from '../composables/usePanelVisibility'
 import { useADetailerHandlers } from '../composables/useADetailerHandlers'
 import { useBookmarkPresetHandlers } from '../composables/useBookmarkPresetHandlers'
 import { useControlNetUnits } from '../composables/useControlNet'
+import { useNotificationSettings } from '../composables/useNotificationSettings'
 
 const { t } = useI18n()
 
@@ -95,9 +95,8 @@ const adetailers = ref([
   { ...DEFAULT_ADETAILER }
 ])
 
-// Notification
-const notificationType = ref(NOTIFICATION_TYPES.NONE)
-const notificationVolume = ref(0.5)
+// Notification (global settings)
+const { notificationType, notificationVolume } = useNotificationSettings()
 
 // UI 상태 (usePanelVisibility composable)
 const {
