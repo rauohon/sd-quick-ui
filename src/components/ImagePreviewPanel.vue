@@ -19,11 +19,18 @@
       @dragover="handleDragOver"
       @drop="handleDrop"
     >
+      <!-- 이미지 사이즈 표시 -->
+      <div v-if="displaySize" class="image-size-info" :class="{ 'expected': displaySize.isExpected }">
+        {{ displaySize.width }} × {{ displaySize.height }}
+        <span v-if="displaySize.isExpected" class="expected-label">⏳</span>
+      </div>
       <img
         v-if="currentImage"
+        ref="imageRef"
         :src="currentImage"
         alt="Generated Image"
         @click="$emit('show-preview')"
+        @load="handleImageLoad"
         class="preview-image"
       >
       <div v-else-if="isLoading" class="preview-placeholder loading">
@@ -44,9 +51,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 
-defineProps({
+const props = defineProps({
   currentImage: {
     type: String,
     default: null
@@ -62,12 +69,62 @@ defineProps({
   usedPrompt: {
     type: String,
     default: ''
+  },
+  // 생성 중 예상 크기 표시용
+  isGenerating: {
+    type: Boolean,
+    default: false
+  },
+  expectedWidth: {
+    type: Number,
+    default: 0
+  },
+  expectedHeight: {
+    type: Number,
+    default: 0
   }
 })
 
 const emit = defineEmits(['toggle-panel', 'show-preview', 'load-png-info'])
 
 const isDragging = ref(false)
+const imageRef = ref(null)
+const imageSize = ref(null)
+
+// 표시할 크기: 생성 중이면 예상 크기, 아니면 실제 이미지 크기
+const displaySize = computed(() => {
+  // 생성 중이고 예상 크기가 있으면 예상 크기 표시
+  if (props.isGenerating && props.expectedWidth > 0 && props.expectedHeight > 0) {
+    return {
+      width: props.expectedWidth,
+      height: props.expectedHeight,
+      isExpected: true
+    }
+  }
+  // 아니면 실제 이미지 크기
+  if (imageSize.value) {
+    return {
+      width: imageSize.value.width,
+      height: imageSize.value.height,
+      isExpected: false
+    }
+  }
+  return null
+})
+
+// 이미지 로드 완료 시 사이즈 저장
+function handleImageLoad(e) {
+  const img = e.target
+  imageSize.value = {
+    width: img.naturalWidth,
+    height: img.naturalHeight
+  }
+}
+
+// 이미지 변경 시 사이즈 초기화
+watch(() => props.currentImage, () => {
+  imageSize.value = null
+})
 
 function handleDragEnter(e) {
   e.preventDefault()
@@ -151,6 +208,28 @@ async function handleDrop(e) {
   overflow: hidden;
   position: relative;
   transition: all 0.2s;
+}
+
+.image-size-info {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.image-size-info.expected {
+  background: rgba(59, 130, 246, 0.85);
+}
+
+.expected-label {
+  margin-left: 4px;
 }
 
 .preview-main.drag-over {

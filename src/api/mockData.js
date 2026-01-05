@@ -5,13 +5,15 @@
 
 /**
  * Canvas로 Mock 이미지 생성
- * 512x512 랜덤 컬러 그라디언트
+ * 요청된 크기의 랜덤 컬러 그라디언트
+ * @param {number} width - 이미지 너비 (기본값: 512)
+ * @param {number} height - 이미지 높이 (기본값: 512)
  */
-function generateMockImage() {
+function generateMockImage(width = 512, height = 512) {
   // Canvas 생성
   const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 512
+  canvas.width = width
+  canvas.height = height
   const ctx = canvas.getContext('2d')
 
   // 랜덤 그라디언트 색상
@@ -26,19 +28,20 @@ function generateMockImage() {
   const [color1, color2] = colors[Math.floor(Math.random() * colors.length)]
 
   // 그라디언트 생성
-  const gradient = ctx.createLinearGradient(0, 0, 512, 512)
+  const gradient = ctx.createLinearGradient(0, 0, width, height)
   gradient.addColorStop(0, color1)
   gradient.addColorStop(1, color2)
 
   ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, 512, 512)
+  ctx.fillRect(0, 0, width, height)
 
-  // "MOCK" 텍스트 추가
+  // "MOCK" 텍스트 추가 (크기에 맞게 조정)
+  const fontSize = Math.min(width, height) * 0.15
   ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
-  ctx.font = 'bold 80px Arial'
+  ctx.font = `bold ${fontSize}px Arial`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('MOCK', 256, 256)
+  ctx.fillText('MOCK', width / 2, height / 2)
 
   // Base64로 변환 (prefix 제거)
   const dataUrl = canvas.toDataURL('image/png')
@@ -205,7 +208,9 @@ export const mockResponses = {
       const batchSize = body.batch_size || 1
       const nIter = body.n_iter || 1
       const totalImages = batchSize * nIter
-      const images = Array(totalImages).fill(null).map(() => generateMockImage())
+      const width = body.width || 512
+      const height = body.height || 512
+      const images = Array(totalImages).fill(null).map(() => generateMockImage(width, height))
 
       // Generate seeds for each image (WebUI increments seed for each image)
       const baseSeed = body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed
@@ -255,7 +260,9 @@ export const mockResponses = {
       const batchSize = body.batch_size || 1
       const nIter = body.n_iter || 1
       const totalImages = batchSize * nIter
-      const images = Array(totalImages).fill(null).map(() => generateMockImage())
+      const width = body.width || 512
+      const height = body.height || 512
+      const images = Array(totalImages).fill(null).map(() => generateMockImage(width, height))
 
       const baseSeed = body.seed === -1 ? Math.floor(Math.random() * 4294967295) : body.seed
       const allSeeds = Array(totalImages).fill(null).map((_, i) => baseSeed + i)

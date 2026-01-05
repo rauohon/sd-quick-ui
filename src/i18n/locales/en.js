@@ -795,6 +795,9 @@ export default {
     // Expansion fill options
     expandFill: 'Fill',
     fillSolid: 'Solid',
-    fillNoise: 'Noise'
+    fillNoise: 'Noise',
+    // Generation related
+    preparingOutpaint: 'Preparing outpaint image...',
+    preparationFailed: 'Failed to prepare image'
   }
 }

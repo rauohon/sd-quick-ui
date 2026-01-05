@@ -353,16 +353,46 @@ watch([initImageWidth, initImageHeight], ([w, h]) => {
 })
 
 // ===== Methods =====
-function handleGenerate() {
+async function handleGenerate() {
+  // 이미지 검증
   if (!initImage.value) {
     props.showToast(t('inpaint.noImageSelected'), 'error')
     return
   }
-  if (!mask.value) {
+
+  // 마스크 검증 (Outpaint일 경우 확장 영역이 자동 마스킹됨)
+  const hasMask = maskCanvasRef.value?.isMaskEmpty ? !maskCanvasRef.value.isMaskEmpty() : !!mask.value
+  if (!hasMask && !isExpanded.value) {
     props.showToast(t('inpaint.noMaskDrawn'), 'error')
     return
   }
-  generateImage()
+
+  try {
+    // 기본 오버라이드 (없음)
+    const overrides = {}
+
+    // Outpaint 모드: 확장된 이미지와 마스크 사용
+    if (isExpanded.value) {
+      props.showToast(t('inpaint.preparingOutpaint'), 'info')
+
+      // 확장된 이미지 생성
+      overrides.initImage = await generateExpandedImage()
+
+      // 확장된 마스크 가져오기 (확장 영역은 자동 마스킹됨)
+      overrides.mask = getExpandedMask()
+
+      // 확장된 크기 설정
+      overrides.width = initImageWidth.value + expandLeft.value + expandRight.value
+      overrides.height = initImageHeight.value + expandTop.value + expandBottom.value
+    }
+
+    // 이미지 생성 호출 (원본 initImage/mask는 수정하지 않음)
+    await generateImage(overrides)
+
+  } catch (error) {
+    console.error('Generation preparation failed:', error)
+    props.showToast(t('inpaint.preparationFailed'), 'error')
+  }
 }
 
 function randomizeSeed() {
@@ -554,6 +584,14 @@ const expandedSize = computed(() => ({
   width: initImageWidth.value + totalExpansion.value.width,
   height: initImageHeight.value + totalExpansion.value.height
 }))
+
+// 생성 시 예상 출력 크기 (Outpaint면 expandedSize, 아니면 width/height)
+const expectedOutputSize = computed(() => {
+  if (isExpanded.value) {
+    return expandedSize.value
+  }
+  return { width: width.value, height: height.value }
+})
 
 // 확장된 이미지 생성 (API 전송용)
 function generateExpandedImage() {
@@ -1611,6 +1649,9 @@ watch(
           class="output-image-panel"
           :current-image="currentImage"
           :is-expanded="showImagePanel"
+          :is-generating="isGenerating"
+          :expected-width="expectedOutputSize.width"
+          :expected-height="expectedOutputSize.height"
           @toggle-panel="toggleImagePanel"
           @show-preview="props.openModal('viewer')"
         />

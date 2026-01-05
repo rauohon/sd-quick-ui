@@ -227,7 +227,14 @@
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
 ## In Progress
-- [ ] Inpaint/Outpainting 기능 구현 (5단계 완료)
+- [ ] Inpaint/Outpainting 기능 구현 (6단계 완료)
+
+### Inpaint 6단계 완료 ✅ (2026-01-05)
+- [x] 6.1 Generate 버튼 연결 및 API 호출
+- [x] 6.2 API 페이로드 구성 (override 파라미터 지원)
+- [x] 6.3 Mock API 개선 (요청 크기로 이미지 생성)
+- [x] 6.4 결과 표시 개선 (생성 중 예상 크기 표시)
+- [x] initImage 덮어쓰기 버그 수정 (캔버스 768→1024 문제)
 
 ### Inpaint 4단계 완료 ✅ (2026-01-05)
 - [x] 4.1 마스크 설정 UI
@@ -459,17 +466,56 @@
   - 언어/테마/8배수 자동보정 설정 통합
   - txt2img, img2img, inpaint 모든 탭에서 공유
 
-#### 6단계: API 연동
-- [ ] 6.1 마스크 → Base64 변환
-  - Canvas에서 마스크 레이어만 추출
-  - 흑백 이미지로 변환 (흰색=마스크 영역)
-  - Base64 인코딩
-- [ ] 6.2 /sdapi/v1/img2img 호출
-  - init_images: 원본 이미지
-  - mask: 마스크 이미지 (base64)
-  - mask_blur, inpainting_fill, inpaint_full_res 등
-- [ ] 6.3 Mock API 지원
-  - mockData.js에 inpaint 응답 추가
+#### 6단계: API 연동 ✅ (2026-01-05)
+
+##### 6.1 Generate 버튼 연결 ✅
+- [x] handleGenerate() 함수 완성
+  - 이미지/마스크 유효성 검사
+  - Outpaint 여부에 따른 이미지/마스크 준비 (overrides 사용)
+  - useInpaintGeneration의 generateImage(overrides) 호출
+- [x] 생성 중 UI 상태 관리
+  - 버튼 비활성화, 프로그레스 표시
+  - Interrupt/Skip 버튼 활성화
+- [x] initImage 덮어쓰기 버그 수정
+  - 확장된 이미지를 initImage에 저장하지 않고 overrides로 전달
+  - 캔버스 크기 중복 계산 문제 해결 (768→1024 버그)
+
+##### 6.2 API 페이로드 구성 ✅
+- [x] useInpaintGeneration에 override 파라미터 추가
+  - initImage, mask, width, height overrides 지원
+- [x] 일반 Inpaint 페이로드
+  - init_images: [initImage base64]
+  - mask: getMaskBase64() 결과
+- [x] Outpaint 페이로드 (isExpanded === true)
+  - init_images: [generateExpandedImage() 결과] (override)
+  - mask: getExpandedMask() 결과 (override)
+  - width/height: expandedSize (override)
+- [x] 공통 파라미터
+  - prompt, negative_prompt, steps, cfg_scale, sampler_name
+  - seed, width, height, denoising_strength
+  - batch_size, n_iter
+
+##### 6.3 Mock API 개선 ✅
+- [x] generateMockImage(width, height) 함수 개선
+  - 요청된 크기로 mock 이미지 생성 (기존: 고정 512x512)
+- [x] txt2img, img2img 엔드포인트에서 body.width/height 사용
+- [x] 프로그레스 시뮬레이션 (기존 구현 활용)
+
+##### 6.4 결과 표시 개선 ✅
+- [x] ImagePreviewPanel에 예상 크기 즉시 표시
+  - isGenerating, expectedWidth, expectedHeight props 추가
+  - 생성 중: 파란색 배경 + ⏳ 아이콘으로 예상 크기 표시
+  - 생성 완료: 실제 이미지 크기 표시 (검은색 배경)
+- [x] expectedOutputSize computed 추가
+  - Outpaint: expandedSize 사용
+  - Inpaint: width/height 사용
+
+##### 6.5 기존 기능 활용
+- [x] 생성된 이미지 저장 (useInpaintGeneration 기존 구현)
+  - IndexedDB에 저장 (thumbnail 포함)
+  - type: 'inpaint'
+- [x] 히스토리 업데이트 (기존 구현)
+- [x] 알림음/브라우저 알림 (기존 구현)
 
 #### 7단계: UI/UX 완성
 - [ ] 7.1 툴바 UI

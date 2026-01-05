@@ -795,6 +795,9 @@ export default {
     // 확장 채우기 옵션
     expandFill: '채우기',
     fillSolid: '단색',
-    fillNoise: '노이즈'
+    fillNoise: '노이즈',
+    // 생성 관련
+    preparingOutpaint: 'Outpaint 이미지 준비 중...',
+    preparationFailed: '이미지 준비에 실패했습니다'
   }
 }

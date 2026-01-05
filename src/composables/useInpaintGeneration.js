@@ -339,6 +339,13 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
 
   /**
    * Inpaint 이미지 생성
+   * @param {Object} overrides - 오버라이드 파라미터
+   * @param {string} overrides.prompt - 프롬프트 오버라이드
+   * @param {string} overrides.negativePrompt - 네거티브 프롬프트 오버라이드
+   * @param {string} overrides.initImage - 입력 이미지 오버라이드 (Outpaint용)
+   * @param {string} overrides.mask - 마스크 오버라이드 (Outpaint용)
+   * @param {number} overrides.width - 너비 오버라이드 (Outpaint용)
+   * @param {number} overrides.height - 높이 오버라이드 (Outpaint용)
    */
   async function generateImage(overrides = {}) {
     const {
@@ -350,14 +357,20 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
       maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding
     } = params
 
+    // 이미지/마스크 오버라이드 (Outpaint 모드용)
+    const actualInitImage = overrides.initImage || initImage.value
+    const actualMask = overrides.mask || mask.value
+    const actualWidth = overrides.width || width.value
+    const actualHeight = overrides.height || height.value
+
     // 입력 이미지 체크
-    if (!initImage.value) {
+    if (!actualInitImage) {
       showToast(t('inpaint.noImageSelected'), 'error')
       return
     }
 
     // 마스크 체크
-    if (!mask.value) {
+    if (!actualMask) {
       showToast(t('inpaint.noMaskDrawn'), 'error')
       return
     }
@@ -370,8 +383,9 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
 
     const corrections = []
 
-    width.value = validateNumber(width.value, 64, 2048, 512)
-    height.value = validateNumber(height.value, 64, 2048, 512)
+    // 오버라이드된 크기 검증 (원본 ref 수정하지 않음)
+    const validatedWidth = validateNumber(actualWidth, 64, 2048, 512)
+    const validatedHeight = validateNumber(actualHeight, 64, 2048, 512)
 
     const originalSteps = steps.value
     steps.value = validateNumber(steps.value, 1, 150, 20)
@@ -410,8 +424,8 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
       steps: steps.value,
       sampler_name: samplerName.value,
       scheduler: scheduler.value,
-      width: width.value,
-      height: height.value,
+      width: validatedWidth,
+      height: validatedHeight,
       cfg_scale: cfgScale.value,
       seed: seed.value,
       batch_size: batchSize.value,
@@ -438,13 +452,13 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
       startProgressPolling()
 
       // base64 이미지 추출 (data:image/xxx;base64, 부분 제거)
-      const base64Image = initImage.value.includes(',')
-        ? initImage.value.split(',')[1]
-        : initImage.value
+      const base64Image = actualInitImage.includes(',')
+        ? actualInitImage.split(',')[1]
+        : actualInitImage
 
-      const base64Mask = mask.value.includes(',')
-        ? mask.value.split(',')[1]
-        : mask.value
+      const base64Mask = actualMask.includes(',')
+        ? actualMask.split(',')[1]
+        : actualMask
 
       const payload = {
         init_images: [base64Image],
@@ -454,8 +468,8 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
         steps: steps.value,
         sampler_name: samplerName.value,
         scheduler: scheduler.value,
-        width: width.value,
-        height: height.value,
+        width: validatedWidth,
+        height: validatedHeight,
         cfg_scale: cfgScale.value,
         seed: seed.value,
         batch_size: batchSize.value,
