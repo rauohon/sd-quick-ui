@@ -226,8 +226,16 @@
   - HistoryManagerModal.vue: 1352 → 1319 lines (-2%)
   - Added documentation comments to PresetManager.vue, HistoryManagerModal.vue
 
-## In Progress
-- [ ] Inpaint/Outpainting 기능 구현 (7단계 완료)
+## Recently Completed
+- [x] **Inpaint/Outpainting 기능 구현 완료** (2026-01-05)
+  - 1단계: 기본 구조 생성
+  - 2단계: 마스크 캔버스 컴포넌트
+  - 3단계: 이미지 입력 기능 강화
+  - 4단계: Inpaint 설정 UI
+  - 5단계: Outpainting 기능
+  - 6단계: API 연동
+  - 7단계: UI/UX 완성 (키보드 단축키)
+  - 8단계: 스킵 (Soft inpainting - 선택 기능)
 
 ### Inpaint 7단계 완료 ✅ (2026-01-05)
 - [x] 7.1~7.2 툴바/캔버스 조작 (이전 단계에서 완료)
@@ -555,13 +563,11 @@
   - 생성된 이미지 히스토리에 저장
   - type: 'inpaint' 저장
 
-#### 8단계: 고급 기능 (선택)
-- [ ] 8.1 마스크 저장/불러오기
-  - 마스크를 PNG로 저장
-  - 저장된 마스크 불러오기
-- [ ] 8.2 Soft inpainting 지원
-  - Schedule bias, Preservation strength 등
-  - WebUI의 soft inpainting 확장 연동
+#### 8단계: 고급 기능 (스킵)
+> 기본 Inpaint 기능으로 충분하므로 스킵
+
+- [~] 8.1 마스크 저장/불러오기 - 스킵
+- [~] 8.2 Soft inpainting 지원 - 스킵
 
 ---
 
