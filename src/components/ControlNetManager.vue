@@ -113,6 +113,33 @@ function getPresetKeyFromModule(moduleName) {
   return null
 }
 
+// 현재 값이 어느 프리셋에 가까운지 판단
+function getCurrentIntensity(unitIndex) {
+  const unit = units.value[unitIndex]
+  const presetKey = getPresetKeyFromModule(unit.module)
+
+  if (!presetKey || !intensityPresets[presetKey]) return null
+
+  const presets = intensityPresets[presetKey]
+  let closestIntensity = null
+  let minDistance = Infinity
+
+  for (const [intensity, preset] of Object.entries(presets)) {
+    // weight와 guidanceEnd의 차이를 계산
+    const weightDiff = Math.abs(unit.weight - preset.weight)
+    const guidanceEndDiff = Math.abs(unit.guidanceEnd - preset.guidanceEnd)
+    const distance = weightDiff + guidanceEndDiff
+
+    if (distance < minDistance) {
+      minDistance = distance
+      closestIntensity = intensity
+    }
+  }
+
+  // 거리가 0.15 이내면 해당 프리셋으로 판단 (약간의 여유)
+  return minDistance <= 0.15 ? closestIntensity : null
+}
+
 // 강도 적용
 function applyIntensity(unitIndex, intensity) {
   const unit = units.value[unitIndex]
@@ -681,7 +708,7 @@ function close() {
                 <div class="intensity-buttons">
                   <button
                     class="intensity-btn weak"
-                    :class="{ active: unit.weight <= 0.5 }"
+                    :class="{ active: getCurrentIntensity(index) === 'weak' }"
                     @click="applyIntensity(index, 'weak')"
                     :disabled="isGenerating"
                   >
@@ -689,7 +716,7 @@ function close() {
                   </button>
                   <button
                     class="intensity-btn normal"
-                    :class="{ active: unit.weight > 0.5 && unit.weight <= 0.75 }"
+                    :class="{ active: getCurrentIntensity(index) === 'normal' }"
                     @click="applyIntensity(index, 'normal')"
                     :disabled="isGenerating"
                   >
@@ -697,7 +724,7 @@ function close() {
                   </button>
                   <button
                     class="intensity-btn strong"
-                    :class="{ active: unit.weight > 0.75 }"
+                    :class="{ active: getCurrentIntensity(index) === 'strong' }"
                     @click="applyIntensity(index, 'strong')"
                     :disabled="isGenerating"
                   >
