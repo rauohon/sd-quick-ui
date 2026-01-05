@@ -687,7 +687,10 @@ export default {
     img2img: 'img2img',
     inpaint: 'Inpaint',
     workflow: 'Workflow',
-    comingSoon: '준비 중입니다'
+    comingSoon: '준비 중입니다',
+    switchWarningTitle: '이미지 생성 중',
+    switchWarningMessage: '이미지 생성 중입니다. 탭을 이동하면 생성 결과가 히스토리에 저장되지 않습니다.',
+    switchAnyway: '이동하기'
   },
 
   // 파이프라인

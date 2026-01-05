@@ -89,7 +89,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab', 'update:isGenerating'])
 
 // Constants (expose to template)
 const NOTIFICATION_TYPES_CONST = NOTIFICATION_TYPES
@@ -589,6 +589,11 @@ watch(progress, (newProgress, oldProgress) => {
 // Emit currentImage updates to parent (for modal)
 watch(currentImage, (newValue) => {
   emit('updateCurrentImage', newValue)
+})
+
+// Emit isGenerating updates to parent (for tab switch blocking)
+watch(isGenerating, (newValue) => {
+  emit('update:isGenerating', newValue)
 })
 
 // Watch selectedModel changes and update WebUI checkpoint

@@ -64,7 +64,7 @@ const props = defineProps({
   toggleTheme: { type: Function, required: true }
 })
 
-const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab', 'update:isGenerating'])
 
 // ===== 기본 파라미터 =====
 const prompt = ref('')
@@ -426,6 +426,11 @@ const {
 // Watch current image for parent
 watch(currentImage, (newImage) => {
   emit('updateCurrentImage', newImage)
+})
+
+// Emit isGenerating updates to parent (for tab switch blocking)
+watch(isGenerating, (newValue) => {
+  emit('update:isGenerating', newValue)
 })
 
 // 입력 이미지 크기로 출력 크기 자동 설정

@@ -92,7 +92,32 @@ txt2img (기본 생성) → img2img + ControlNet (포즈 보정) → inpaint (�
   - 커스텀 스텝 추가/제거
 
 ## Backlog
-- [ ]
+
+### 탭 이동 시에도 이미지 생성 유지
+> 현재: 탭 이동 시 컴포넌트가 언마운트되어 생성 결과가 히스토리에 저장 안 됨
+> 목표: 탭을 이동해도 백그라운드에서 생성 완료 후 히스토리에 저장
+
+**현재 임시 처리 (2026-01-05):**
+- 생성 중 탭 이동 시 경고 다이얼로그 표시
+- 사용자가 "이동하기" 선택 시에만 탭 전환
+
+**채택된 방향: 생성 로직을 App.vue 레벨로 분리**
+
+`v-show` 방식은 문제가 있음:
+- 초기 로딩 시 3개 뷰 동시 마운트 → API 호출 3배
+- 메모리 상주 (generatedImages × 3)
+- 키보드 단축키 충돌, 상태 동기화 문제
+
+**구현 계획:**
+- [ ] `useGenerationEngine.js` composable 생성 (App.vue 레벨)
+  - 생성 API 호출 (`/sdapi/v1/txt2img`, `img2img`, `inpaint`)
+  - progress polling
+  - 결과 IndexedDB 저장
+- [ ] 각 뷰는 파라미터 UI만 담당
+  - 생성 요청을 App.vue로 emit (파라미터 전달)
+  - 생성 상태(progress, currentImage)는 props로 받음
+- [ ] 탭 이동해도 생성은 App.vue에서 계속 진행
+- [ ] 완료 시 해당 탭의 히스토리 갱신 (이벤트 또는 provide/inject)
 
 ## Notes
 - Use `[x]` for completed tasks
@@ -102,4 +127,4 @@ txt2img (기본 생성) → img2img + ControlNet (포즈 보정) → inpaint (�
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-05 (파이프라인 Phase 2 완료)
+Last updated: 2026-01-05 (탭 이동 시 생성 유지 기능 백로그 추가)

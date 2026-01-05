@@ -687,7 +687,10 @@ export default {
     img2img: 'img2img',
     inpaint: 'Inpaint',
     workflow: 'Workflow',
-    comingSoon: 'Coming Soon'
+    comingSoon: 'Coming Soon',
+    switchWarningTitle: 'Generation in Progress',
+    switchWarningMessage: 'Image generation is in progress. If you switch tabs, the result will not be saved to history.',
+    switchAnyway: 'Switch Anyway'
   },
 
   // Pipeline

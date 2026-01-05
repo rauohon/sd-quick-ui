@@ -25,10 +25,44 @@ const tabs = [
 const savedTab = localStorage.getItem('sd-active-tab')
 const activeTab = ref(tabs.some(t => t.id === savedTab) ? savedTab : 'txt2img')
 
+// 각 탭별 생성 상태 추적
+const generatingTabs = ref({
+  txt2img: false,
+  img2img: false,
+  inpaint: false
+})
+
+// 현재 탭이 생성 중인지 확인
+function isCurrentTabGenerating() {
+  return generatingTabs.value[activeTab.value] || false
+}
+
 // 탭 변경 시 저장
-function setActiveTab(tabId) {
+async function setActiveTab(tabId, forceSwitch = false) {
+  // 같은 탭이면 무시
+  if (tabId === activeTab.value) return
+
+  // 현재 탭이 생성 중인데 강제 전환이 아니면 확인
+  if (isCurrentTabGenerating() && !forceSwitch) {
+    const result = await showConfirm({
+      title: t('tabs.switchWarningTitle'),
+      message: t('tabs.switchWarningMessage'),
+      confirmText: t('tabs.switchAnyway'),
+      cancelText: t('common.cancel')
+    })
+
+    if (!result?.confirmed) {
+      return // 사용자가 취소함
+    }
+  }
+
   activeTab.value = tabId
   localStorage.setItem('sd-active-tab', tabId)
+}
+
+// 각 탭의 생성 상태 업데이트
+function updateTabGenerating(tabId, isGenerating) {
+  generatingTabs.value[tabId] = isGenerating
 }
 
 // Pipeline integration
@@ -235,6 +269,7 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
+        @update:isGenerating="updateTabGenerating('txt2img', $event)"
       />
 
       <!-- img2img -->
@@ -247,6 +282,7 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
+        @update:isGenerating="updateTabGenerating('img2img', $event)"
       />
 
       <!-- inpaint -->
@@ -259,6 +295,7 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
+        @update:isGenerating="updateTabGenerating('inpaint', $event)"
       />
 
       <!-- Pipeline / Workflow -->
