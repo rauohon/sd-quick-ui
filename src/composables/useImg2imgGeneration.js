@@ -548,6 +548,7 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
 
           const paramsWithActualSeed = {
             ...usedParams,
+            seed: imageSeed, // Override -1 with actual seed
             actual_seed: imageSeed,
             prompt: allPrompts[i] || usedParams.prompt,
             negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt

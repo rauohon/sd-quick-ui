@@ -687,6 +687,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
           // Add actual values to params for this image
           const paramsWithActualSeed = {
             ...usedParams,
+            seed: imageSeed, // Override -1 with actual seed
             actual_seed: imageSeed,
             prompt: allPrompts[i] || usedParams.prompt,
             negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt

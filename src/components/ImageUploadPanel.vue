@@ -67,10 +67,13 @@ function handleDrop(event) {
 
 function handleDragOver(event) {
   event.preventDefault()
+  event.stopPropagation() // Prevent global drag handler
   isDragging.value = true
 }
 
-function handleDragLeave() {
+function handleDragLeave(event) {
+  event.preventDefault()
+  event.stopPropagation() // Prevent global drag handler
   isDragging.value = false
 }
 

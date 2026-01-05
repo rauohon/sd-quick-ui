@@ -96,16 +96,19 @@ function loadImageFile(file, unitIndex) {
 // 드래그 앤 드롭
 function handleDragEnter(e, unitIndex) {
   e.preventDefault()
+  e.stopPropagation() // Prevent global drag handler
   isDragging.value[unitIndex] = true
 }
 
 function handleDragLeave(e, unitIndex) {
   e.preventDefault()
+  e.stopPropagation() // Prevent global drag handler
   isDragging.value[unitIndex] = false
 }
 
 function handleDragOver(e) {
   e.preventDefault()
+  e.stopPropagation() // Prevent global drag handler
 }
 
 function handleDrop(e, unitIndex) {
