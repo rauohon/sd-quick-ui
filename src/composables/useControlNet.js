@@ -271,19 +271,38 @@ export function useControlNet() {
   }
 }
 
+// ===== ControlNet 유닛 싱글톤 상태 (뷰 간 공유) =====
+// 각 탭(txt2img, img2img, inpaint)별로 독립적인 유닛 상태
+const unitsByTab = {
+  txt2img: null,
+  img2img: null,
+  inpaint: null
+}
+
+function initializeUnits(tabId, maxUnits) {
+  if (!unitsByTab[tabId]) {
+    unitsByTab[tabId] = ref(
+      Array.from({ length: maxUnits }, (_, i) => ({
+        ...CONTROLNET_DEFAULT_UNIT,
+        id: `unit-${tabId}-${i}-${Date.now()}`
+      }))
+    )
+  }
+  return unitsByTab[tabId]
+}
+
 /**
  * ControlNet 유닛 상태 관리 Composable
- * 개별 뷰에서 유닛 상태를 관리할 때 사용
+ * 싱글톤 패턴: 같은 탭에서 호출하면 동일한 상태 공유
+ * @param {string} tabId - 탭 ID ('txt2img', 'img2img', 'inpaint')
  * @param {number} maxUnits - 최대 유닛 수 (기본 3)
  * @returns {Object} 유닛 상태와 관리 함수
  */
-export function useControlNetUnits(maxUnits = CONTROLNET_MAX_UNITS) {
+export function useControlNetUnits(tabId = 'txt2img', maxUnits = CONTROLNET_MAX_UNITS) {
   const { createDefaultUnit } = useControlNet()
 
-  // 유닛 배열 초기화
-  const units = ref(
-    Array.from({ length: maxUnits }, (_, i) => createDefaultUnit(i))
-  )
+  // 탭별 싱글톤 유닛 상태 가져오기/생성
+  const units = initializeUnits(tabId, maxUnits)
 
   /**
    * 특정 유닛 업데이트
@@ -302,7 +321,10 @@ export function useControlNetUnits(maxUnits = CONTROLNET_MAX_UNITS) {
    */
   function resetUnit(index) {
     if (index >= 0 && index < units.value.length) {
-      units.value[index] = createDefaultUnit(index)
+      units.value[index] = {
+        ...CONTROLNET_DEFAULT_UNIT,
+        id: `unit-${tabId}-${index}-${Date.now()}`
+      }
     }
   }
 
@@ -310,7 +332,10 @@ export function useControlNetUnits(maxUnits = CONTROLNET_MAX_UNITS) {
    * 모든 유닛 리셋
    */
   function resetAllUnits() {
-    units.value = Array.from({ length: maxUnits }, (_, i) => createDefaultUnit(i))
+    units.value = Array.from({ length: maxUnits }, (_, i) => ({
+      ...CONTROLNET_DEFAULT_UNIT,
+      id: `unit-${tabId}-${i}-${Date.now()}`
+    }))
   }
 
   /**

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useImg2imgGeneration } from '../composables/useImg2imgGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
@@ -110,7 +110,7 @@ const {
 } = usePanelVisibility('img2img')
 
 // ControlNet
-const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits('img2img')
 
 // ADetailer 핸들러 (composable)
 const {
@@ -204,6 +204,8 @@ const defaultSettings = {
   batchCount: 1,
   batchSize: 1,
   seed: -1,
+  seedVariationRange: 1000,
+  selectedModel: '',
   denoisingStrength: IMG2IMG_PARAM_RANGES.denoisingStrength.default,
   enableUpscale: false,
   upscaler: 'R-ESRGAN 4x+',
@@ -223,6 +225,8 @@ const SETTINGS_REFS = {
   batchCount,
   batchSize,
   seed,
+  seedVariationRange,
+  selectedModel,
   denoisingStrength,
   enableUpscale,
   upscaler,
@@ -230,7 +234,7 @@ const SETTINGS_REFS = {
 }
 
 // 슬롯 관리 (img2img 전용 키 사용)
-const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, null, props.showToast, 'sd-img2img')
+const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, adetailers, props.showToast, 'sd-img2img')
 const {
   slots,
   activeSlot,
@@ -461,6 +465,12 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
+  slotManagement.cancelDebouncedSlotSave()
+  slotManagement.saveCurrentSlot()
+})
+
 // Slots → IndexedDB persistence
 watch(slots, async (newSlots) => {
   try {
@@ -474,8 +484,8 @@ watch(slots, async (newSlots) => {
 // Settings change → debounced slot save
 watch(
   [prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-   width, height, batchCount, batchSize, seed, denoisingStrength,
-   enableUpscale, upscaler, upscaleScale],
+   width, height, batchCount, batchSize, seed, seedVariationRange,
+   selectedModel, denoisingStrength, enableUpscale, upscaler, upscaleScale],
   () => {
     if (activeSlot.value !== null) {
       startDebouncedSlotSave()
@@ -891,8 +901,8 @@ watch(
       class="image-area"
       :is-generating="isGenerating"
       :showToast="props.showToast"
+      tab-id="img2img"
       @close="closeControlNetManager"
-      @update:units="(units) => controlnetUnits = units"
     />
   </div>
 </template>

@@ -615,6 +615,13 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       if (controlnetUnits?.value) {
         const controlnetScript = buildControlNetScript(controlnetUnits.value)
         if (controlnetScript) {
+          console.log('[ControlNet] Applied:', controlnetScript.controlnet.args.length, 'unit(s)')
+          console.log('[ControlNet] Units:', controlnetScript.controlnet.args.map(u => ({
+            module: u.module,
+            model: u.model,
+            weight: u.weight,
+            hasImage: !!u.image
+          })))
           payload.alwayson_scripts = {
             ...payload.alwayson_scripts,
             ...controlnetScript

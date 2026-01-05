@@ -163,7 +163,7 @@ const {
 } = usePanelVisibility('inpaint')
 
 // ControlNet
-const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits('inpaint')
 
 // 이미지 업로드 composable (드래그앤드롭, 파일 업로드, 클립보드)
 const {
@@ -278,6 +278,8 @@ const defaultSettings = {
   batchCount: 1,
   batchSize: 1,
   seed: -1,
+  seedVariationRange: 1000,
+  selectedModel: '',
   denoisingStrength: INPAINT_PARAM_RANGES.denoisingStrength.default,
   maskBlur: INPAINT_PARAM_RANGES.maskBlur.default,
   inpaintingFill: INPAINT_FILL_OPTIONS.ORIGINAL,
@@ -298,6 +300,8 @@ const SETTINGS_REFS = {
   batchCount,
   batchSize,
   seed,
+  seedVariationRange,
+  selectedModel,
   denoisingStrength,
   maskBlur,
   inpaintingFill,
@@ -306,7 +310,7 @@ const SETTINGS_REFS = {
 }
 
 // 슬롯 관리 (inpaint 전용 키 사용)
-const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, null, props.showToast, 'sd-inpaint')
+const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, adetailers, props.showToast, 'sd-inpaint')
 const {
   slots,
   activeSlot,
@@ -773,6 +777,10 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 해제
   unregisterPasteListener()
+
+  // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
+  slotManagement.cancelDebouncedSlotSave()
+  slotManagement.saveCurrentSlot()
 })
 
 // Slots → IndexedDB persistence
@@ -788,8 +796,9 @@ watch(slots, async (newSlots) => {
 // Settings change → debounced slot save
 watch(
   [prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-   width, height, batchCount, batchSize, seed, denoisingStrength,
-   maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding],
+   width, height, batchCount, batchSize, seed, seedVariationRange,
+   selectedModel, denoisingStrength, maskBlur, inpaintingFill,
+   inpaintFullRes, inpaintFullResPadding],
   () => {
     if (activeSlot.value !== null) {
       startDebouncedSlotSave()
@@ -1372,8 +1381,8 @@ watch(
       class="image-area"
       :is-generating="isGenerating"
       :showToast="props.showToast"
+      tab-id="inpaint"
       @close="closeControlNetManager"
-      @update:units="(units) => controlnetUnits = units"
     />
   </div>
 </template>

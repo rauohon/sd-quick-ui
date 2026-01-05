@@ -16,7 +16,8 @@ const { t } = useI18n()
 
 const props = defineProps({
   isGenerating: { type: Boolean, default: false },
-  showToast: { type: Function, default: null }
+  showToast: { type: Function, default: null },
+  tabId: { type: String, default: 'txt2img' }
 })
 
 const emit = defineEmits(['update:units'])
@@ -44,7 +45,7 @@ const {
   toggleUnit,
   setUnitImage,
   clearUnitImage
-} = useControlNetUnits()
+} = useControlNetUnits(props.tabId)
 
 // UI 상태
 const activeUnitIndex = ref(0)

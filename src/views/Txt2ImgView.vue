@@ -263,7 +263,7 @@ function reorderADetailers(fromIndex, toIndex) {
 }
 
 // ControlNet
-const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits()
+const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits('txt2img')
 
 const imageGeneration = useImageGeneration(
   {
@@ -625,7 +625,10 @@ onMounted(async () => {
 onUnmounted(() => {
   stopProgressPolling()
   stopQueue() // Clean up queue processor interval
+
+  // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
   slotManagement.cancelDebouncedSlotSave()
+  slotManagement.saveCurrentSlot()
 
   // Clean up completion timeout to prevent memory leak
   if (completionTimeout) {
@@ -928,8 +931,8 @@ onUnmounted(() => {
       class="image-area"
       :is-generating="isGenerating"
       :showToast="showToast"
+      tab-id="txt2img"
       @close="closeControlNetManager"
-      @update:units="(units) => controlnetUnits = units"
     />
 
     <!-- PNG Info Preview Modal -->
