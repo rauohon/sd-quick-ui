@@ -169,7 +169,6 @@
           class="controlnet-btn"
           :class="{ active: showControlNetManager }"
           @click="$emit('open-controlnet')"
-          :disabled="isGenerating"
         >
           <span class="controlnet-icon">🎛️</span>
           <span class="controlnet-label">ControlNet</span>
