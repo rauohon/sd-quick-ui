@@ -537,7 +537,12 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
         const newImages = []
         let totalDeletedCount = 0
 
-        for (let i = 0; i < data.images.length; i++) {
+        // Only process actual generated images (exclude ControlNet detected_maps)
+        // ControlNet appends preprocessor outputs at the end of images array
+        const expectedImageCount = batchSize.value * batchCount.value
+        const actualImageCount = Math.min(expectedImageCount, data.images.length)
+
+        for (let i = 0; i < actualImageCount; i++) {
           const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
 
           const paramsWithActualSeed = {
