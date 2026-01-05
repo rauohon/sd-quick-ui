@@ -490,7 +490,8 @@
   gap: 6px;
 }
 
-.tool-btn {
+/* 슬롯 영역 툴 버튼 (북마크, 프리셋) */
+.tool-buttons .tool-btn {
   width: 36px;
   height: 36px;
   display: flex;
@@ -505,22 +506,22 @@
   transition: all 0.2s;
 }
 
-.tool-btn:hover {
+.tool-buttons .tool-btn:hover {
   border-color: var(--color-primary);
   background: var(--color-bg-tertiary);
 }
 
-.tool-btn.active {
+.tool-buttons .tool-btn.active {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
 
-.bookmark-btn.active {
+.tool-buttons .bookmark-btn.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.preset-btn.active {
+.tool-buttons .preset-btn.active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
