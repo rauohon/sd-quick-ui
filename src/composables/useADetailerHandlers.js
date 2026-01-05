@@ -37,59 +37,13 @@ export function useADetailerHandlers(adetailers) {
   }
 
   /**
-   * ADetailer 활성화 상태 업데이트
+   * ADetailer 필드 업데이트 (제네릭)
+   * @param {number} index - ADetailer 인덱스
+   * @param {string} field - 필드명 (enable, model, confidence, dilateErode, etc.)
+   * @param {any} value - 새 값
    */
-  function updateADetailerEnable(index, value) {
-    adetailers.value[index].enable = value
-  }
-
-  /**
-   * ADetailer 모델 업데이트
-   */
-  function updateADetailerModel(index, value) {
-    adetailers.value[index].model = value
-  }
-
-  /**
-   * ADetailer Confidence 업데이트
-   */
-  function updateADetailerConfidence(index, value) {
-    adetailers.value[index].confidence = value
-  }
-
-  /**
-   * ADetailer Dilate/Erode 업데이트
-   */
-  function updateADetailerDilateErode(index, value) {
-    adetailers.value[index].dilateErode = value
-  }
-
-  /**
-   * ADetailer Inpaint Denoising 업데이트
-   */
-  function updateADetailerInpaintDenoising(index, value) {
-    adetailers.value[index].inpaintDenoising = value
-  }
-
-  /**
-   * ADetailer Inpaint Only Masked 업데이트
-   */
-  function updateADetailerInpaintOnlyMasked(index, value) {
-    adetailers.value[index].inpaintOnlyMasked = value
-  }
-
-  /**
-   * ADetailer Use Separate Steps 업데이트
-   */
-  function updateADetailerUseSeparateSteps(index, value) {
-    adetailers.value[index].useSeparateSteps = value
-  }
-
-  /**
-   * ADetailer Steps 업데이트
-   */
-  function updateADetailerSteps(index, value) {
-    adetailers.value[index].steps = value
+  function updateADetailerField(index, field, value) {
+    adetailers.value[index][field] = value
   }
 
   /**
@@ -113,14 +67,7 @@ export function useADetailerHandlers(adetailers) {
 
     // 업데이트 함수
     updateADetailerPrompts,
-    updateADetailerEnable,
-    updateADetailerModel,
-    updateADetailerConfidence,
-    updateADetailerDilateErode,
-    updateADetailerInpaintDenoising,
-    updateADetailerInpaintOnlyMasked,
-    updateADetailerUseSeparateSteps,
-    updateADetailerSteps,
+    updateADetailerField,
     reorderADetailers
   }
 }

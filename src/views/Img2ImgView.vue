@@ -119,8 +119,7 @@ const {
   editingADetailerIndex,
   openADetailerPrompt,
   updateADetailerPrompts,
-  updateADetailerEnable,
-  updateADetailerModel,
+  updateADetailerField,
   reorderADetailers
 } = useADetailerHandlers(adetailers)
 
@@ -676,13 +675,13 @@ watch(
                 <button :disabled="index === adetailers.length - 1 || isGenerating" @click="reorderADetailers(index, index + 1)">▼</button>
               </div>
               <label class="checkbox-label">
-                <input type="checkbox" :checked="ad.enable" @change="updateADetailerEnable(index, $event.target.checked)" :disabled="isGenerating" />
+                <input type="checkbox" :checked="ad.enable" @change="updateADetailerField(index, 'enable', $event.target.checked)" :disabled="isGenerating" />
                 AD {{ ADETAILER_LABELS[index] }}
               </label>
             </div>
             <template v-if="ad.enable">
               <div class="ad-details">
-                <select :value="ad.model" @change="updateADetailerModel(index, $event.target.value)" :disabled="isGenerating">
+                <select :value="ad.model" @change="updateADetailerField(index, 'model', $event.target.value)" :disabled="isGenerating">
                   <option v-for="model in ADETAILER_MODELS" :key="model" :value="model">{{ model }}</option>
                 </select>
                 <button class="prompt-edit-btn" @click="openADetailerPrompt(index)" :disabled="isGenerating">
