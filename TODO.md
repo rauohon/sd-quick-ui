@@ -37,10 +37,36 @@
 
 ## Planned
 
-### Workflow 저장 기능
-- [ ] 전체 생성 설정을 JSON으로 저장/불러오기
-- [ ] 워크플로우 목록 관리
-- [ ] 가져오기/내보내기
+### 스텝 기반 파이프라인 (Workflow 탭)
+> txt2img → img2img → inpaint 등 여러 단계를 자동 연결하여 실행
+
+**예시 흐름**:
+```
+txt2img (기본 생성) → img2img + ControlNet (포즈 보정) → inpaint (얼굴 수정)
+```
+
+**구현 계획**:
+- [ ] Phase 1: 이미지 전달 메커니즘
+  - App.vue에서 `pendingImage` 상태 관리
+  - 각 뷰에 `initialImage` prop 추가
+  - prop 변경 시 자동으로 `initImage`에 설정
+
+- [ ] Phase 2: 파이프라인 실행 엔진
+  - `usePipeline.js` composable 생성
+  - 스텝 순차 실행 로직
+  - 탭 자동 전환 (`setActiveTab`)
+  - 생성 완료 감지 → 다음 스텝 트리거
+
+- [ ] Phase 3: WorkflowView UI
+  - 스텝 추가/제거/순서 변경
+  - 각 스텝별 설정 (프롬프트, 파라미터, ControlNet 등)
+  - 파이프라인 저장/불러오기
+  - 실행 버튼 및 진행 상황 표시
+
+**현재 구조 참고**:
+- `workflow` 탭 placeholder 이미 존재 (App.vue)
+- 각 뷰는 `initImage` ref 사용
+- 뷰 간 이미지 전달 메커니즘 필요
 
 ## Backlog
 - [ ]
@@ -53,4 +79,4 @@
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-05 (ControlNet 구현 완료)
+Last updated: 2026-01-05 (파이프라인 기능 계획 추가)
