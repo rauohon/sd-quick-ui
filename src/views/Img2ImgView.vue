@@ -452,13 +452,11 @@ onMounted(async () => {
     const loadedSlots = await indexedDB.loadSlots(IMG2IMG_SLOT_KEY)
     slots.value = loadedSlots
 
-    // Load active slot from localStorage
+    // Load active slot from localStorage (default to slot 0)
     const savedActiveSlot = window.localStorage.getItem(localStorageKey)
-    if (savedActiveSlot !== null) {
-      const slotIndex = parseInt(savedActiveSlot, 10)
-      if (!isNaN(slotIndex) && slotIndex >= 0 && slotIndex < SLOT_COUNT) {
-        selectSlot(slotIndex)
-      }
+    const slotIndex = savedActiveSlot !== null ? parseInt(savedActiveSlot, 10) : 0
+    if (!isNaN(slotIndex) && slotIndex >= 0 && slotIndex < SLOT_COUNT) {
+      selectSlot(slotIndex)
     }
   } catch (error) {
     console.error('Failed to load slots from IndexedDB:', error)
