@@ -53,6 +53,15 @@ const isDragging = ref([false, false, false])
 const showAdvanced = ref([false, false, false])
 const expandedUnit = ref(0) // 확장된 유닛 인덱스 (-1이면 모두 축소)
 
+// 이미지 변환 상태 (확대/축소/이동)
+const imageTransform = ref([
+  { scale: 1, offsetX: 0, offsetY: 0 },
+  { scale: 1, offsetX: 0, offsetY: 0 },
+  { scale: 1, offsetX: 0, offsetY: 0 }
+])
+const isDraggingImage = ref([false, false, false])
+const dragStart = ref([{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }])
+
 // 빠른 프리셋
 const quickPresets = [
   { id: 'openpose', name: 'OpenPose', module: 'openpose', icon: '🧍' },
@@ -225,6 +234,70 @@ function handlePaste(e, unitIndex) {
   }
 }
 
+// 이미지 변환 함수들
+function resetTransform(unitIndex) {
+  imageTransform.value[unitIndex] = { scale: 1, offsetX: 0, offsetY: 0 }
+}
+
+function updateScale(unitIndex, scale) {
+  imageTransform.value[unitIndex].scale = Math.max(0.5, Math.min(3, scale))
+}
+
+function startImageDrag(e, unitIndex) {
+  if (e.button !== 0) return // 좌클릭만
+  isDraggingImage.value[unitIndex] = true
+  dragStart.value[unitIndex] = {
+    x: e.clientX - imageTransform.value[unitIndex].offsetX,
+    y: e.clientY - imageTransform.value[unitIndex].offsetY
+  }
+  e.preventDefault()
+}
+
+function onImageDrag(e, unitIndex) {
+  if (!isDraggingImage.value[unitIndex]) return
+  imageTransform.value[unitIndex].offsetX = e.clientX - dragStart.value[unitIndex].x
+  imageTransform.value[unitIndex].offsetY = e.clientY - dragStart.value[unitIndex].y
+}
+
+function stopImageDrag(unitIndex) {
+  isDraggingImage.value[unitIndex] = false
+}
+
+// 변환된 이미지를 canvas로 생성
+function getTransformedImage(unitIndex) {
+  return new Promise((resolve) => {
+    const unit = units.value[unitIndex]
+    const transform = imageTransform.value[unitIndex]
+
+    // 변환이 없으면 원본 반환
+    if (transform.scale === 1 && transform.offsetX === 0 && transform.offsetY === 0) {
+      resolve(unit.image)
+      return
+    }
+
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+
+      // 캔버스 중앙 기준으로 변환 적용
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.save()
+      ctx.translate(canvas.width / 2 + transform.offsetX, canvas.height / 2 + transform.offsetY)
+      ctx.scale(transform.scale, transform.scale)
+      ctx.drawImage(img, -img.width / 2, -img.height / 2)
+      ctx.restore()
+
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.src = unit.image
+  })
+}
+
 // 프리프로세서 미리보기
 async function runPreprocess(unitIndex) {
   const unit = units.value[unitIndex]
@@ -235,9 +308,11 @@ async function runPreprocess(unitIndex) {
 
   isPreprocessing.value[unitIndex] = true
   try {
-    const imageData = unit.image.includes(',')
-      ? unit.image.split(',')[1]
-      : unit.image
+    // 변환된 이미지 사용
+    const transformedImage = await getTransformedImage(unitIndex)
+    const imageData = transformedImage.includes(',')
+      ? transformedImage.split(',')[1]
+      : transformedImage
 
     const result = await detectPreprocess(
       unit.module,
@@ -412,7 +487,24 @@ function close() {
                 tabindex="0"
               >
                 <template v-if="unit.image">
-                  <img :src="unit.image" alt="Control image" class="preview-img" />
+                  <div
+                    class="image-transform-container"
+                    @mousedown="startImageDrag($event, index)"
+                    @mousemove="onImageDrag($event, index)"
+                    @mouseup="stopImageDrag(index)"
+                    @mouseleave="stopImageDrag(index)"
+                  >
+                    <img
+                      :src="unit.image"
+                      alt="Control image"
+                      class="preview-img transformable"
+                      :style="{
+                        transform: `translate(${imageTransform[index].offsetX}px, ${imageTransform[index].offsetY}px) scale(${imageTransform[index].scale})`,
+                        cursor: isDraggingImage[index] ? 'grabbing' : 'grab'
+                      }"
+                      draggable="false"
+                    />
+                  </div>
                   <button
                     class="clear-btn"
                     @click="clearUnitImage(index)"
@@ -436,6 +528,31 @@ function close() {
                     </label>
                   </div>
                 </template>
+              </div>
+
+              <!-- 이미지 변환 컨트롤 (확대/축소) -->
+              <div v-if="unit.image" class="transform-controls">
+                <div class="transform-slider">
+                  <span class="transform-label">🔍</span>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="3"
+                    step="0.1"
+                    :value="imageTransform[index].scale"
+                    @input="updateScale(index, Number($event.target.value))"
+                    class="scale-slider"
+                  />
+                  <span class="transform-value">{{ (imageTransform[index].scale * 100).toFixed(0) }}%</span>
+                </div>
+                <button
+                  v-if="imageTransform[index].scale !== 1 || imageTransform[index].offsetX !== 0 || imageTransform[index].offsetY !== 0"
+                  class="reset-transform-btn"
+                  @click="resetTransform(index)"
+                  :title="t('controlnet.resetTransform')"
+                >
+                  ↺
+                </button>
               </div>
 
               <!-- 프리프로세서 미리보기 -->
@@ -1089,6 +1206,75 @@ function close() {
 .preprocessed-img {
   width: 100%;
   border-radius: 4px;
+}
+
+/* Image Transform */
+.image-transform-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.preview-img.transformable {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: none;
+  user-select: none;
+}
+
+.transform-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+}
+
+.transform-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.transform-label {
+  font-size: 14px;
+}
+
+.scale-slider {
+  flex: 1;
+  height: 4px;
+  cursor: pointer;
+}
+
+.transform-value {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-width: 40px;
+  text-align: right;
+}
+
+.reset-transform-btn {
+  padding: 4px 8px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.reset-transform-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
 }
 
 /* Settings Section */

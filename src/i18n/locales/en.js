@@ -881,6 +881,8 @@ export default {
       normal: 'Normal: Balanced setting',
       strong: 'Strong: Closely follows reference image'
     },
-    intensityHint: 'Weak: More prompt freedom · Strong: More reference influence'
+    intensityHint: 'Weak: More prompt freedom · Strong: More reference influence',
+    // Image transform
+    resetTransform: 'Reset transform'
   }
 }

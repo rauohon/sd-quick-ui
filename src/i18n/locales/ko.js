@@ -881,6 +881,8 @@ export default {
       normal: '보통: 균형 잡힌 설정',
       strong: '강함: 참조 이미지를 강하게 따름'
     },
-    intensityHint: '약함: 프롬프트 자유도 ↑ · 강함: 참조 이미지 영향 ↑'
+    intensityHint: '약함: 프롬프트 자유도 ↑ · 강함: 참조 이미지 영향 ↑',
+    // Image transform
+    resetTransform: '변환 초기화'
   }
 }
