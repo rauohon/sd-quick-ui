@@ -2,6 +2,24 @@
 
 > 완료된 작업은 TODO_COMPLETED.md 참조
 
+## In Progress
+
+(없음)
+
+---
+
+## Recently Completed
+
+### Img2ImgView / InpaintView 리팩토링 ✅ (2026-01-05)
+> 4,616줄 → 2,935줄 (1,681줄, 36% 절감)
+
+- 공통 스타일 추출 (`src/styles/generation-view.css`)
+- Composables 생성: `useADetailerHandlers.js`, `useBookmarkPresetHandlers.js`
+- 공통 컴포넌트: `HistorySelectorModal.vue`
+- `usePanelVisibility` 동적 prefix 지원
+
+---
+
 ## Planned
 
 ### ControlNet 연동

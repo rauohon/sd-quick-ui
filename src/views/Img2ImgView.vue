@@ -31,6 +31,7 @@ import ADetailerPromptModal from '../components/ADetailerPromptModal.vue'
 import SystemSettingsSection from '../components/SystemSettingsSection.vue'
 import BookmarkManager from '../components/BookmarkManager.vue'
 import PresetManager from '../components/PresetManager.vue'
+import HistorySelectorModal from '../components/HistorySelectorModal.vue'
 
 // Composables
 import { useBookmarks } from '../composables/useBookmarks'
@@ -38,6 +39,9 @@ import { usePresets } from '../composables/usePresets'
 import { useHistory } from '../composables/useHistory'
 import { useLocalStorage } from '../composables/useLocalStorage'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
+import { usePanelVisibility } from '../composables/usePanelVisibility'
+import { useADetailerHandlers } from '../composables/useADetailerHandlers'
+import { useBookmarkPresetHandlers } from '../composables/useBookmarkPresetHandlers'
 
 const { t } = useI18n()
 
@@ -90,19 +94,51 @@ const adetailers = ref([
 const notificationType = ref(NOTIFICATION_TYPES.NONE)
 const notificationVolume = ref(0.5)
 
-// UI 상태
-const showSettingsPanel = ref(true)
-const showHistoryPanel = ref(true)
-const isHistoryContentCollapsed = ref(false)
-const showImagePanel = ref(true)
+// UI 상태 (usePanelVisibility composable)
+const {
+  showHistoryPanel,
+  isHistoryContentCollapsed,
+  showImagePanel,
+  showAdvancedPanel: showSettingsPanel,
+  toggleHistoryPanel,
+  toggleHistoryContent,
+  toggleImagePanel,
+  initPanelVisibility
+} = usePanelVisibility('img2img')
 
-// ADetailer 프롬프트 모달
-const showADetailerPrompt = ref(false)
-const editingADetailerIndex = ref(0)
+// ADetailer 핸들러 (composable)
+const {
+  showADetailerPrompt,
+  editingADetailerIndex,
+  openADetailerPrompt,
+  updateADetailerPrompts,
+  updateADetailerEnable,
+  updateADetailerModel,
+  updateADetailerConfidence,
+  updateADetailerDilateErode,
+  updateADetailerInpaintDenoising,
+  updateADetailerInpaintOnlyMasked,
+  updateADetailerUseSeparateSteps,
+  updateADetailerSteps,
+  reorderADetailers
+} = useADetailerHandlers(adetailers)
 
-// 북마크/프리셋 모달
-const showBookmarkManager = ref(false)
-const showPresetManager = ref(false)
+// 북마크/프리셋 핸들러 (composable)
+const {
+  showBookmarkManager,
+  showPresetManager,
+  openBookmarkManager,
+  closeBookmarkManager,
+  openPresetManager,
+  closePresetManager,
+  applyBookmark,
+  applyPreset
+} = useBookmarkPresetHandlers(
+  { prompt, negativePrompt },
+  { steps, cfgScale, samplerName, scheduler, width, height, seed,
+    batchCount, batchSize, denoisingStrength, adetailers,
+    enableUpscale, upscaler, upscaleScale }
+)
 
 // 북마크/프리셋 composables
 const {
@@ -304,18 +340,6 @@ function randomizeSeed() {
   seed.value = Math.floor(Math.random() * 4294967295)
 }
 
-function toggleHistoryPanel() {
-  showHistoryPanel.value = !showHistoryPanel.value
-}
-
-function toggleHistoryContent() {
-  isHistoryContentCollapsed.value = !isHistoryContentCollapsed.value
-}
-
-function toggleImagePanel() {
-  showImagePanel.value = !showImagePanel.value
-}
-
 function loadParamsFromHistory(item) {
   const params = item.params || item
   if (params.prompt !== undefined) prompt.value = params.prompt
@@ -335,66 +359,11 @@ function handleCompareImage(item) {
   props.openModal('comparison', item.image)
 }
 
-// ===== ADetailer Functions =====
-function openADetailerPrompt(index) {
-  editingADetailerIndex.value = index
-  showADetailerPrompt.value = true
-}
-
-function updateADetailerPrompts(prompt, negativePrompt) {
-  const index = editingADetailerIndex.value
-  adetailers.value[index].prompt = prompt
-  adetailers.value[index].negativePrompt = negativePrompt
-}
-
-function updateADetailerEnable(index, value) {
-  adetailers.value[index].enable = value
-}
-
-function updateADetailerModel(index, value) {
-  adetailers.value[index].model = value
-}
-
-function updateADetailerConfidence(index, value) {
-  adetailers.value[index].confidence = value
-}
-
-function updateADetailerDilateErode(index, value) {
-  adetailers.value[index].dilateErode = value
-}
-
-function updateADetailerInpaintDenoising(index, value) {
-  adetailers.value[index].inpaintDenoising = value
-}
-
-function updateADetailerInpaintOnlyMasked(index, value) {
-  adetailers.value[index].inpaintOnlyMasked = value
-}
-
-function updateADetailerUseSeparateSteps(index, value) {
-  adetailers.value[index].useSeparateSteps = value
-}
-
-function updateADetailerSteps(index, value) {
-  adetailers.value[index].steps = value
-}
-
-function reorderADetailers(fromIndex, toIndex) {
-  if (toIndex < 0 || toIndex >= adetailers.value.length) return
-  const temp = adetailers.value[fromIndex]
-  adetailers.value[fromIndex] = adetailers.value[toIndex]
-  adetailers.value[toIndex] = temp
-}
-
-// History image selector modal (임시 구현)
+// History image selector modal
 const showHistorySelector = ref(false)
 
 function openHistorySelector() {
   showHistorySelector.value = true
-}
-
-function closeHistorySelector() {
-  showHistorySelector.value = false
 }
 
 function selectImageFromHistory(image) {
@@ -406,74 +375,6 @@ function selectImageFromHistory(image) {
     initImageHeight.value = img.height
   }
   img.src = image.image
-  closeHistorySelector()
-}
-
-// ===== 북마크/프리셋 핸들러 =====
-function openBookmarkManager() {
-  showPresetManager.value = false
-  showBookmarkManager.value = !showBookmarkManager.value
-}
-
-function closeBookmarkManager() {
-  showBookmarkManager.value = false
-}
-
-function openPresetManager() {
-  showBookmarkManager.value = false
-  showPresetManager.value = !showPresetManager.value
-}
-
-function closePresetManager() {
-  showPresetManager.value = false
-}
-
-// 북마크 적용
-function applyBookmark({ prompt: newPrompt, negativePrompt: newNegativePrompt, mode }) {
-  if (mode === 'replace') {
-    prompt.value = newPrompt
-    negativePrompt.value = newNegativePrompt
-  } else if (mode === 'prepend') {
-    prompt.value = newPrompt + (prompt.value ? ', ' + prompt.value : '')
-    negativePrompt.value = newNegativePrompt + (negativePrompt.value ? ', ' + negativePrompt.value : '')
-  } else if (mode === 'append') {
-    prompt.value = prompt.value + (prompt.value ? ', ' : '') + newPrompt
-    negativePrompt.value = negativePrompt.value + (negativePrompt.value ? ', ' : '') + newNegativePrompt
-  }
-}
-
-// 프리셋 적용
-function applyPreset(params) {
-  // 기본 파라미터
-  if (params.steps !== undefined) steps.value = params.steps
-  if (params.cfgScale !== undefined) cfgScale.value = params.cfgScale
-  if (params.cfg_scale !== undefined) cfgScale.value = params.cfg_scale
-  if (params.samplerName !== undefined) samplerName.value = params.samplerName
-  if (params.sampler_name !== undefined) samplerName.value = params.sampler_name
-  if (params.scheduler !== undefined) scheduler.value = params.scheduler
-  if (params.width !== undefined) width.value = params.width
-  if (params.height !== undefined) height.value = params.height
-  if (params.seed !== undefined) seed.value = params.seed
-
-  // 배치 설정
-  if (params.batchCount !== undefined) batchCount.value = params.batchCount
-  if (params.batch_count !== undefined) batchCount.value = params.batch_count
-  if (params.batchSize !== undefined) batchSize.value = params.batchSize
-  if (params.batch_size !== undefined) batchSize.value = params.batch_size
-
-  // img2img 전용
-  if (params.denoisingStrength !== undefined) denoisingStrength.value = params.denoisingStrength
-  if (params.denoising_strength !== undefined) denoisingStrength.value = params.denoising_strength
-
-  // 업스케일
-  if (params.enableUpscale !== undefined) enableUpscale.value = params.enableUpscale
-  if (params.upscaler !== undefined) upscaler.value = params.upscaler
-  if (params.upscaleScale !== undefined) upscaleScale.value = params.upscaleScale
-
-  // ADetailer
-  if (params.adetailers) {
-    adetailers.value = JSON.parse(JSON.stringify(params.adetailers))
-  }
 }
 
 // 현재 파라미터 (프리셋 저장용)
@@ -496,6 +397,9 @@ const currentParams = computed(() => ({
 
 // ===== Lifecycle =====
 onMounted(async () => {
+  // Initialize panel visibility (load from localStorage)
+  initPanelVisibility()
+
   await checkApiStatus()
   await loadModels()
 
@@ -561,7 +465,7 @@ watch(
 </script>
 
 <template>
-  <div class="img2img-view" :class="{ 'settings-collapsed': !showSettingsPanel }">
+  <div class="generation-view img2img-view" :class="{ 'settings-collapsed': !showSettingsPanel }">
     <!-- 1열: 설정 패널 -->
     <div class="advanced-panel" :class="{ collapsed: !showSettingsPanel }">
       <div class="panel-header">
@@ -920,36 +824,20 @@ watch(
     />
 
     <!-- History Selector Modal -->
-    <div v-if="showHistorySelector" class="modal-overlay" @click="closeHistorySelector">
-      <div class="modal-content history-selector-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ t('img2img.selectFromHistory') }}</h3>
-          <button class="close-btn" @click="closeHistorySelector">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="history-selector-grid">
-            <div
-              v-for="image in generatedImages.slice(0, 50)"
-              :key="image.id"
-              class="selector-item"
-              @click="selectImageFromHistory(image)"
-            >
-              <img :src="image.image" alt="Select this image" />
-            </div>
-          </div>
-          <div v-if="generatedImages.length === 0" class="empty-state">
-            {{ t('history.noImages') }}
-          </div>
-        </div>
-      </div>
-    </div>
+    <HistorySelectorModal
+      v-model="showHistorySelector"
+      :images="generatedImages"
+      @select="selectImageFromHistory"
+    />
 
     <!-- ADetailer Prompt Modal -->
     <ADetailerPromptModal
       v-model="showADetailerPrompt"
-      :adetailer="adetailers[editingADetailerIndex]"
-      :adetailer-label="ADETAILER_LABELS[editingADetailerIndex]"
-      @save="updateADetailerPrompts"
+      :adetailer-index="editingADetailerIndex"
+      :adetailer="editingADetailerIndex >= 0 ? adetailers[editingADetailerIndex] : null"
+      :label="editingADetailerIndex >= 0 ? ADETAILER_LABELS[editingADetailerIndex] : ''"
+      @update:prompt="adetailers[editingADetailerIndex].prompt = $event"
+      @update:negativePrompt="adetailers[editingADetailerIndex].negativePrompt = $event"
     />
 
     <!-- Bookmark Manager (replaces image area) -->
@@ -974,579 +862,13 @@ watch(
   </div>
 </template>
 
+<style>
+/* 공통 스타일 import */
+@import '../styles/generation-view.css';
+</style>
+
 <style scoped>
-.img2img-view {
-  display: grid;
-  grid-template-columns: 280px 300px 1fr;
-  gap: 12px;
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  background: var(--color-bg-primary);
-  overflow: hidden;
-}
-
-.img2img-view.settings-collapsed {
-  grid-template-columns: 48px 300px 1fr;
-}
-
-/* ===== Advanced Panel (1열) ===== */
-.advanced-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  background: var(--color-bg-secondary);
-  border-radius: 8px;
-}
-
-.advanced-panel.collapsed {
-  min-width: 48px;
-  max-width: 48px;
-}
-
-.advanced-panel.collapsed .panel-header {
-  justify-content: center;
-  padding: 8px 4px;
-}
-
-.advanced-panel.collapsed .panel-title,
-.advanced-panel.collapsed .header-right {
-  display: none;
-}
-
-.panel-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: auto;
-}
-
-.toggle-advanced-btn {
-  padding: 4px 8px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.toggle-advanced-btn:hover {
-  background: var(--color-bg-hover);
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  flex: 1;
-}
-
-.advanced-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  background: var(--color-bg-secondary);
-}
-
-.form-group {
-  margin-bottom: 12px;
-}
-
-.form-group.horizontal {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-group.horizontal label {
-  flex: 0 0 80px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-.form-group.horizontal input[type="number"],
-.form-group.horizontal input[type="range"],
-.form-group.horizontal select {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
-
-.form-group.horizontal input[type="range"] {
-  padding: 0;
-}
-
-.volume-display {
-  flex: 0 0 40px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  text-align: right;
-}
-
-.checkbox-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.checkbox-inline input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.seed-random-btn {
-  padding: 6px 10px;
-  background: var(--color-success);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.seed-random-btn:hover:not(:disabled) {
-  background: var(--color-success-dark);
-  transform: scale(1.05);
-}
-
-.seed-random-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.section-divider {
-  height: 1px;
-  background: var(--color-border-primary);
-  margin: 16px 0;
-}
-
-/* ADetailer 그룹 */
-.adetailer-group {
-  padding-top: 0;
-  margin-top: 0;
-}
-
-.adetailer-group .group-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
-}
-
-.ad-row {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.ad-row:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.ad-header-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.reorder-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.reorder-btns button {
-  width: 18px;
-  height: 14px;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-secondary);
-  font-size: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.reorder-btns button:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-.reorder-btns button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.ad-details {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  padding-left: 24px;
-}
-
-.ad-details select {
-  flex: 1;
-  padding: 4px 6px;
-  font-size: 11px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-}
-
-.prompt-edit-btn {
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-bg-tertiary);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.prompt-edit-btn:hover:not(:disabled) {
-  background: var(--color-bg-hover);
-}
-
-/* Panel Footer */
-.panel-footer {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--color-bg-elevated);
-  border-top: 1px solid var(--color-border-primary);
-}
-
-.footer-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-
-.footer-btn {
-  padding: 4px 10px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.footer-btn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-}
-
-.footer-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ===== 2열: 프롬프트 패널 ===== */
-.prompt-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--color-bg-secondary);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.prompt-panel-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.prompt-panel-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.header-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.generate-btn {
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  padding: 8px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.generate-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
-}
-
-.generate-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: var(--color-text-secondary);
-}
-
-.progress-container {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  background: var(--color-bg-elevated);
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.progress-bar {
-  height: 8px;
-  background: var(--color-bg-tertiary);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--gradient-primary);
-  transition: width 0.3s ease;
-  border-radius: 4px;
-}
-
-.progress-text {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.progress-state {
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.progress-percent {
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.generation-controls {
-  flex-shrink: 0;
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  background: #fef3c7;
-  border-bottom: 1px solid #fde68a;
-}
-
-.control-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.interrupt-btn {
-  background: var(--color-error);
-  color: var(--color-text-inverse);
-}
-
-.interrupt-btn:hover {
-  background: var(--color-error-dark);
-  transform: scale(1.02);
-}
-
-.skip-btn {
-  background: var(--color-info);
-  color: var(--color-text-inverse);
-}
-
-.skip-btn:hover {
-  background: var(--color-info-dark);
-  transform: scale(1.02);
-}
-
-.slot-section {
-  flex-shrink: 0;
-  padding: 12px 16px;
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.slot-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.slot-buttons {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-}
-
-.tool-buttons {
-  display: flex;
-  gap: 6px;
-}
-
-.tool-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--color-border-primary);
-  border-radius: 8px;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tool-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-tertiary);
-}
-
-.tool-btn.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.bookmark-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.preset-btn.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.slot-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 12px;
-  border: 2px solid var(--color-border-primary);
-  border-radius: 8px;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.slot-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-tertiary);
-}
-
-.slot-btn.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.slot-btn.filled:not(.active) {
-  border-color: var(--color-success);
-}
-
-.slot-btn .dot {
-  font-size: 8px;
-  color: var(--color-success);
-}
-
-.slot-btn.active .dot {
-  color: var(--color-text-inverse);
-}
-
-.prompt-section {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ===== 3열: 이미지 영역 ===== */
-.image-area {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 16px;
-  overflow: hidden;
-}
-
-/* 이미지 컬럼 (입력 + 출력 상하 분할) */
-.image-column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow: hidden;
-  min-height: 0;
-}
+/* ===== Img2Img 고유 스타일 ===== */
 
 /* 입력 이미지 패널 (상단) */
 .input-image-panel {
@@ -1555,17 +877,13 @@ watch(
   min-height: 150px;
 }
 
-/* 출력 이미지 패널 (하단) */
-.output-image-panel {
+/* 출력 이미지 패널 - Img2Img 전용 오버라이드 */
+.img2img-view .output-image-panel {
   flex: 1;
   min-height: 0;
 }
 
-/* 히스토리 패널 접힘 시 */
-.image-area.history-collapsed {
-  grid-template-columns: 1fr 40px;
-}
-
+/* 히스토리 패널 접힘 시 추가 스타일 */
 .image-area.history-collapsed .history-panel {
   width: 40px;
 }
@@ -1602,7 +920,7 @@ watch(
   display: none;
 }
 
-/* History */
+/* History Item - Img2Img 전용 */
 .history-item {
   position: relative;
   aspect-ratio: 1;
@@ -1637,93 +955,5 @@ watch(
   padding: 2px 4px;
   border-radius: 3px;
   font-weight: 600;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: var(--color-bg-secondary);
-  border-radius: 12px;
-  max-width: 800px;
-  max-height: 80vh;
-  width: 90%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: var(--color-text-primary);
-}
-
-.close-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.history-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
-
-.selector-item {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 3px solid transparent;
-  transition: all 0.2s;
-}
-
-.selector-item:hover {
-  border-color: var(--color-primary);
-  transform: scale(1.02);
-}
-
-.selector-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: var(--color-text-secondary);
 }
 </style>

@@ -1,20 +1,21 @@
 import { ref, watch, onMounted } from 'vue'
 
-const STORAGE_KEYS = {
-  historyPanel: 'txt2img_showHistoryPanel',
-  historyContentCollapsed: 'txt2img_isHistoryContentCollapsed',
-  imagePanel: 'txt2img_showImagePanel',
-  advancedPanel: 'txt2img_showAdvancedPanel',
-  paramsPanel: 'txt2img_showParamsPanel'
-}
-
 /**
  * 패널 가시성 관리 composable
  * 패널 상태를 localStorage에 저장하고 복원
  *
+ * @param {string} prefix - localStorage 키 접두사 (기본값: 'txt2img')
  * @returns {Object} 패널 가시성 관련 상태와 함수들
  */
-export function usePanelVisibility() {
+export function usePanelVisibility(prefix = 'txt2img') {
+  // 동적으로 Storage 키 생성
+  const STORAGE_KEYS = {
+    historyPanel: `${prefix}_showHistoryPanel`,
+    historyContentCollapsed: `${prefix}_isHistoryContentCollapsed`,
+    imagePanel: `${prefix}_showImagePanel`,
+    advancedPanel: `${prefix}_showAdvancedPanel`,
+    paramsPanel: `${prefix}_showParamsPanel`
+  }
   // Panel visibility refs
   const showHistoryPanel = ref(true)
   const isHistoryContentCollapsed = ref(false)
