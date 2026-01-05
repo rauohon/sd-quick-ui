@@ -715,7 +715,9 @@ export default {
     upscaleHint: '출력 크기: {width} × {height}',
     upscaling: '업스케일 중...',
     upscaleComplete: '업스케일 완료',
-    upscaleFailed: '업스케일 실패'
+    upscaleFailed: '업스케일 실패',
+    // Pipeline
+    imageReceived: '이미지 전달: {from} → img2img'
   },
 
   // Inpaint
@@ -804,7 +806,9 @@ export default {
     fillNoise: '노이즈',
     // 생성 관련
     preparingOutpaint: 'Outpaint 이미지 준비 중...',
-    preparationFailed: '이미지 준비에 실패했습니다'
+    preparationFailed: '이미지 준비에 실패했습니다',
+    // Pipeline
+    imageReceived: '이미지 전달: {from} → inpaint'
   },
 
   // ControlNet

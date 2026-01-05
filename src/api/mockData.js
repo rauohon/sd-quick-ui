@@ -5,7 +5,7 @@
 
 /**
  * Canvas로 Mock 이미지 생성
- * 요청된 크기의 랜덤 컬러 그라디언트
+ * 요청된 크기의 랜덤 컬러 그라디언트 + MOCK 텍스트 + 생성 시간
  * @param {number} width - 이미지 너비 (기본값: 512)
  * @param {number} height - 이미지 높이 (기본값: 512)
  */
@@ -36,12 +36,26 @@ function generateMockImage(width = 512, height = 512) {
   ctx.fillRect(0, 0, width, height)
 
   // "MOCK" 텍스트 추가 (크기에 맞게 조정)
-  const fontSize = Math.min(width, height) * 0.15
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'
+  const fontSize = Math.min(width, height) * 0.22
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
   ctx.font = `bold ${fontSize}px Arial`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('MOCK', width / 2, height / 2)
+  ctx.fillText('MOCK', width / 2, height * 0.25)
+
+  // 생성 시간 추가
+  const now = new Date()
+  const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const timeFontSize = Math.min(width, height) * 0.12
+  ctx.font = `bold ${timeFontSize}px Arial`
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+  ctx.fillText(timeStr, width / 2, height * 0.45)
+
+  // 이미지 크기 표시
+  const sizeFontSize = Math.min(width, height) * 0.08
+  ctx.font = `${sizeFontSize}px Arial`
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+  ctx.fillText(`${width} × ${height}`, width / 2, height * 0.62)
 
   // Base64로 변환 (prefix 제거)
   const dataUrl = canvas.toDataURL('image/png')

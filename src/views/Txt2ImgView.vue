@@ -44,6 +44,7 @@ import { usePngInfo } from '../composables/usePngInfo'
 import { useAspectRatio } from '../composables/useAspectRatio'
 import { useParamsApplication } from '../composables/useParamsApplication'
 import { useHistory } from '../composables/useHistory'
+import { usePipelineImage } from '../composables/usePipelineImage'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useModals } from '../composables/useModals'
@@ -87,7 +88,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['updateCurrentImage'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
 
 // Constants (expose to template)
 const NOTIFICATION_TYPES_CONST = NOTIFICATION_TYPES
@@ -243,6 +244,20 @@ const negativePromptChanged = computed(() => {
 // Use composables
 const localStorage = useLocalStorage()
 const indexedDB = useIndexedDB()
+
+// Pipeline Image
+const { sendToImg2Img, sendToInpaint } = usePipelineImage()
+
+// Send to handlers
+function handleSendToImg2Img(item) {
+  sendToImg2Img(item.image, 'txt2img')
+  emit('switch-tab', 'img2img')
+}
+
+function handleSendToInpaint(item) {
+  sendToInpaint(item.image, 'txt2img')
+  emit('switch-tab', 'inpaint')
+}
 
 const slotManagement = useSlotManagement(defaultSettings, SETTINGS_REFS, adetailers, props.showToast)
 const {
@@ -862,11 +877,14 @@ onUnmounted(() => {
           :index="item._virtualIndex"
           :is-selection-mode="isSelectionMode"
           :is-selected="selectedImages.has(item.id)"
+          current-tab="txt2img"
           @toggle-favorite="toggleImageFavorite"
           @delete="deleteImage"
           @load-params="loadParamsFromHistory"
           @toggle-selection="toggleImageSelection"
           @compare-image="handleCompareImage"
+          @send-to-img2img="handleSendToImg2Img"
+          @send-to-inpaint="handleSendToInpaint"
         />
       </HistoryPanel>
     </div>

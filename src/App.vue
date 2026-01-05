@@ -197,6 +197,7 @@ onUnmounted(() => {
         :isDark="isDark"
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
+        @switch-tab="setActiveTab"
       />
 
       <!-- img2img -->
@@ -208,6 +209,7 @@ onUnmounted(() => {
         :isDark="isDark"
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
+        @switch-tab="setActiveTab"
       />
 
       <!-- inpaint -->
@@ -219,6 +221,7 @@ onUnmounted(() => {
         :isDark="isDark"
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
+        @switch-tab="setActiveTab"
       />
 
       <!-- workflow (placeholder) -->

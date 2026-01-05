@@ -715,7 +715,9 @@ export default {
     upscaleHint: 'Output size: {width} × {height}',
     upscaling: 'Upscaling...',
     upscaleComplete: 'Upscale complete',
-    upscaleFailed: 'Upscale failed'
+    upscaleFailed: 'Upscale failed',
+    // Pipeline
+    imageReceived: 'Image transfer: {from} → img2img'
   },
 
   // Inpaint
@@ -804,7 +806,9 @@ export default {
     fillNoise: 'Noise',
     // Generation related
     preparingOutpaint: 'Preparing outpaint image...',
-    preparationFailed: 'Failed to prepare image'
+    preparationFailed: 'Failed to prepare image',
+    // Pipeline
+    imageReceived: 'Image transfer: {from} → inpaint'
   },
 
   // ControlNet

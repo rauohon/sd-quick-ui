@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInpaintGeneration } from '../composables/useInpaintGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
+import { usePipelineImage } from '../composables/usePipelineImage'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
@@ -61,7 +62,7 @@ const props = defineProps({
   toggleTheme: { type: Function, required: true }
 })
 
-const emit = defineEmits(['updateCurrentImage'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
 
 // ===== 기본 파라미터 =====
 const prompt = ref('')
@@ -261,6 +262,15 @@ const {
 // IndexedDB & localStorage
 const indexedDB = useIndexedDB()
 const localStorage = useLocalStorage()
+
+// ===== Pipeline Image =====
+const { consumePendingImage, hasPendingImageFor, sendToImg2Img } = usePipelineImage()
+
+// Send to handlers
+function handleSendToImg2Img(item) {
+  sendToImg2Img(item.image, 'inpaint')
+  emit('switch-tab', 'img2img')
+}
 
 // ===== Slot Management =====
 const INPAINT_SLOT_KEY = 'inpaint-slots'
@@ -768,6 +778,24 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Failed to load slots from IndexedDB:', error)
+  }
+
+  // Check for pending pipeline image
+  if (hasPendingImageFor('inpaint')) {
+    const pending = consumePendingImage()
+    if (pending) {
+      initImage.value = pending.image
+      // base64에서 포맷 감지
+      const formatMatch = pending.image.match(/^data:image\/(\w+);/)
+      initImageFormat.value = formatMatch ? formatMatch[1].toUpperCase() : 'WEBP'
+      const img = new Image()
+      img.onload = () => {
+        initImageWidth.value = img.width
+        initImageHeight.value = img.height
+      }
+      img.src = pending.image
+      props.showToast(t('inpaint.imageReceived', { from: pending.sourceTab || 'unknown' }), 'success')
+    }
   }
 })
 
@@ -1312,11 +1340,13 @@ watch(
           :index="item._virtualIndex"
           :is-selection-mode="isSelectionMode"
           :is-selected="selectedImages.has(item.id)"
+          current-tab="inpaint"
           @toggle-favorite="toggleImageFavorite"
           @delete="deleteImage"
           @load-params="loadParamsFromHistory"
           @toggle-selection="toggleImageSelection"
           @compare-image="handleCompareImage"
+          @send-to-img2img="handleSendToImg2Img"
         />
       </HistoryPanel>
     </div>

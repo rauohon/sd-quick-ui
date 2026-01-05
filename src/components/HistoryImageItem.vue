@@ -34,6 +34,22 @@
       <button class="load-params-btn" @click.stop="$emit('load-params', item)" title="Load these settings">
         🔄
       </button>
+      <button
+        v-if="currentTab !== 'img2img'"
+        class="send-to-btn"
+        @click.stop="$emit('send-to-img2img', item)"
+        title="Send to img2img"
+      >
+        📤
+      </button>
+      <button
+        v-if="currentTab !== 'inpaint'"
+        class="send-to-btn"
+        @click.stop="$emit('send-to-inpaint', item)"
+        title="Send to Inpaint"
+      >
+        🖌️
+      </button>
       <button class="delete-btn" @click.stop="$emit('delete', item, index)" title="이미지 삭제">
         🗑️
       </button>
@@ -61,10 +77,14 @@ defineProps({
   isSelected: {
     type: Boolean,
     default: false
+  },
+  currentTab: {
+    type: String,
+    default: 'txt2img'
   }
 })
 
-defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'compare-image'])
+defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'compare-image', 'send-to-img2img', 'send-to-inpaint'])
 </script>
 
 <style scoped>
@@ -75,5 +95,20 @@ defineEmits(['toggle-favorite', 'delete', 'load-params', 'toggle-selection', 'co
 
 .history-item.is-selected img {
   opacity: 0.7;
+}
+
+.send-to-btn {
+  background: rgba(79, 70, 229, 0.9);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 5px;
+  transition: all 0.2s;
+}
+
+.send-to-btn:hover {
+  background: rgba(99, 102, 241, 1);
+  transform: scale(1.1);
 }
 </style>

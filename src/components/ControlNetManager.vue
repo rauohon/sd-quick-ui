@@ -127,6 +127,7 @@ function handleDragOver(e) {
 
 function handleDrop(e, unitIndex) {
   e.preventDefault()
+  e.stopPropagation() // Prevent global PNG info handler
   isDragging.value[unitIndex] = false
   const files = e.dataTransfer?.files
   if (files && files.length > 0) {

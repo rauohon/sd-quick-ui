@@ -56,6 +56,7 @@ function handleFileSelect(event) {
 
 function handleDrop(event) {
   event.preventDefault()
+  event.stopPropagation() // Prevent global PNG info handler
   isDragging.value = false
 
   const file = event.dataTransfer?.files?.[0]
