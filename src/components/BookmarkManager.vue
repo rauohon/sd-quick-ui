@@ -555,18 +555,21 @@ onMounted(async () => {
 .close-btn {
   width: 32px;
   height: 32px;
-  border: none;
-  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--color-text-inverse);
+  background: transparent;
   color: var(--color-text-inverse);
-  border-radius: 50%;
+  border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .import-btn,
@@ -574,20 +577,22 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   color: var(--color-text-inverse);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  border: 2px solid var(--color-text-inverse);
+  border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .import-btn:hover,
 .export-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Search */

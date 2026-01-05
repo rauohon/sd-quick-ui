@@ -157,7 +157,7 @@ defineExpose({
 
 <style scoped>
 .system-settings-section {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-primary);
   padding: 8px 12px;
   background: var(--color-bg-secondary);
 }
@@ -178,7 +178,7 @@ defineExpose({
 .system-settings-title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .toggle-icon {
@@ -209,7 +209,7 @@ defineExpose({
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -221,12 +221,17 @@ defineExpose({
 .notification-select {
   padding: 6px 8px;
   font-size: 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   cursor: pointer;
   width: 100%;
+}
+
+.notification-select option {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .notification-select:disabled {
@@ -254,7 +259,7 @@ defineExpose({
 }
 
 .setting-divider {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-primary);
   margin: 4px 0;
 }
 
@@ -267,10 +272,10 @@ defineExpose({
   flex: 1;
   padding: 6px 8px;
   font-size: 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.2s;
 }

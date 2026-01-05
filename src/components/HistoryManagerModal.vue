@@ -704,6 +704,9 @@ function highlightText(text) {
   font-weight: bold;
   color: var(--color-text-primary);
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
@@ -733,19 +736,6 @@ function highlightText(text) {
   color: #4f46e5;
 }
 
-.select-btn {
-  padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-
-.select-btn:hover {
-  background: #e5e7eb;
-}
 
 .selection-buttons {
   display: flex;
