@@ -174,11 +174,13 @@ export function useControlNet() {
     return units
       .filter(unit => unit.enabled && unit.image)
       .map(unit => {
+        // 변환된 이미지가 있으면 사용, 없으면 원본 사용
+        const imageToUse = unit.transformedImage || unit.image
         const args = {
           enabled: true,
           module: unit.module || 'none',
           model: unit.model || 'None',
-          image: unit.image, // Base64
+          image: imageToUse, // Base64 (transformed or original)
           weight: unit.weight,
           resize_mode: RESIZE_MODE_STRINGS[unit.resizeMode] || 'Crop and Resize',
           control_mode: CONTROL_MODE_STRINGS[unit.controlMode] || 'Balanced',
@@ -387,6 +389,7 @@ export function useControlNetUnits(tabId = 'txt2img', maxUnits = CONTROLNET_MAX_
     if (index >= 0 && index < units.value.length) {
       units.value[index].image = null
       units.value[index].preprocessedImage = null
+      units.value[index].transformedImage = null
     }
   }
 

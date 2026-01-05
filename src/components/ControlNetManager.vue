@@ -3,7 +3,7 @@
  * ControlNetManager.vue - ControlNet 관리 패널 (BookmarkManager 스타일)
  * 넓은 공간에서 ControlNet 유닛을 편리하게 관리
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useControlNet, useControlNetUnits } from '../composables/useControlNet'
 import {
@@ -182,7 +182,9 @@ function loadImageFile(file, unitIndex) {
   const reader = new FileReader()
   reader.onload = (e) => {
     setUnitImage(unitIndex, e.target.result)
-    updateUnit(unitIndex, { enabled: true })
+    updateUnit(unitIndex, { enabled: true, transformedImage: null })
+    // 새 이미지 로드 시 변환 상태 리셋
+    resetTransform(unitIndex)
     expandedUnit.value = unitIndex
     props.showToast?.(t('controlnet.imageLoaded'), 'success')
   }
@@ -263,6 +265,32 @@ function stopImageDrag(unitIndex) {
   isDraggingImage.value[unitIndex] = false
 }
 
+// 디바운스된 변환 이미지 저장 함수
+let transformSaveTimeout = null
+async function saveTransformedImages() {
+  for (let i = 0; i < units.value.length; i++) {
+    const unit = units.value[i]
+    const transform = imageTransform.value[i]
+
+    // 이미지가 있고 변환이 적용된 경우에만 저장
+    if (unit.image && (transform.scale !== 1 || transform.offsetX !== 0 || transform.offsetY !== 0)) {
+      const transformed = await getTransformedImage(i)
+      updateUnit(i, { transformedImage: transformed })
+    } else if (unit.image) {
+      // 변환이 없으면 transformedImage를 null로 설정 (원본 사용)
+      updateUnit(i, { transformedImage: null })
+    }
+  }
+}
+
+// 변환 변경 시 자동으로 transformedImage 저장 (디바운스)
+watch(imageTransform, () => {
+  if (transformSaveTimeout) {
+    clearTimeout(transformSaveTimeout)
+  }
+  transformSaveTimeout = setTimeout(saveTransformedImages, 300)
+}, { deep: true })
+
 // 변환된 이미지를 canvas로 생성
 function getTransformedImage(unitIndex) {
   return new Promise((resolve) => {
@@ -282,12 +310,21 @@ function getTransformedImage(unitIndex) {
       canvas.height = img.height
       const ctx = canvas.getContext('2d')
 
+      // 미리보기 영역 크기 (CSS에서 약 200px)
+      const previewSize = 200
+      // 원본 이미지와 미리보기의 비율 계산
+      const ratio = Math.max(img.width, img.height) / previewSize
+
       // 캔버스 중앙 기준으로 변환 적용
       ctx.fillStyle = '#000000'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       ctx.save()
-      ctx.translate(canvas.width / 2 + transform.offsetX, canvas.height / 2 + transform.offsetY)
+      // 오프셋에 비율 적용
+      ctx.translate(
+        canvas.width / 2 + transform.offsetX * ratio,
+        canvas.height / 2 + transform.offsetY * ratio
+      )
       ctx.scale(transform.scale, transform.scale)
       ctx.drawImage(img, -img.width / 2, -img.height / 2)
       ctx.restore()
@@ -384,6 +421,12 @@ function findMatchingModel(moduleName) {
   return models.value.find(m => m.toLowerCase().includes(modulePrefix))
 }
 
+// 유닛 리셋 (변환 상태도 함께 리셋)
+function handleResetUnit(index) {
+  resetUnit(index)
+  resetTransform(index)
+}
+
 // 유닛 상태 요약
 function getUnitSummary(unit, index) {
   if (!unit.enabled) return t('controlnet.disabled')
@@ -461,7 +504,7 @@ function close() {
             </label>
             <button
               class="reset-btn"
-              @click.stop="resetUnit(index)"
+              @click.stop="handleResetUnit(index)"
               :disabled="isGenerating"
               :title="t('controlnet.reset')"
             >
