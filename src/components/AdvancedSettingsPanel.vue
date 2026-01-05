@@ -222,8 +222,10 @@ import { useI18n } from 'vue-i18n'
 import ApiStatusIndicator from './ApiStatusIndicator.vue'
 import LastParamsSection from './LastParamsSection.vue'
 import SystemSettingsSection from './SystemSettingsSection.vue'
+import { useDimensionValidation } from '../composables/useDimensionValidation'
 
 const { t } = useI18n()
+const { validateDimension } = useDimensionValidation()
 
 // State
 
@@ -404,47 +406,15 @@ async function updateDimension(type, value) {
   }
 
   debounceTimers[type] = setTimeout(async () => {
-    const numValue = Number(value)
-    const emitEvent = `update:${type}`
-    const messageKey = `dimensionValidation.${type}Message`
+    const result = await validateDimension(Number(value), {
+      showConfirm: props.showConfirm,
+      showToast: props.showToast,
+      t,
+      type
+    })
 
-    // Check if value is multiple of 8
-    if (numValue % 8 !== 0) {
-      const correctedValue = Math.round(numValue / 8) * 8
-      const setting = localStorage.getItem('sd-auto-correct-dimensions')
-
-      if (setting === null) {
-        // No preference set - ask user
-        const result = await props.showConfirm({
-          title: t('dimensionValidation.title'),
-          message: t(messageKey, { original: numValue, corrected: correctedValue }),
-          confirmText: t('dimensionValidation.applyCorrection'),
-          cancelText: t('dimensionValidation.keepOriginal'),
-          showDontAskAgain: true,
-          dontAskAgainText: t('common.dontAskAgain')
-        })
-
-        if (result.confirmed) {
-          localRef.value = correctedValue
-          emit(emitEvent, correctedValue)
-        } else {
-          emit(emitEvent, numValue)
-        }
-
-        if (result.dontAskAgain) {
-          localStorage.setItem('sd-auto-correct-dimensions', String(result.confirmed))
-          autoCorrectDimensions.value = result.confirmed
-          props.showToast?.(t('dimensionValidation.settingsHint'), 'info')
-        }
-      } else if (setting === 'true') {
-        localRef.value = correctedValue
-        emit(emitEvent, correctedValue)
-      } else {
-        emit(emitEvent, numValue)
-      }
-    } else {
-      emit(emitEvent, numValue)
-    }
+    localRef.value = result.value
+    emit(`update:${type}`, result.value)
   }, 300)
 }
 

@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { useDimensionValidation } from './useDimensionValidation'
 
 /**
  * Outpaint 확장 관리 composable
@@ -12,6 +13,7 @@ import { ref, computed } from 'vue'
 export function useOutpaint(imageRefs, callbacks, t) {
   const { initImage, initImageWidth, initImageHeight } = imageRefs
   const { showToast } = callbacks
+  const { correctTo8Multiple } = useDimensionValidation()
 
   // 확장 상태
   const expandTop = ref(0)
@@ -41,11 +43,6 @@ export function useOutpaint(imageRefs, callbacks, t) {
     expandTop.value > 0 || expandBottom.value > 0 ||
     expandLeft.value > 0 || expandRight.value > 0
   )
-
-  // 8의 배수로 보정
-  function correctTo8Multiple(value) {
-    return Math.round(value / 8) * 8
-  }
 
   // 프리셋 값을 모든 방향에 적용
   function applyPresetToAll(value) {

@@ -14,6 +14,7 @@ import { usePanelVisibility } from '../composables/usePanelVisibility'
 import { useADetailerHandlers } from '../composables/useADetailerHandlers'
 import { useBookmarkPresetHandlers } from '../composables/useBookmarkPresetHandlers'
 import { useVirtualScroll } from '../composables/useVirtualScroll'
+import { useDimensionValidation } from '../composables/useDimensionValidation'
 import {
   SLOT_COUNT,
   ADETAILER_LABELS,
@@ -239,10 +240,10 @@ const {
 
 // 시스템 설정
 const systemSettingsRef = ref(null)
-const autoCorrectEnabled = ref(false)
+const { autoCorrectEnabled, saveAutoCorrectSetting } = useDimensionValidation()
 
 function handleAutoCorrectChange(value) {
-  autoCorrectEnabled.value = value
+  saveAutoCorrectSetting(value)
 }
 
 // API 상태
@@ -655,11 +656,6 @@ async function confirmImageReplace() {
   return true
 }
 
-// 시스템 설정 저장
-function saveAutoCorrectSetting() {
-  window.localStorage.setItem('sd-auto-correct-dimensions', String(autoCorrectEnabled.value))
-}
-
 // 현재 파라미터 (프리셋 저장용)
 const currentParams = computed(() => ({
   steps: steps.value,
@@ -774,12 +770,6 @@ onMounted(async () => {
   // Load bookmarks and presets
   loadBookmarks()
   loadPresets()
-
-  // Load auto-correct setting
-  const savedAutoCorrect = window.localStorage.getItem('sd-auto-correct-dimensions')
-  if (savedAutoCorrect === 'true') {
-    autoCorrectEnabled.value = true
-  }
 
   // Load existing images from IndexedDB
   try {

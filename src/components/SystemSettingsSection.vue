@@ -76,7 +76,7 @@
           <label class="setting-label checkbox-label">
             <input
               type="checkbox"
-              v-model="autoCorrectDimensions"
+              v-model="autoCorrectEnabled"
               @change="saveAutoCorrectSetting"
             >
             <span>{{ t('dimensionValidation.autoCorrect') }}</span>
@@ -88,11 +88,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from './LanguageSwitcher.vue'
+import { useDimensionValidation } from '../composables/useDimensionValidation'
 
 const { t } = useI18n()
+const { autoCorrectEnabled, saveAutoCorrectSetting: saveSetting } = useDimensionValidation()
 
 const props = defineProps({
   isDark: {
@@ -121,37 +123,16 @@ const emit = defineEmits(['update:autoCorrect', 'update:notificationType', 'upda
 
 // State
 const isExpanded = ref(false)
-const autoCorrectDimensions = ref(false)
 
-// localStorage key
-const STORAGE_KEY = 'sd-auto-correct-dimensions'
-
-// Get current auto-correct setting (can be called from parent)
-function getAutoCorrectSetting() {
-  return autoCorrectDimensions.value
-}
-
-// Save auto-correct setting to localStorage
+// Save auto-correct setting (uses composable)
 function saveAutoCorrectSetting() {
-  localStorage.setItem(STORAGE_KEY, String(autoCorrectDimensions.value))
-  emit('update:autoCorrect', autoCorrectDimensions.value)
+  saveSetting(autoCorrectEnabled.value)
+  emit('update:autoCorrect', autoCorrectEnabled.value)
 }
-
-// Load auto-correct setting from localStorage on mount
-onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved === 'true') {
-    autoCorrectDimensions.value = true
-  } else if (saved === 'false') {
-    autoCorrectDimensions.value = false
-  }
-  // Emit initial value
-  emit('update:autoCorrect', autoCorrectDimensions.value)
-})
 
 // Expose for parent access
 defineExpose({
-  getAutoCorrectSetting
+  getAutoCorrectSetting: () => autoCorrectEnabled.value
 })
 </script>
 
