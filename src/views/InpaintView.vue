@@ -950,8 +950,60 @@ const currentParams = computed(() => ({
   adetailers: JSON.parse(JSON.stringify(adetailers.value))
 }))
 
+// ===== Keyboard Shortcuts =====
+const BRUSH_SIZE_STEP = 10
+const BRUSH_SIZE_MIN = 1
+const BRUSH_SIZE_MAX = 200
+
+function handleKeyDown(e) {
+  // 입력 필드에서는 단축키 비활성화
+  const isInputField = e.target.tagName === 'INPUT' ||
+                       e.target.tagName === 'TEXTAREA' ||
+                       e.target.isContentEditable
+
+  // Ctrl+I: 마스크 반전 (입력 필드에서도 동작)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+    e.preventDefault()
+    invertMask()
+    return
+  }
+
+  // 입력 필드에서는 나머지 단축키 무시
+  if (isInputField) return
+
+  // B: 브러시 도구
+  if (e.key === 'b' || e.key === 'B') {
+    e.preventDefault()
+    setActiveTool('brush')
+    return
+  }
+
+  // E: 지우개 도구
+  if (e.key === 'e' || e.key === 'E') {
+    e.preventDefault()
+    setActiveTool('eraser')
+    return
+  }
+
+  // [: 브러시 크기 감소
+  if (e.key === '[') {
+    e.preventDefault()
+    brushSize.value = Math.max(BRUSH_SIZE_MIN, brushSize.value - BRUSH_SIZE_STEP)
+    return
+  }
+
+  // ]: 브러시 크기 증가
+  if (e.key === ']') {
+    e.preventDefault()
+    brushSize.value = Math.min(BRUSH_SIZE_MAX, brushSize.value + BRUSH_SIZE_STEP)
+    return
+  }
+}
+
 // ===== Lifecycle =====
 onMounted(async () => {
+  // 키보드 단축키 이벤트 등록
+  window.addEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 등록
   window.addEventListener('paste', handlePaste)
 
@@ -1001,6 +1053,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // 키보드 단축키 이벤트 해제
+  window.removeEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 해제
   window.removeEventListener('paste', handlePaste)
 })
