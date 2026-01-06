@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
@@ -110,6 +110,18 @@ function addStep(type) {
   showAddStepDropdown.value = false
 }
 
+function toggleAddStepDropdown() {
+  showAddStepDropdown.value = !showAddStepDropdown.value
+}
+
+// Close dropdown on outside click
+function handleOutsideClick(event) {
+  const dropdown = document.querySelector('.add-step-container')
+  if (dropdown && !dropdown.contains(event.target)) {
+    showAddStepDropdown.value = false
+  }
+}
+
 // Get step status emoji
 function getStepStatusEmoji(status) {
   switch (status) {
@@ -138,6 +150,13 @@ onMounted(async () => {
   if (apiConnected.value) {
     await loadModels()
   }
+
+  // Add outside click listener for dropdown
+  document.addEventListener('click', handleOutsideClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleOutsideClick)
 })
 </script>
 
@@ -222,11 +241,40 @@ onMounted(async () => {
 
     <!-- Center Panel: Steps Editor -->
     <div class="steps-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">{{ t('workflow.pipelineSteps') }}</h3>
-        <span class="step-count" v-if="pipeline.hasSteps.value">
-          {{ pipeline.steps.value.length }} {{ t('workflow.stepsCount') }}
-        </span>
+      <div class="panel-header steps-header">
+        <div class="header-left">
+          <h3 class="panel-title">{{ t('workflow.pipelineSteps') }}</h3>
+          <span class="step-count" v-if="pipeline.hasSteps.value">
+            {{ pipeline.steps.value.length }} {{ t('workflow.stepsCount') }}
+          </span>
+        </div>
+        <div class="header-controls">
+          <button
+            @click="clearPipeline"
+            class="header-btn clear-btn"
+            :disabled="pipeline.isRunning.value || !pipeline.hasSteps.value"
+            :title="t('workflow.clear')"
+          >
+            {{ t('workflow.clear') }}
+          </button>
+          <button
+            v-if="pipeline.isRunning.value"
+            @click="stopPipeline"
+            class="header-btn stop-btn"
+            :title="t('workflow.stop')"
+          >
+            {{ t('workflow.stop') }}
+          </button>
+          <button
+            v-else
+            @click="startPipeline"
+            class="header-btn start-btn"
+            :disabled="!pipeline.hasSteps.value"
+            :title="t('workflow.start')"
+          >
+            ▶ {{ t('workflow.start') }}
+          </button>
+        </div>
       </div>
 
       <div class="panel-content">
@@ -321,30 +369,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Footer: Controls -->
-      <div class="panel-footer controls-footer">
-        <button
-          @click="startPipeline"
-          class="control-btn start-btn"
-          :disabled="pipeline.isRunning.value || !pipeline.hasSteps.value"
-        >
-          {{ pipeline.isRunning.value ? t('workflow.running') : t('workflow.start') }}
-        </button>
-        <button
-          @click="stopPipeline"
-          class="control-btn stop-btn"
-          :disabled="!pipeline.isRunning.value"
-        >
-          {{ t('workflow.stop') }}
-        </button>
-        <button
-          @click="clearPipeline"
-          class="control-btn clear-btn"
-          :disabled="pipeline.isRunning.value"
-        >
-          {{ t('workflow.clear') }}
-        </button>
-      </div>
     </div>
 
     <!-- Right Panel: Results Preview -->
@@ -594,9 +618,69 @@ onMounted(async () => {
   border-radius: 6px;
 }
 
+/* Steps Panel Header */
+.steps-header {
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.header-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.header-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.header-btn.start-btn {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.header-btn.start-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.header-btn.stop-btn {
+  background: var(--color-error);
+  color: white;
+}
+
+.header-btn.stop-btn:hover {
+  opacity: 0.9;
+}
+
+.header-btn.clear-btn {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+.header-btn.clear-btn:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
 /* Steps Panel */
 .step-count {
-  margin-left: auto;
   font-size: 12px;
   color: var(--color-text-secondary);
   background: var(--color-primary-light);
@@ -616,7 +700,7 @@ onMounted(async () => {
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border-primary);
   border-radius: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
 .step-card.step-running {
@@ -711,17 +795,26 @@ onMounted(async () => {
   color: var(--color-error);
 }
 
+.step-card:last-child {
+  margin-bottom: 0;
+}
+
 .step-connector {
   position: absolute;
-  bottom: -20px;
+  bottom: -18px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .connector-arrow {
-  font-size: 16px;
-  color: var(--color-text-tertiary);
+  font-size: 20px;
+  color: var(--color-success);
+  line-height: 1;
+  text-shadow: 0 0 4px var(--color-success);
 }
 
 /* Empty State */
@@ -795,56 +888,6 @@ onMounted(async () => {
 }
 
 .dropdown-item:hover {
-  background: var(--color-bg-hover);
-}
-
-/* Controls Footer */
-.controls-footer {
-  display: flex;
-  gap: 8px;
-}
-
-.control-btn {
-  flex: 1;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.control-btn.start-btn {
-  background: var(--gradient-primary);
-  color: white;
-}
-
-.control-btn.start-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.control-btn.stop-btn {
-  background: var(--color-error);
-  color: white;
-}
-
-.control-btn.stop-btn:hover:not(:disabled) {
-  background: var(--color-error-dark);
-}
-
-.control-btn.clear-btn {
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border-primary);
-  color: var(--color-text-primary);
-}
-
-.control-btn.clear-btn:hover:not(:disabled) {
   background: var(--color-bg-hover);
 }
 
