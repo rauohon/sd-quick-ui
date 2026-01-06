@@ -1,9 +1,11 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
+import { useNotificationSettings } from '../composables/useNotificationSettings'
+import SystemSettingsSection from '../components/SystemSettingsSection.vue'
 
 const { t } = useI18n()
 
@@ -13,6 +15,9 @@ const props = defineProps({
   isDark: { type: Boolean, default: false },
   toggleTheme: { type: Function, required: true }
 })
+
+// Notification settings (shared singleton)
+const { notificationType, notificationVolume } = useNotificationSettings()
 
 // Pipeline
 const pipeline = usePipeline()
@@ -24,12 +29,31 @@ const { apiConnected, checkApiStatus } = useApiStatus(props.showToast)
 const selectedModel = ref('')
 const { availableModels, loadModels } = useModelLoader(selectedModel, props.showToast)
 
-// Panel collapse state
-const isSettingsCollapsed = ref(false)
+// Panel collapse state (persisted in localStorage)
+const SETTINGS_COLLAPSED_KEY = 'workflow-settings-collapsed'
+const isSettingsCollapsed = ref(localStorage.getItem(SETTINGS_COLLAPSED_KEY) === 'true')
+
+// Watch and persist collapse state
+watch(isSettingsCollapsed, (collapsed) => {
+  localStorage.setItem(SETTINGS_COLLAPSED_KEY, String(collapsed))
+})
 
 // Toggle settings panel
 function toggleSettings() {
   isSettingsCollapsed.value = !isSettingsCollapsed.value
+}
+
+// API checking state
+const apiChecking = ref(false)
+
+// Check API connection
+async function checkApi() {
+  apiChecking.value = true
+  await checkApiStatus()
+  if (apiConnected.value) {
+    await loadModels()
+  }
+  apiChecking.value = false
 }
 
 // Pipeline template functions
@@ -169,10 +193,29 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Footer: Theme/Language -->
-      <div class="panel-footer" v-if="!isSettingsCollapsed">
-        <button class="theme-toggle-btn" @click="toggleTheme">
-          {{ isDark ? '☀️' : '🌙' }}
+      <!-- System Settings -->
+      <SystemSettingsSection
+        v-if="!isSettingsCollapsed"
+        :isDark="isDark"
+        :toggleTheme="toggleTheme"
+        :notificationType="notificationType"
+        :notificationVolume="notificationVolume"
+        :isGenerating="pipeline.isRunning.value"
+        @update:notificationType="notificationType = $event"
+        @update:notificationVolume="notificationVolume = $event"
+      />
+
+      <!-- Panel Footer -->
+      <div v-if="!isSettingsCollapsed" class="panel-footer">
+        <span class="footer-title">⚡ SD Quick UI</span>
+        <button
+          v-if="!apiConnected"
+          class="footer-btn"
+          @click="checkApi"
+          :disabled="apiChecking"
+          :title="t('api.checkConnection')"
+        >
+          {{ apiChecking ? t('advancedPanel.checking') : t('advancedPanel.reconnect') }}
         </button>
       </div>
     </div>
@@ -402,10 +445,39 @@ onMounted(async () => {
 }
 
 .panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
   background: var(--color-bg-elevated);
   border-top: 1px solid var(--color-border-primary);
   flex-shrink: 0;
+}
+
+.footer-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.footer-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.footer-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.footer-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Settings Panel */
@@ -520,22 +592,6 @@ onMounted(async () => {
   font-size: 12px;
   background: var(--color-bg-tertiary);
   border-radius: 6px;
-}
-
-/* Theme Toggle */
-.theme-toggle-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--color-border-primary);
-  background: var(--color-bg-tertiary);
-  border-radius: 6px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.theme-toggle-btn:hover {
-  background: var(--color-bg-hover);
 }
 
 /* Steps Panel */
