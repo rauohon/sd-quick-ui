@@ -53,6 +53,7 @@ import { usePanelVisibility } from '../composables/usePanelVisibility'
 import { useResizer } from '../composables/useResizer'
 import { useGenerationState } from '../composables/useGenerationState'
 import { useBookmarkTracking } from '../composables/useBookmarkTracking'
+import { useParamValidation } from '../composables/useParamValidation'
 
 // i18n
 const { t } = useI18n()
@@ -208,6 +209,24 @@ const {
   initBookmarkTracking
 } = bookmarkTracking
 
+// Parameter validation composable (debounced validation with toast)
+const paramValidation = useParamValidation({
+  refs: {
+    steps,
+    cfgScale,
+    width,
+    height,
+    batchCount,
+    batchSize,
+    hrSteps,
+    denoisingStrength,
+    hrUpscale
+  },
+  showToast: props.showToast,
+  t,
+  debounce: 300
+})
+
 // Initialize composables (after all refs are declared)
 // 1. Aspect Ratio composable
 const aspectRatio = useAspectRatio(width, height, ASPECT_RATIOS)
@@ -324,6 +343,18 @@ function generateImage(overrides = {}) {
     notificationVolume: notificationVolume.value,
     enabledADetailers: toRaw(enabledADetailers.value),
     appliedBookmarkId: appliedBookmarkId.value,
+    // 검증된 파라미터 UI 반영 콜백
+    onParamsValidated: (validated) => {
+      steps.value = validated.steps
+      cfgScale.value = validated.cfgScale
+      width.value = validated.width
+      height.value = validated.height
+      batchCount.value = validated.batchCount
+      batchSize.value = validated.batchSize
+      hrSteps.value = validated.hrSteps
+      denoisingStrength.value = validated.denoisingStrength
+      hrUpscale.value = validated.hrUpscale
+    }
   }
 
   txt2imgEngine.generateImage(params)
@@ -683,6 +714,9 @@ onUnmounted(() => {
     clearTimeout(completionTimeout)
     completionTimeout = null
   }
+
+  // Clean up param validation timers
+  paramValidation.cleanup()
 })
 </script>
 

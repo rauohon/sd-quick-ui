@@ -50,6 +50,7 @@ import { useOutpaint } from '../composables/useOutpaint'
 import { useImageUpload } from '../composables/useImageUpload'
 import { useControlNetUnits } from '../composables/useControlNet'
 import { useNotificationSettings } from '../composables/useNotificationSettings'
+import { useParamValidation } from '../composables/useParamValidation'
 
 const { t } = useI18n()
 
@@ -149,6 +150,23 @@ const adetailers = ref([
 
 // Notification (global settings)
 const { notificationType, notificationVolume } = useNotificationSettings()
+
+// Parameter validation composable (debounced validation with toast)
+const paramValidation = useParamValidation({
+  refs: {
+    steps,
+    cfgScale,
+    width,
+    height,
+    batchCount,
+    batchSize,
+    denoisingStrength,
+    maskBlur
+  },
+  showToast: props.showToast,
+  t,
+  debounce: 300
+})
 
 // UI 상태 (usePanelVisibility composable)
 const {
@@ -380,7 +398,18 @@ function generateImage(overrides = {}) {
     maskBlur: maskBlur.value,
     inpaintingFill: inpaintingFill.value,
     inpaintFullRes: inpaintFullRes.value,
-    inpaintFullResPadding: inpaintFullResPadding.value
+    inpaintFullResPadding: inpaintFullResPadding.value,
+    // 검증된 파라미터 UI 반영 콜백
+    onParamsValidated: (validated) => {
+      steps.value = validated.steps
+      cfgScale.value = validated.cfgScale
+      width.value = validated.width
+      height.value = validated.height
+      batchCount.value = validated.batchCount
+      batchSize.value = validated.batchSize
+      denoisingStrength.value = validated.denoisingStrength
+      maskBlur.value = validated.maskBlur
+    }
   }
 
   inpaintEngine.generateImage(params)
@@ -866,6 +895,9 @@ onUnmounted(() => {
     initImageWidth: initImageWidth.value,
     initImageHeight: initImageHeight.value
   })
+
+  // Clean up param validation timers
+  paramValidation.cleanup()
 })
 
 // Slots → IndexedDB persistence

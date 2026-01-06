@@ -358,7 +358,8 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       enableHr, hrUpscaler, hrSteps, denoisingStrength, hrUpscale,
       adetailers, selectedModel, controlnetUnits,
       notificationType, notificationVolume,
-      enabledADetailers, appliedBookmarkId
+      enabledADetailers, appliedBookmarkId,
+      onParamsValidated
     } = params
 
     // Store for later use
@@ -384,6 +385,19 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     const validatedHrSteps = validateNumber(hrSteps, 0, 150, 10)
     const validatedDenoisingStrength = validateNumber(denoisingStrength, 0, 1, 0.7)
     const validatedHrUpscale = validateNumber(hrUpscale, 1, 4, 2)
+
+    // Notify caller of validated params (for UI update)
+    onParamsValidated?.({
+      steps: validatedSteps,
+      cfgScale: validatedCfgScale,
+      width: validatedWidth,
+      height: validatedHeight,
+      batchCount: validatedBatchCount,
+      batchSize: validatedBatchSize,
+      hrSteps: validatedHrSteps,
+      denoisingStrength: validatedDenoisingStrength,
+      hrUpscale: validatedHrUpscale
+    })
 
     isGenerating.value = true
     generationStartTime.value = Date.now()
@@ -1005,7 +1019,8 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       enabledADetailers,
       // img2img 전용
       initImage, denoisingStrength,
-      enableUpscale, upscaler, upscaleScale
+      enableUpscale, upscaler, upscaleScale,
+      onParamsValidated
     } = params
 
     // 입력 이미지 체크
@@ -1027,6 +1042,17 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     const validatedBatchCount = validateNumber(batchCount, 1, 100, 1)
     const validatedBatchSize = validateNumber(batchSize, 1, 8, 1)
     const validatedDenoisingStrength = validateNumber(denoisingStrength, 0, 1, 0.75)
+
+    // Notify caller of validated params (for UI update)
+    onParamsValidated?.({
+      steps: validatedSteps,
+      cfgScale: validatedCfgScale,
+      width: validatedWidth,
+      height: validatedHeight,
+      batchCount: validatedBatchCount,
+      batchSize: validatedBatchSize,
+      denoisingStrength: validatedDenoisingStrength
+    })
 
     isGenerating.value = true
     generationStartTime.value = Date.now()
@@ -1654,7 +1680,8 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       enabledADetailers,
       // inpaint 전용
       initImage, mask, denoisingStrength,
-      maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding
+      maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding,
+      onParamsValidated
     } = params
 
     // 입력 이미지 체크
@@ -1683,6 +1710,18 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     const validatedBatchSize = validateNumber(batchSize, 1, 8, 1)
     const validatedDenoisingStrength = validateNumber(denoisingStrength, 0, 1, 0.75)
     const validatedMaskBlur = validateNumber(maskBlur, 0, 64, 4)
+
+    // Notify caller of validated params (for UI update)
+    onParamsValidated?.({
+      steps: validatedSteps,
+      cfgScale: validatedCfgScale,
+      width: validatedWidth,
+      height: validatedHeight,
+      batchCount: validatedBatchCount,
+      batchSize: validatedBatchSize,
+      denoisingStrength: validatedDenoisingStrength,
+      maskBlur: validatedMaskBlur
+    })
 
     isGenerating.value = true
     generationStartTime.value = Date.now()

@@ -475,7 +475,8 @@ export default {
     invalidFormat: 'Invalid {field} format',
     tooShort: '{field} is too short',
     tooLong: '{field} is too long',
-    invalidValue: 'Invalid value'
+    invalidValue: 'Invalid value',
+    paramCorrected: '{param}: {from} → {to} (range: {min}~{max})'
   },
 
   // Notification

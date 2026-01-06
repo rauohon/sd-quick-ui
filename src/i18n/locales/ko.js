@@ -475,7 +475,8 @@ export default {
     invalidFormat: '{field}의 형식이 올바르지 않습니다',
     tooShort: '{field}이(가) 너무 짧습니다',
     tooLong: '{field}이(가) 너무 깁니다',
-    invalidValue: '유효하지 않은 값입니다'
+    invalidValue: '유효하지 않은 값입니다',
+    paramCorrected: '{param}: {from} → {to} (범위: {min}~{max})'
   },
 
   // 알림

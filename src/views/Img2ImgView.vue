@@ -45,6 +45,7 @@ import { useADetailerHandlers } from '../composables/useADetailerHandlers'
 import { useBookmarkPresetHandlers } from '../composables/useBookmarkPresetHandlers'
 import { useControlNetUnits } from '../composables/useControlNet'
 import { useNotificationSettings } from '../composables/useNotificationSettings'
+import { useParamValidation } from '../composables/useParamValidation'
 
 const { t } = useI18n()
 
@@ -137,6 +138,22 @@ const {
     batchCount, batchSize, denoisingStrength, adetailers,
     enableUpscale, upscaler, upscaleScale }
 )
+
+// Parameter validation composable (debounced validation with toast)
+const paramValidation = useParamValidation({
+  refs: {
+    steps,
+    cfgScale,
+    width,
+    height,
+    batchCount,
+    batchSize,
+    denoisingStrength
+  },
+  showToast: props.showToast,
+  t,
+  debounce: 300
+})
 
 // ControlNet 매니저 상태
 const showControlNetManager = ref(false)
@@ -296,7 +313,17 @@ function generateImage() {
     denoisingStrength: denoisingStrength.value,
     enableUpscale: enableUpscale.value,
     upscaler: upscaler.value,
-    upscaleScale: upscaleScale.value
+    upscaleScale: upscaleScale.value,
+    // 검증된 파라미터 UI 반영 콜백
+    onParamsValidated: (validated) => {
+      steps.value = validated.steps
+      cfgScale.value = validated.cfgScale
+      width.value = validated.width
+      height.value = validated.height
+      batchCount.value = validated.batchCount
+      batchSize.value = validated.batchSize
+      denoisingStrength.value = validated.denoisingStrength
+    }
   }
 
   img2imgEngine.generateImage(params)
@@ -527,6 +554,9 @@ onUnmounted(() => {
   // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
   slotManagement.cancelDebouncedSlotSave()
   slotManagement.saveCurrentSlot()
+
+  // Clean up param validation timers
+  paramValidation.cleanup()
 })
 
 // Slots → IndexedDB persistence
