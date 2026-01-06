@@ -1,5 +1,7 @@
 # SD Quick UI
 
+[한국어](README-KR.md)
+
 > Vue 3 frontend for Stable Diffusion WebUI (AUTOMATIC1111)
 
 Alternative UI for txt2img, img2img, inpaint/outpaint, ControlNet, and workflow pipelines.
