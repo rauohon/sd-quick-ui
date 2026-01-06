@@ -2,7 +2,36 @@
 
 > 완료된 작업 기록. TODO.md에서 분리하여 토큰 절약.
 
+## 2026-01-06
+
+### 탭 이동 시에도 이미지 생성 유지 (txt2img, img2img, inpaint)
+- `useGenerationEngine.js` composable 생성 (App.vue 레벨)
+- App.vue에서 provide/inject로 엔진 공유
+- 모든 생성 뷰에서 inject로 엔진 사용
+- 탭 전환 시 경고 다이얼로그 제거
+- inpaint: 탭 전환 시 initImage/mask 상태 저장 및 복원
+- MaskCanvas에 `loadMask` 함수 추가
+
 ## 2026-01-05
+
+### 파이프라인 Phase 2: 실행 엔진 & UI
+- `usePipeline.js` composable (데이터 구조 & 실행 엔진)
+- 각 뷰에 `setOnComplete` 콜백 추가
+- Workflow 탭 UI (템플릿 선택, 스텝 표시, 실행/중지/초기화)
+
+### 파이프라인 Phase 1: 이미지 전달 메커니즘
+- `usePipelineImage.js` composable (싱글톤 패턴)
+- 히스토리 패널에 "Send to" 버튼 추가
+- 탭 자동 전환 + 이미지 자동 로드
+
+### ControlNet 연동 구현
+- API: `useControlNet.js` (모델/모듈 조회, 프리프로세서 미리보기)
+- UI: `ControlNetPanel.vue`, `ControlNetManager.vue`
+- 빠른 프리셋: OpenPose, Canny, Depth, Lineart, Tile
+
+### Img2ImgView / InpaintView 리팩토링
+- 4,616줄 → 2,303줄 (50% 절감)
+- 공통 스타일, composables, 컴포넌트 추출
 
 ### Inpaint/Outpainting 기능 구현 완료
 - 1단계: 기본 구조 생성 (InpaintView, useInpaintGeneration)
@@ -98,4 +127,4 @@
 ### Width/Height 8-multiple validation
 
 ---
-Last updated: 2026-01-05
+Last updated: 2026-01-06
