@@ -32,3 +32,4 @@ CLAUDE.md
 
 # Test files
 test-edit-tool.txt
+*.stackdump
