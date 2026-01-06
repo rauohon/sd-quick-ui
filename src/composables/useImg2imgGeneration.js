@@ -7,8 +7,8 @@ import { useIndexedDB } from './useIndexedDB'
 import { useErrorHandler } from './useErrorHandler'
 import { useControlNet } from './useControlNet'
 import { useProgressPolling } from './useProgressPolling'
+import { useGenerationResult } from './useGenerationResult'
 import { cloneADetailers } from '../utils/adetailer'
-import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
 import { validateNumber, sleep } from '../utils/paramValidation'
 import { post } from '../api/client'
@@ -46,6 +46,14 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
     setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
+
+  // Generation result processing (중앙화된 로직 사용)
+  const {
+    processGeneratedImages,
+    updateStateAfterGeneration,
+    sendCompletionNotification,
+    callPipelineCallback
+  } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   const consecutiveErrors = ref(0)
   let isInfiniteLoopRunning = false
@@ -411,85 +419,26 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
           ? Date.now() - generationStartTime.value
           : null
 
-        let actualSeed = usedParams.seed
-        let allSeeds = []
-        let allPrompts = []
-        let allNegativePrompts = []
-        try {
-          const info = JSON.parse(data.info)
-          if (info.seed !== undefined) {
-            actualSeed = info.seed
-          }
-          if (info.all_seeds && Array.isArray(info.all_seeds)) {
-            allSeeds = info.all_seeds
-          }
-          if (info.all_prompts && Array.isArray(info.all_prompts)) {
-            allPrompts = info.all_prompts
-          }
-          if (info.all_negative_prompts && Array.isArray(info.all_negative_prompts)) {
-            allNegativePrompts = info.all_negative_prompts
-          }
-        } catch (e) {
-          // Failed to parse info
-        }
+        // Process generated images using centralized logic
+        const { newImages, totalDeletedCount } = await processGeneratedImages({
+          data,
+          usedParams,
+          expectedImageCount: batchSize.value * batchCount.value,
+          generationDuration,
+          wasInterrupted: wasInterrupted.value,
+          imageType: IMAGE_TYPES.IMG2IMG
+        })
 
-        const newImages = []
-        let totalDeletedCount = 0
-
-        // Only process actual generated images (exclude ControlNet detected_maps)
-        // ControlNet appends preprocessor outputs at the end of images array
-        const expectedImageCount = batchSize.value * batchCount.value
-        const actualImageCount = Math.min(expectedImageCount, data.images.length)
-
-        for (let i = 0; i < actualImageCount; i++) {
-          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
-
-          const paramsWithActualSeed = {
-            ...usedParams,
-            seed: imageSeed, // Override -1 with actual seed
-            actual_seed: imageSeed,
-            prompt: allPrompts[i] || usedParams.prompt,
-            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
-          }
-
-          const newImage = {
-            image: `data:image/png;base64,${data.images[i]}`,
-            info: data.info,
-            params: paramsWithActualSeed,
-            timestamp: new Date().toISOString(),
-            duration: generationDuration,
-            favorite: false,
-            interrupted: wasInterrupted.value,
-            type: IMAGE_TYPES.IMG2IMG // 이미지 타입 저장
-          }
-
-          try {
-            const result = await saveImage(newImage)
-            newImage.id = result.id
-
-            if (result.deletedCount > 0) {
-              totalDeletedCount += result.deletedCount
-            }
-          } catch (error) {
-            storage(error, { context: 'saveImage', silent: true })
-          }
-
-          newImages.push(newImage)
-        }
-
-        if (totalDeletedCount > 0) {
-          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
-        }
-
+        // Update state
         wasInterrupted.value = false
-
-        const combined = [...newImages, ...generatedImages.value]
-        generatedImages.value = combined.slice(0, MAX_IMAGES)
-
-        setFinalImageReceived(true)
-        currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = newImages[0].params
-
+        updateStateAfterGeneration({
+          newImages,
+          totalDeletedCount,
+          generatedImages,
+          currentImage,
+          lastUsedParams,
+          setFinalImageReceived
+        })
         consecutiveErrors.value = 0
 
         // 업스케일 처리
@@ -511,17 +460,14 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
               if (upscaleResponse.ok) {
                 const upscaleData = await upscaleResponse.json()
                 if (upscaleData.image) {
-                  // 업스케일된 이미지로 교체
                   const scale = upscaleScale?.value || 2
                   newImages[i].image = `data:image/png;base64,${upscaleData.image}`
                   newImages[i].params.upscaled = true
                   newImages[i].params.upscaler = upscaler?.value
                   newImages[i].params.upscaleScale = scale
-                  // 업스케일된 사이즈로 업데이트
                   newImages[i].params.width = Math.round(newImages[i].params.width * scale)
                   newImages[i].params.height = Math.round(newImages[i].params.height * scale)
 
-                  // IndexedDB 업데이트
                   try {
                     await saveImage(newImages[i])
                   } catch (err) {
@@ -543,20 +489,14 @@ export function useImg2imgGeneration(params, enabledADetailers, showToast, t) {
           }
         }
 
-        if (!newImages[0].interrupted && params.notificationType?.value) {
-          notifyCompletion(params.notificationType.value, {
-            volume: params.notificationVolume?.value || 0.5,
-            imageInfo: {
-              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
-              count: data.images.length
-            }
-          })
-        }
-
-        // 파이프라인 콜백 호출 (중단되지 않은 경우만)
-        if (!newImages[0].interrupted && onCompleteCallback.value) {
-          onCompleteCallback.value(generatedImages.value[0].image)
-        }
+        // Notifications and callbacks
+        sendCompletionNotification({
+          newImages,
+          imageCount: data.images.length,
+          notificationType: params.notificationType?.value,
+          notificationVolume: params.notificationVolume?.value
+        })
+        callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
       console.error(t('message.error.generationFailed'), error)

@@ -7,8 +7,8 @@ import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
 import { useErrorHandler } from './useErrorHandler'
 import { useProgressPolling } from './useProgressPolling'
+import { useGenerationResult } from './useGenerationResult'
 import { cloneADetailers } from '../utils/adetailer'
-import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
 import { validateNumber, sleep } from '../utils/paramValidation'
 import { get, post } from '../api/client'
@@ -58,6 +58,14 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
+
+  // Generation result processing (중앙화된 로직 사용)
+  const {
+    processGeneratedImages,
+    updateStateAfterGeneration,
+    sendCompletionNotification,
+    callPipelineCallback
+  } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   /**
    * 생성 중단
@@ -442,101 +450,40 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
           ? Date.now() - generationStartTime.value
           : null
 
-        // Parse info
-        let actualSeed = usedParams.seed
-        let allSeeds = []
-        let allPrompts = []
-        let allNegativePrompts = []
-        try {
-          const info = JSON.parse(data.info)
-          if (info.seed !== undefined) actualSeed = info.seed
-          if (info.all_seeds) allSeeds = info.all_seeds
-          if (info.all_prompts) allPrompts = info.all_prompts
-          if (info.all_negative_prompts) allNegativePrompts = info.all_negative_prompts
-        } catch (e) { /* ignore */ }
+        // Process generated images using centralized logic
+        const { newImages, totalDeletedCount } = await processGeneratedImages({
+          data,
+          usedParams,
+          expectedImageCount: validatedBatchSize * validatedBatchCount,
+          generationDuration,
+          wasInterrupted: wasInterrupted.value,
+          viewType,
+          onBookmarkLink: appliedBookmarkIdRef.value ? (imageId) => {
+            const { setBookmarkThumbnail } = useBookmarks()
+            setBookmarkThumbnail(appliedBookmarkIdRef.value, imageId)
+          } : null
+        })
 
-        const newImages = []
-        let totalDeletedCount = 0
-
-        const expectedImageCount = validatedBatchSize * validatedBatchCount
-        const actualImageCount = Math.min(expectedImageCount, data.images.length)
-
-        for (let i = 0; i < actualImageCount; i++) {
-          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
-
-          const paramsWithActualSeed = {
-            ...usedParams,
-            seed: imageSeed,
-            actual_seed: imageSeed,
-            prompt: allPrompts[i] || usedParams.prompt,
-            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
-          }
-
-          const newImage = {
-            image: `data:image/png;base64,${data.images[i]}`,
-            info: data.info,
-            params: paramsWithActualSeed,
-            timestamp: new Date().toISOString(),
-            duration: generationDuration,
-            favorite: false,
-            interrupted: wasInterrupted.value,
-            viewType: viewType // 어느 뷰에서 생성했는지 기록
-          }
-
-          try {
-            const result = await saveImage(newImage)
-            newImage.id = result.id
-
-            // Auto-link thumbnail if bookmark was applied
-            if (i === 0 && appliedBookmarkIdRef.value) {
-              try {
-                const { setBookmarkThumbnail } = useBookmarks()
-                setBookmarkThumbnail(appliedBookmarkIdRef.value, result.id)
-              } catch (error) {
-                storage(error, { context: 'autoLinkThumbnail', silent: true })
-              }
-            }
-
-            if (result.deletedCount > 0) {
-              totalDeletedCount += result.deletedCount
-            }
-          } catch (error) {
-            storage(error, { context: 'saveImage', silent: true })
-          }
-
-          newImages.push(newImage)
-        }
-
-        if (totalDeletedCount > 0) {
-          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
-        }
-
+        // Update state
         wasInterrupted.value = false
-
-        const combined = [...newImages, ...generatedImages.value]
-        generatedImages.value = combined.slice(0, MAX_IMAGES)
-
-        setFinalImageReceived(true)
-        currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = newImages[0].params
-
+        updateStateAfterGeneration({
+          newImages,
+          totalDeletedCount,
+          generatedImages,
+          currentImage,
+          lastUsedParams,
+          setFinalImageReceived
+        })
         consecutiveErrors.value = 0
 
-        // 생성 완료 알림
-        if (!newImages[0].interrupted && notificationType) {
-          notifyCompletion(notificationType, {
-            volume: notificationVolume || 0.5,
-            imageInfo: {
-              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
-              count: data.images.length
-            }
-          })
-        }
-
-        // 파이프라인 콜백 호출
-        if (!newImages[0].interrupted && onCompleteCallback.value) {
-          onCompleteCallback.value(generatedImages.value[0].image)
-        }
+        // Notifications and callbacks
+        sendCompletionNotification({
+          newImages,
+          imageCount: data.images.length,
+          notificationType,
+          notificationVolume
+        })
+        callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
       console.error('Generation failed:', error)
@@ -673,6 +620,14 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
+
+  // Generation result processing (중앙화된 로직 사용)
+  const {
+    processGeneratedImages,
+    updateStateAfterGeneration,
+    sendCompletionNotification,
+    callPipelineCallback
+  } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
@@ -1027,74 +982,27 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
           ? Date.now() - generationStartTime.value
           : null
 
-        let actualSeed = usedParams.seed
-        let allSeeds = []
-        let allPrompts = []
-        let allNegativePrompts = []
-        try {
-          const info = JSON.parse(data.info)
-          if (info.seed !== undefined) actualSeed = info.seed
-          if (info.all_seeds) allSeeds = info.all_seeds
-          if (info.all_prompts) allPrompts = info.all_prompts
-          if (info.all_negative_prompts) allNegativePrompts = info.all_negative_prompts
-        } catch (e) { /* ignore */ }
+        // Process generated images using centralized logic
+        const { newImages, totalDeletedCount } = await processGeneratedImages({
+          data,
+          usedParams,
+          expectedImageCount: validatedBatchSize * validatedBatchCount,
+          generationDuration,
+          wasInterrupted: wasInterrupted.value,
+          imageType: IMAGE_TYPES.IMG2IMG,
+          viewType
+        })
 
-        const newImages = []
-        let totalDeletedCount = 0
-
-        const expectedImageCount = validatedBatchSize * validatedBatchCount
-        const actualImageCount = Math.min(expectedImageCount, data.images.length)
-
-        for (let i = 0; i < actualImageCount; i++) {
-          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
-
-          const paramsWithActualSeed = {
-            ...usedParams,
-            seed: imageSeed,
-            actual_seed: imageSeed,
-            prompt: allPrompts[i] || usedParams.prompt,
-            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
-          }
-
-          const newImage = {
-            image: `data:image/png;base64,${data.images[i]}`,
-            info: data.info,
-            params: paramsWithActualSeed,
-            timestamp: new Date().toISOString(),
-            duration: generationDuration,
-            favorite: false,
-            interrupted: wasInterrupted.value,
-            type: IMAGE_TYPES.IMG2IMG,
-            viewType: viewType
-          }
-
-          try {
-            const result = await saveImage(newImage)
-            newImage.id = result.id
-
-            if (result.deletedCount > 0) {
-              totalDeletedCount += result.deletedCount
-            }
-          } catch (error) {
-            storage(error, { context: 'saveImage', silent: true })
-          }
-
-          newImages.push(newImage)
-        }
-
-        if (totalDeletedCount > 0) {
-          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
-        }
-
+        // Update state
         wasInterrupted.value = false
-
-        const combined = [...newImages, ...generatedImages.value]
-        generatedImages.value = combined.slice(0, MAX_IMAGES)
-
-        setFinalImageReceived(true)
-        currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = newImages[0].params
-
+        updateStateAfterGeneration({
+          newImages,
+          totalDeletedCount,
+          generatedImages,
+          currentImage,
+          lastUsedParams,
+          setFinalImageReceived
+        })
         consecutiveErrors.value = 0
 
         // 업스케일 처리
@@ -1144,21 +1052,14 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
           }
         }
 
-        // 생성 완료 알림
-        if (!newImages[0].interrupted && notificationType) {
-          notifyCompletion(notificationType, {
-            volume: notificationVolume || 0.5,
-            imageInfo: {
-              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
-              count: data.images.length
-            }
-          })
-        }
-
-        // 파이프라인 콜백 호출
-        if (!newImages[0].interrupted && onCompleteCallback.value) {
-          onCompleteCallback.value(generatedImages.value[0].image)
-        }
+        // Notifications and callbacks
+        sendCompletionNotification({
+          newImages,
+          imageCount: data.images.length,
+          notificationType,
+          notificationVolume
+        })
+        callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
       console.error('Generation failed:', error)
@@ -1268,6 +1169,14 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
+
+  // Generation result processing (중앙화된 로직 사용)
+  const {
+    processGeneratedImages,
+    updateStateAfterGeneration,
+    sendCompletionNotification,
+    callPipelineCallback
+  } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
@@ -1643,91 +1552,37 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
           ? Date.now() - generationStartTime.value
           : null
 
-        let actualSeed = usedParams.seed
-        let allSeeds = []
-        let allPrompts = []
-        let allNegativePrompts = []
-        try {
-          const info = JSON.parse(data.info)
-          if (info.seed !== undefined) actualSeed = info.seed
-          if (info.all_seeds) allSeeds = info.all_seeds
-          if (info.all_prompts) allPrompts = info.all_prompts
-          if (info.all_negative_prompts) allNegativePrompts = info.all_negative_prompts
-        } catch (e) { /* ignore */ }
+        // Process generated images using centralized logic
+        const { newImages, totalDeletedCount } = await processGeneratedImages({
+          data,
+          usedParams,
+          expectedImageCount: validatedBatchSize * validatedBatchCount,
+          generationDuration,
+          wasInterrupted: wasInterrupted.value,
+          imageType: IMAGE_TYPES.INPAINT,
+          viewType
+        })
 
-        const newImages = []
-        let totalDeletedCount = 0
-
-        const expectedImageCount = validatedBatchSize * validatedBatchCount
-        const actualImageCount = Math.min(expectedImageCount, data.images.length)
-
-        for (let i = 0; i < actualImageCount; i++) {
-          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
-
-          const paramsWithActualSeed = {
-            ...usedParams,
-            seed: imageSeed,
-            actual_seed: imageSeed,
-            prompt: allPrompts[i] || usedParams.prompt,
-            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
-          }
-
-          const newImage = {
-            image: `data:image/png;base64,${data.images[i]}`,
-            info: data.info,
-            params: paramsWithActualSeed,
-            timestamp: new Date().toISOString(),
-            duration: generationDuration,
-            favorite: false,
-            interrupted: wasInterrupted.value,
-            type: IMAGE_TYPES.INPAINT,
-            viewType: viewType
-          }
-
-          try {
-            const result = await saveImage(newImage)
-            newImage.id = result.id
-
-            if (result.deletedCount > 0) {
-              totalDeletedCount += result.deletedCount
-            }
-          } catch (error) {
-            storage(error, { context: 'saveImage', silent: true })
-          }
-
-          newImages.push(newImage)
-        }
-
-        if (totalDeletedCount > 0) {
-          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
-        }
-
+        // Update state
         wasInterrupted.value = false
-
-        const combined = [...newImages, ...generatedImages.value]
-        generatedImages.value = combined.slice(0, MAX_IMAGES)
-
-        setFinalImageReceived(true)
-        currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = newImages[0].params
-
+        updateStateAfterGeneration({
+          newImages,
+          totalDeletedCount,
+          generatedImages,
+          currentImage,
+          lastUsedParams,
+          setFinalImageReceived
+        })
         consecutiveErrors.value = 0
 
-        // 생성 완료 알림
-        if (!newImages[0].interrupted && notificationType) {
-          notifyCompletion(notificationType, {
-            volume: notificationVolume || 0.5,
-            imageInfo: {
-              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
-              count: data.images.length
-            }
-          })
-        }
-
-        // 파이프라인 콜백 호출
-        if (!newImages[0].interrupted && onCompleteCallback.value) {
-          onCompleteCallback.value(generatedImages.value[0].image)
-        }
+        // Notifications and callbacks
+        sendCompletionNotification({
+          newImages,
+          imageCount: data.images.length,
+          notificationType,
+          notificationVolume
+        })
+        callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
       console.error('Generation failed:', error)

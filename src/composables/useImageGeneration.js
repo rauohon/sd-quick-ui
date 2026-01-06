@@ -6,8 +6,8 @@ import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
 import { useErrorHandler } from './useErrorHandler'
 import { useProgressPolling } from './useProgressPolling'
+import { useGenerationResult } from './useGenerationResult'
 import { cloneADetailers } from '../utils/adetailer'
-import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
 import { validateNumber, sleep } from '../utils/paramValidation'
 import { get, post } from '../api/client'
@@ -16,8 +16,7 @@ import {
   SEED_MAX,
   MAX_CONSECUTIVE_ERRORS,
   GENERATION_TIMEOUT,
-  INFINITE_MODE_INITIAL_WAIT,
-  MAX_IMAGES
+  INFINITE_MODE_INITIAL_WAIT
 } from '../config/constants'
 
 export function useImageGeneration(params, enabledADetailers, showToast, t, appliedBookmarkId = null) {
@@ -50,6 +49,14 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     setFinalImageReceived,
     isPolling
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
+
+  // Generation result processing (중앙화된 로직 사용)
+  const {
+    processGeneratedImages,
+    updateStateAfterGeneration,
+    sendCompletionNotification,
+    callPipelineCallback
+  } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   // 연속 에러 카운터
   const consecutiveErrors = ref(0)
@@ -518,126 +525,43 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       const data = await response.json()
 
       if (data.images && data.images.length > 0) {
-        // 소요시간 계산
         const generationDuration = generationStartTime.value
           ? Date.now() - generationStartTime.value
           : null
 
-        // Parse info to get actual values used (seeds, prompts for batch)
-        let actualSeed = usedParams.seed
-        let allSeeds = []
-        let allPrompts = []
-        let allNegativePrompts = []
-        try {
-          const info = JSON.parse(data.info)
-          if (info.seed !== undefined) {
-            actualSeed = info.seed
-          }
-          if (info.all_seeds && Array.isArray(info.all_seeds)) {
-            allSeeds = info.all_seeds
-          }
-          if (info.all_prompts && Array.isArray(info.all_prompts)) {
-            allPrompts = info.all_prompts
-          }
-          if (info.all_negative_prompts && Array.isArray(info.all_negative_prompts)) {
-            allNegativePrompts = info.all_negative_prompts
-          }
-        } catch (e) {
-          // Failed to parse info
-        }
+        // Process generated images using centralized logic
+        const { newImages, totalDeletedCount } = await processGeneratedImages({
+          data,
+          usedParams,
+          expectedImageCount: batchSize.value * batchCount.value,
+          generationDuration,
+          wasInterrupted: wasInterrupted.value,
+          onBookmarkLink: appliedBookmarkId?.value ? (imageId) => {
+            const { setBookmarkThumbnail } = useBookmarks()
+            setBookmarkThumbnail(appliedBookmarkId.value, imageId)
+          } : null
+        })
 
-        // Process all images from batch
-        const newImages = []
-        let totalDeletedCount = 0
-
-        // Only process actual generated images (exclude ControlNet detected_maps)
-        // ControlNet appends preprocessor outputs at the end of images array
-        const expectedImageCount = batchSize.value * batchCount.value
-        const actualImageCount = Math.min(expectedImageCount, data.images.length)
-
-        for (let i = 0; i < actualImageCount; i++) {
-          const imageSeed = allSeeds[i] !== undefined ? allSeeds[i] : actualSeed
-
-          // Add actual values to params for this image
-          const paramsWithActualSeed = {
-            ...usedParams,
-            seed: imageSeed, // Override -1 with actual seed
-            actual_seed: imageSeed,
-            prompt: allPrompts[i] || usedParams.prompt,
-            negative_prompt: allNegativePrompts[i] || usedParams.negative_prompt
-          }
-
-          const newImage = {
-            image: `data:image/png;base64,${data.images[i]}`,
-            info: data.info,
-            params: paramsWithActualSeed,
-            timestamp: new Date().toISOString(),
-            duration: generationDuration, // 소요시간 (밀리초)
-            favorite: false,
-            interrupted: wasInterrupted.value
-          }
-
-          // Save to IndexedDB
-          try {
-            const result = await saveImage(newImage)
-            newImage.id = result.id
-
-            // Auto-link thumbnail if bookmark was applied (only for first image)
-            if (i === 0 && appliedBookmarkId && appliedBookmarkId.value) {
-              try {
-                const { setBookmarkThumbnail } = useBookmarks()
-                setBookmarkThumbnail(appliedBookmarkId.value, result.id)
-              } catch (error) {
-                storage(error, { context: 'autoLinkThumbnail', silent: true })
-              }
-            }
-
-            if (result.deletedCount > 0) {
-              totalDeletedCount += result.deletedCount
-            }
-          } catch (error) {
-            storage(error, { context: 'saveImage', silent: true })
-          }
-
-          newImages.push(newImage)
-        }
-
-        // 200장 초과로 삭제된 이미지가 있으면 알림
-        if (totalDeletedCount > 0) {
-          showToast(t('generation.autoDeleted', { count: totalDeletedCount }), 'info')
-        }
-
-        // 중단 플래그 리셋
+        // Update state
         wasInterrupted.value = false
-
-        // Add all images to memory (newest first)
-        // Use new array assignment to ensure reactivity
-        const combined = [...newImages, ...generatedImages.value]
-        generatedImages.value = combined.slice(0, MAX_IMAGES)
-
-        // 최종 이미지 설정 (첫 번째 이미지를 미리보기로)
-        setFinalImageReceived(true)
-        currentImage.value = generatedImages.value[0].image
-        lastUsedParams.value = newImages[0].params
-
-        // 성공 시 에러 카운터 리셋
+        updateStateAfterGeneration({
+          newImages,
+          totalDeletedCount,
+          generatedImages,
+          currentImage,
+          lastUsedParams,
+          setFinalImageReceived
+        })
         consecutiveErrors.value = 0
 
-        // 생성 완료 알림 (중단되지 않은 경우만)
-        if (!newImages[0].interrupted && params.notificationType?.value) {
-          notifyCompletion(params.notificationType.value, {
-            volume: params.notificationVolume?.value || 0.5,
-            imageInfo: {
-              size: `${newImages[0].params.width}x${newImages[0].params.height}`,
-              count: data.images.length
-            }
-          })
-        }
-
-        // 파이프라인 콜백 호출 (중단되지 않은 경우만)
-        if (!newImages[0].interrupted && onCompleteCallback.value) {
-          onCompleteCallback.value(generatedImages.value[0].image)
-        }
+        // Notifications and callbacks
+        sendCompletionNotification({
+          newImages,
+          imageCount: data.images.length,
+          notificationType: params.notificationType?.value,
+          notificationVolume: params.notificationVolume?.value
+        })
+        callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
       console.error(t('message.error.generationFailed'), error)
