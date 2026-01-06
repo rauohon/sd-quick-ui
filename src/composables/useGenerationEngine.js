@@ -9,6 +9,7 @@ import { useErrorHandler } from './useErrorHandler'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
+import { validateNumber, sleep } from '../utils/paramValidation'
 import { get, post } from '../api/client'
 import { useControlNet } from './useControlNet'
 import {
@@ -22,21 +23,6 @@ import {
   PARAM_RANGES,
   IMAGE_TYPES
 } from '../config/constants'
-
-// Number validation helper
-function validateNumber(value, min, max, defaultValue, step = null) {
-  let num = Number(value)
-  if (isNaN(num)) return defaultValue
-  if (num < min) num = min
-  if (num > max) num = max
-  if (step && num % step !== 0) {
-    num = Math.round(num / step) * step
-  }
-  return num
-}
-
-// Sleep utility
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 /**
  * 뷰별 생성 상태를 관리하는 엔진

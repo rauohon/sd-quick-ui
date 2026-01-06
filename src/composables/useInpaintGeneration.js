@@ -9,6 +9,7 @@ import { useControlNet } from './useControlNet'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
+import { validateNumber, sleep } from '../utils/paramValidation'
 import { get, post } from '../api/client'
 import {
   SEED_MAX,
@@ -20,26 +21,6 @@ import {
   MAX_IMAGES,
   IMAGE_TYPES
 } from '../config/constants'
-
-// Number validation helper
-function validateNumber(value, min, max, defaultValue, step = null) {
-  let num = Number(value)
-
-  if (isNaN(num)) {
-    return defaultValue
-  }
-
-  if (num < min) num = min
-  if (num > max) num = max
-
-  if (step && num % step !== 0) {
-    num = Math.round(num / step) * step
-  }
-
-  return num
-}
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
   const isGenerating = ref(false)

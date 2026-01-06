@@ -8,6 +8,7 @@ import { useErrorHandler, ErrorCategory } from './useErrorHandler'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
+import { validateNumber, sleep } from '../utils/paramValidation'
 import { get, post } from '../api/client'
 import { useControlNet } from './useControlNet'
 import {
@@ -20,30 +21,6 @@ import {
   MAX_IMAGES,
   PARAM_RANGES
 } from '../config/constants'
-
-// Number validation helper
-function validateNumber(value, min, max, defaultValue, step = null) {
-  let num = Number(value)
-
-  // NaN 체크
-  if (isNaN(num)) {
-    return defaultValue
-  }
-
-  // 범위 체크
-  if (num < min) num = min
-  if (num > max) num = max
-
-  // Step 체크 (width, height 등)
-  if (step && num % step !== 0) {
-    num = Math.round(num / step) * step
-  }
-
-  return num
-}
-
-// Sleep utility function (reusable Promise for delays)
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 export function useImageGeneration(params, enabledADetailers, showToast, t, appliedBookmarkId = null) {
   const isGenerating = ref(false)
