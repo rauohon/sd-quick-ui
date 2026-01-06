@@ -24,6 +24,11 @@ export function useProgressPolling({ t, onError }) {
   const hasShownProgressImage = ref(false)
   const lastUsedParams = ref(null)
 
+  // Batch tracking (클라이언트 측 추적)
+  const batchTotal = ref(1)
+  const batchCurrent = ref(1)
+  let lastJobTimestamp = null
+
   let idleCount = 0
 
   /**
@@ -61,6 +66,15 @@ export function useProgressPolling({ t, onError }) {
             idleCount = 0
           }
 
+          // Batch tracking: job_timestamp 변경 감지
+          if (data.state?.job_timestamp && lastJobTimestamp !== data.state.job_timestamp) {
+            if (lastJobTimestamp !== null && batchCurrent.value < batchTotal.value) {
+              // 새 작업 시작 = 다음 배치
+              batchCurrent.value++
+            }
+            lastJobTimestamp = data.state.job_timestamp
+          }
+
           progress.value = progressPercentage
 
           // Update progress state text
@@ -75,9 +89,9 @@ export function useProgressPolling({ t, onError }) {
             const state = data.state
             const parts = []
 
-            // Job number (for batch)
-            if (state.job_count > 1) {
-              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
+            // Batch progress (클라이언트 측 추적)
+            if (batchTotal.value > 1) {
+              parts.push(t('generation.imageCount', { current: batchCurrent.value, total: batchTotal.value }))
             }
 
             // Job description
@@ -141,6 +155,10 @@ export function useProgressPolling({ t, onError }) {
     finalImageReceived.value = false
     hasShownProgressImage.value = false
     pendingUsedParams.value = null
+    // Batch 초기화
+    batchTotal.value = 1
+    batchCurrent.value = 1
+    lastJobTimestamp = null
   }
 
   /**
@@ -149,6 +167,16 @@ export function useProgressPolling({ t, onError }) {
   function setPendingUsedParams(params) {
     pendingUsedParams.value = params
     hasShownProgressImage.value = false
+  }
+
+  /**
+   * Set batch info for progress tracking
+   * @param {number} total - Total batch count
+   */
+  function setBatchInfo(total) {
+    batchTotal.value = total || 1
+    batchCurrent.value = 1
+    lastJobTimestamp = null
   }
 
   /**
@@ -178,6 +206,7 @@ export function useProgressPolling({ t, onError }) {
     stopProgressPolling,
     resetProgress,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived,
     isPolling
   }

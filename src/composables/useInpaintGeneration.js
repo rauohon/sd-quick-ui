@@ -43,6 +43,7 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
     startProgressPolling,
     stopProgressPolling,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
@@ -350,6 +351,7 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
     }
 
     try {
+      setBatchInfo(batchCount.value)
       startProgressPolling()
 
       // base64 이미지 추출 (data:image/xxx;base64, 부분 제거)

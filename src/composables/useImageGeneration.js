@@ -46,6 +46,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     stopProgressPolling,
     resetProgress,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived,
     isPolling
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
@@ -427,7 +428,8 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     }
 
     try {
-      // Start progress polling
+      // Start progress polling with batch info
+      setBatchInfo(batchCount.value)
       startProgressPolling()
 
       // Prepare API payload

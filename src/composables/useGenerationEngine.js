@@ -55,6 +55,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     startProgressPolling,
     stopProgressPolling,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
@@ -360,6 +361,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     }
 
     try {
+      setBatchInfo(validatedBatchCount)
       startProgressPolling()
 
       // Prepare API payload
@@ -668,6 +670,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     startProgressPolling,
     stopProgressPolling,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
@@ -944,6 +947,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     }
 
     try {
+      setBatchInfo(validatedBatchCount)
       startProgressPolling()
 
       // base64 이미지 추출
@@ -1261,6 +1265,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     startProgressPolling,
     stopProgressPolling,
     setPendingUsedParams,
+    setBatchInfo,
     setFinalImageReceived
   } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
@@ -1549,6 +1554,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     }
 
     try {
+      setBatchInfo(validatedBatchCount)
       startProgressPolling()
 
       // base64 이미지 추출
