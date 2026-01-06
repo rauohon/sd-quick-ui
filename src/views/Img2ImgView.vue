@@ -282,14 +282,9 @@ const generatedImages = img2imgEngine?.generatedImages || ref([])
 const isInfiniteMode = img2imgEngine?.isInfiniteMode || ref(false)
 const infiniteCount = img2imgEngine?.infiniteCount || ref(0)
 
-// Engine 메서드 래핑
-function generateImage() {
-  if (!img2imgEngine) {
-    props.showToast('Generation engine not available', 'error')
-    return
-  }
-
-  const params = {
+// 현재 View의 파라미터를 가져오는 함수 (무한 모드에서도 사용)
+function getCurrentParams() {
+  return {
     prompt: prompt.value,
     negativePrompt: negativePrompt.value,
     steps: steps.value,
@@ -325,8 +320,16 @@ function generateImage() {
       denoisingStrength.value = validated.denoisingStrength
     }
   }
+}
 
-  img2imgEngine.generateImage(params)
+// Engine 메서드 래핑
+function generateImage() {
+  if (!img2imgEngine) {
+    props.showToast('Generation engine not available', 'error')
+    return
+  }
+
+  img2imgEngine.generateImage(getCurrentParams())
 }
 
 function interruptGeneration() {
@@ -342,7 +345,7 @@ function stopInfiniteModeOnly() {
 }
 
 function toggleInfiniteMode() {
-  img2imgEngine?.toggleInfiniteMode()
+  img2imgEngine?.toggleInfiniteMode(getCurrentParams)
 }
 
 function setOnComplete(callback) {

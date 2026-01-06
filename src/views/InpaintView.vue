@@ -365,14 +365,9 @@ const generatedImages = inpaintEngine?.generatedImages || ref([])
 const isInfiniteMode = inpaintEngine?.isInfiniteMode || ref(false)
 const infiniteCount = inpaintEngine?.infiniteCount || ref(0)
 
-// Engine 메서드 래핑
-function generateImage(overrides = {}) {
-  if (!inpaintEngine) {
-    props.showToast('Generation engine not available', 'error')
-    return
-  }
-
-  const params = {
+// 현재 View의 파라미터를 가져오는 함수 (무한 모드에서도 사용)
+function getCurrentParams(overrides = {}) {
+  return {
     prompt: overrides.prompt !== undefined ? overrides.prompt : prompt.value,
     negativePrompt: overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value,
     steps: steps.value,
@@ -411,8 +406,16 @@ function generateImage(overrides = {}) {
       maskBlur.value = validated.maskBlur
     }
   }
+}
 
-  inpaintEngine.generateImage(params)
+// Engine 메서드 래핑
+function generateImage(overrides = {}) {
+  if (!inpaintEngine) {
+    props.showToast('Generation engine not available', 'error')
+    return
+  }
+
+  inpaintEngine.generateImage(getCurrentParams(overrides))
 }
 
 function interruptGeneration() {
@@ -428,7 +431,7 @@ function stopInfiniteModeOnly() {
 }
 
 function toggleInfiniteMode() {
-  inpaintEngine?.toggleInfiniteMode()
+  inpaintEngine?.toggleInfiniteMode(getCurrentParams)
 }
 
 function setOnComplete(callback) {

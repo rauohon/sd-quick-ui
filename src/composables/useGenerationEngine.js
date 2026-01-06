@@ -36,6 +36,8 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
 
   // 무한 생성 루프 실행 플래그
   let isInfiniteLoopRunning = false
+  // 무한 모드에서 최신 파라미터를 가져오는 콜백
+  let infiniteParamsGetter = null
 
   // 현재 생성 요청 파라미터 (탭 전환 후에도 유지)
   const currentParams = ref(null)
@@ -160,8 +162,9 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
 
   /**
    * 무한 생성 모드 토글
+   * @param {Function} getLatestParams - View에서 최신 파라미터를 가져오는 콜백
    */
-  function toggleInfiniteMode() {
+  function toggleInfiniteMode(getLatestParams = null) {
     isInfiniteMode.value = !isInfiniteMode.value
 
     if (isInfiniteMode.value) {
@@ -178,11 +181,13 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       infiniteCount.value = 0
       consecutiveErrors.value = 0
       isInfiniteLoopRunning = true
+      infiniteParamsGetter = getLatestParams
 
       showToast(t('infiniteMode.started'), 'success')
       startInfiniteGeneration()
     } else {
       consecutiveErrors.value = 0
+      infiniteParamsGetter = null
       showToast(t('infiniteMode.stopped', { count: infiniteCount.value }), 'info')
     }
   }
@@ -220,19 +225,24 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       return
     }
 
-    const params = currentParams.value
-    if (!params) {
+    // 초기 파라미터 확인 (콜백이 있으면 콜백 사용, 없으면 currentParams 사용)
+    const initialParams = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+    if (!initialParams) {
       showToast(t('infiniteMode.noParams'), 'error')
       isInfiniteMode.value = false
       isInfiniteLoopRunning = false
       return
     }
 
-    const baseSeed = params.seed
+    const baseSeed = initialParams.seed
     const useVariation = baseSeed !== -1
 
     try {
       while (isInfiniteMode.value) {
+        // 매 생성마다 최신 파라미터 가져오기 (콜백이 있으면 콜백 사용)
+        const params = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+        if (!params) break
+
         // 매번 새로운 seed 생성
         let newSeed = baseSeed
         if (useVariation) {
@@ -581,6 +591,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
   const consecutiveErrors = ref(0)
 
   let isInfiniteLoopRunning = false
+  let infiniteParamsGetter = null
 
   const currentParams = ref(null)
   const currentEnabledADetailers = ref([])
@@ -691,7 +702,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     showToast(t('infiniteMode.stoppedCurrent', { count: currentCount }), 'info')
   }
 
-  function toggleInfiniteMode() {
+  function toggleInfiniteMode(getLatestParams = null) {
     isInfiniteMode.value = !isInfiniteMode.value
 
     if (isInfiniteMode.value) {
@@ -708,11 +719,13 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       infiniteCount.value = 0
       consecutiveErrors.value = 0
       isInfiniteLoopRunning = true
+      infiniteParamsGetter = getLatestParams
 
       showToast(t('infiniteMode.started'), 'success')
       startInfiniteGeneration()
     } else {
       consecutiveErrors.value = 0
+      infiniteParamsGetter = null
       showToast(t('infiniteMode.stopped', { count: infiniteCount.value }), 'info')
     }
   }
@@ -747,19 +760,24 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       return
     }
 
-    const params = currentParams.value
-    if (!params) {
+    // 초기 파라미터 확인 (콜백이 있으면 콜백 사용, 없으면 currentParams 사용)
+    const initialParams = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+    if (!initialParams) {
       showToast(t('infiniteMode.noParams'), 'error')
       isInfiniteMode.value = false
       isInfiniteLoopRunning = false
       return
     }
 
-    const baseSeed = params.seed
+    const baseSeed = initialParams.seed
     const useVariation = baseSeed !== -1
 
     try {
       while (isInfiniteMode.value) {
+        // 매 생성마다 최신 파라미터 가져오기 (콜백이 있으면 콜백 사용)
+        const params = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+        if (!params) break
+
         let newSeed = baseSeed
         if (useVariation) {
           const range = params.seedVariationRange || 100
@@ -1111,6 +1129,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
   const savedInitImageHeight = ref(0)
 
   let isInfiniteLoopRunning = false
+  let infiniteParamsGetter = null
 
   const currentParams = ref(null)
   const currentEnabledADetailers = ref([])
@@ -1221,7 +1240,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     showToast(t('infiniteMode.stoppedCurrent', { count: currentCount }), 'info')
   }
 
-  function toggleInfiniteMode() {
+  function toggleInfiniteMode(getLatestParams = null) {
     isInfiniteMode.value = !isInfiniteMode.value
 
     if (isInfiniteMode.value) {
@@ -1238,11 +1257,13 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       infiniteCount.value = 0
       consecutiveErrors.value = 0
       isInfiniteLoopRunning = true
+      infiniteParamsGetter = getLatestParams
 
       showToast(t('infiniteMode.started'), 'success')
       startInfiniteGeneration()
     } else {
       consecutiveErrors.value = 0
+      infiniteParamsGetter = null
       showToast(t('infiniteMode.stopped', { count: infiniteCount.value }), 'info')
     }
   }
@@ -1277,19 +1298,24 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       return
     }
 
-    const params = currentParams.value
-    if (!params) {
+    // 초기 파라미터 확인 (콜백이 있으면 콜백 사용, 없으면 currentParams 사용)
+    const initialParams = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+    if (!initialParams) {
       showToast(t('infiniteMode.noParams'), 'error')
       isInfiniteMode.value = false
       isInfiniteLoopRunning = false
       return
     }
 
-    const baseSeed = params.seed
+    const baseSeed = initialParams.seed
     const useVariation = baseSeed !== -1
 
     try {
       while (isInfiniteMode.value) {
+        // 매 생성마다 최신 파라미터 가져오기 (콜백이 있으면 콜백 사용)
+        const params = infiniteParamsGetter ? infiniteParamsGetter() : currentParams.value
+        if (!params) break
+
         let newSeed = baseSeed
         if (useVariation) {
           const range = params.seedVariationRange || 100

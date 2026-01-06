@@ -310,15 +310,9 @@ const generatedImages = txt2imgEngine?.generatedImages || ref([])
 const isInfiniteMode = txt2imgEngine?.isInfiniteMode || ref(false)
 const infiniteCount = txt2imgEngine?.infiniteCount || ref(0)
 
-// Engine 메서드 래핑 (파라미터를 현재 값으로 전달)
-function generateImage(overrides = {}) {
-  if (!txt2imgEngine) {
-    console.error('Generation engine not available')
-    return
-  }
-
-  // 현재 파라미터를 모아서 engine에 전달
-  const params = {
+// 현재 View의 파라미터를 가져오는 함수 (무한 모드에서도 사용)
+function getCurrentParams(overrides = {}) {
+  return {
     prompt: overrides.prompt !== undefined ? overrides.prompt : prompt.value,
     negativePrompt: overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value,
     steps: steps.value,
@@ -356,14 +350,22 @@ function generateImage(overrides = {}) {
       hrUpscale.value = validated.hrUpscale
     }
   }
+}
 
-  txt2imgEngine.generateImage(params)
+// Engine 메서드 래핑 (파라미터를 현재 값으로 전달)
+function generateImage(overrides = {}) {
+  if (!txt2imgEngine) {
+    console.error('Generation engine not available')
+    return
+  }
+
+  txt2imgEngine.generateImage(getCurrentParams(overrides))
 }
 
 const interruptGeneration = () => txt2imgEngine?.interruptGeneration()
 const skipCurrentImage = () => txt2imgEngine?.skipCurrentImage()
 const stopInfiniteModeOnly = () => txt2imgEngine?.stopInfiniteModeOnly()
-const toggleInfiniteMode = () => txt2imgEngine?.toggleInfiniteMode()
+const toggleInfiniteMode = () => txt2imgEngine?.toggleInfiniteMode(getCurrentParams)
 const startProgressPolling = () => txt2imgEngine?.startProgressPolling()
 const stopProgressPolling = () => txt2imgEngine?.stopProgressPolling()
 const checkOngoingGeneration = () => txt2imgEngine?.checkOngoingGeneration()
