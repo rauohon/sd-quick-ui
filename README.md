@@ -2,7 +2,7 @@
 
 > A lightweight Vue 3 frontend for Stable Diffusion WebUI (AUTOMATIC1111)
 
-Full-featured alternative UI with **txt2img**, **img2img**, **inpaint/outpaint**, **ControlNet**, and **Workflow pipelines**. Built with simplicity and speed in mind.
+Alternative UI supporting **txt2img**, **img2img**, **inpaint/outpaint**, **ControlNet**, and **Workflow pipelines**. Built with simplicity and speed in mind.
 
 ![SD Quick UI - txt2img](screenshots/tabs_txt2img.png)
 
