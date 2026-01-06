@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/sd-vue-ui.git"
+    "url": "https://github.com/rauohon/sd-quick-ui.git"
   },
   "keywords": [
     "stable-diffusion",
@@ -29,7 +29,7 @@
     "adetailer",
     "prompt-management"
   ],
-  "author": "Your Name",
+  "author": "rauohon",
   "license": "MIT",
   "dependencies": {
     "vue": "^3.5.24",
