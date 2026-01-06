@@ -6,6 +6,7 @@ import { ref, reactive, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
 import { useErrorHandler } from './useErrorHandler'
+import { useProgressPolling } from './useProgressPolling'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
@@ -15,12 +16,9 @@ import { useControlNet } from './useControlNet'
 import {
   SEED_MAX,
   MAX_CONSECUTIVE_ERRORS,
-  MAX_IDLE_COUNT,
-  PROGRESS_POLL_INTERVAL,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT,
   MAX_IMAGES,
-  PARAM_RANGES,
   IMAGE_TYPES
 } from '../config/constants'
 
@@ -29,25 +27,16 @@ import {
  */
 function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
   const isGenerating = ref(false)
-  const progress = ref(0)
-  const progressState = ref('')
-  const currentImage = ref('')
-  const lastUsedParams = ref(null)
   const generatedImages = ref([])
   const isInfiniteMode = ref(false)
   const infiniteCount = ref(0)
   const wasInterrupted = ref(false)
-  const finalImageReceived = ref(false)
   const generationStartTime = ref(null)
-  const pendingUsedParams = ref(null)
-  const hasShownProgressImage = ref(false)
   const onCompleteCallback = ref(null)
-  const progressInterval = ref(null)
   const consecutiveErrors = ref(0)
 
   // 무한 생성 루프 실행 플래그
   let isInfiniteLoopRunning = false
-  let idleCount = 0
 
   // 현재 생성 요청 파라미터 (탭 전환 후에도 유지)
   const currentParams = ref(null)
@@ -56,82 +45,18 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
 
   const { network, storage, generation } = errorHandler
 
-  /**
-   * 진행 상태 폴링 시작
-   */
-  function startProgressPolling() {
-    if (progressInterval.value) return
-
-    idleCount = 0
-    progressInterval.value = setInterval(async () => {
-      try {
-        const response = await get('/sdapi/v1/progress')
-        if (response.ok) {
-          const data = await response.json()
-          const progressPercentage = data.progress * 100
-          const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
-
-          if (!hasActiveJob && progressPercentage === 0) {
-            idleCount++
-            if (idleCount >= MAX_IDLE_COUNT) {
-              stopProgressPolling()
-              return
-            }
-          } else {
-            idleCount = 0
-          }
-
-          progress.value = progressPercentage
-
-          // Update progress state text
-          let stateText = ''
-          if (data.textinfo) {
-            stateText = data.textinfo
-          } else if (data.state) {
-            const state = data.state
-            const parts = []
-            if (state.job_count > 1) {
-              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
-            }
-            if (state.job) parts.push(state.job)
-            if (state.sampling_step !== undefined && state.sampling_steps > 0) {
-              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
-            }
-            if (data.eta_relative > 0) {
-              const eta = Math.ceil(data.eta_relative)
-              parts.push(t('time.secondsRemaining', { eta }))
-            }
-            stateText = parts.join(' • ') || t('generation.processing')
-          } else {
-            stateText = t('generation.processing')
-          }
-
-          progressState.value = stateText
-
-          if (data.current_image && !finalImageReceived.value) {
-            currentImage.value = `data:image/png;base64,${data.current_image}`
-            if (!hasShownProgressImage.value && pendingUsedParams.value) {
-              lastUsedParams.value = pendingUsedParams.value
-              hasShownProgressImage.value = true
-            }
-          }
-        }
-      } catch (error) {
-        network(error, { context: 'progressPolling', silent: true })
-      }
-    }, PROGRESS_POLL_INTERVAL)
-  }
-
-  /**
-   * 진행 상태 폴링 중지
-   */
-  function stopProgressPolling() {
-    if (progressInterval.value) {
-      clearInterval(progressInterval.value)
-      progressInterval.value = null
-    }
-    idleCount = 0
-  }
+  // Progress polling (중앙화된 로직 사용)
+  const {
+    progress,
+    progressState,
+    currentImage,
+    lastUsedParams,
+    finalImageReceived,
+    startProgressPolling,
+    stopProgressPolling,
+    setPendingUsedParams,
+    setFinalImageReceived
+  } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
   /**
    * 생성 중단
@@ -403,8 +328,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     generationStartTime.value = Date.now()
     progress.value = 0
     progressState.value = t('generation.preparing')
-    finalImageReceived.value = false
-    hasShownProgressImage.value = false
+    setFinalImageReceived(false)
     wasInterrupted.value = false // 생성 시작 시 중단 플래그 초기화
 
     // Save parameters used for generation
@@ -428,7 +352,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       adetailers: adetailers ? cloneADetailers(adetailers) : [],
     }
 
-    pendingUsedParams.value = usedParams
+    setPendingUsedParams(usedParams)
     lastUsedParams.value = {
       ...usedParams,
       prompt: rawPrompt,
@@ -590,7 +514,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
         const combined = [...newImages, ...generatedImages.value]
         generatedImages.value = combined.slice(0, MAX_IMAGES)
 
-        finalImageReceived.value = true
+        setFinalImageReceived(true)
         currentImage.value = generatedImages.value[0].image
         lastUsedParams.value = newImages[0].params
 
@@ -719,24 +643,15 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
   const viewType = 'img2img'
 
   const isGenerating = ref(false)
-  const progress = ref(0)
-  const progressState = ref('')
-  const currentImage = ref('')
-  const lastUsedParams = ref(null)
   const generatedImages = ref([])
   const isInfiniteMode = ref(false)
   const infiniteCount = ref(0)
   const wasInterrupted = ref(false)
-  const finalImageReceived = ref(false)
   const generationStartTime = ref(null)
-  const pendingUsedParams = ref(null)
-  const hasShownProgressImage = ref(false)
   const onCompleteCallback = ref(null)
-  const progressInterval = ref(null)
   const consecutiveErrors = ref(0)
 
   let isInfiniteLoopRunning = false
-  let idleCount = 0
 
   const currentParams = ref(null)
   const currentEnabledADetailers = ref([])
@@ -744,75 +659,17 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
   const { network, storage, generation } = errorHandler
   const { buildControlNetScript } = useControlNet()
 
-  function startProgressPolling() {
-    if (progressInterval.value) return
-
-    idleCount = 0
-    progressInterval.value = setInterval(async () => {
-      try {
-        const response = await get('/sdapi/v1/progress')
-        if (response.ok) {
-          const data = await response.json()
-          const progressPercentage = data.progress * 100
-          const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
-
-          if (!hasActiveJob && progressPercentage === 0) {
-            idleCount++
-            if (idleCount >= MAX_IDLE_COUNT) {
-              stopProgressPolling()
-              return
-            }
-          } else {
-            idleCount = 0
-          }
-
-          progress.value = progressPercentage
-
-          let stateText = ''
-          if (data.textinfo) {
-            stateText = data.textinfo
-          } else if (data.state) {
-            const state = data.state
-            const parts = []
-            if (state.job_count > 1) {
-              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
-            }
-            if (state.job) parts.push(state.job)
-            if (state.sampling_step !== undefined && state.sampling_steps > 0) {
-              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
-            }
-            if (data.eta_relative > 0) {
-              const eta = Math.ceil(data.eta_relative)
-              parts.push(t('time.secondsRemaining', { eta }))
-            }
-            stateText = parts.join(' • ') || t('generation.processing')
-          } else {
-            stateText = t('generation.processing')
-          }
-
-          progressState.value = stateText
-
-          if (data.current_image && !finalImageReceived.value) {
-            currentImage.value = `data:image/png;base64,${data.current_image}`
-            if (!hasShownProgressImage.value && pendingUsedParams.value) {
-              lastUsedParams.value = pendingUsedParams.value
-              hasShownProgressImage.value = true
-            }
-          }
-        }
-      } catch (error) {
-        network(error, { context: 'progressPolling', silent: true })
-      }
-    }, PROGRESS_POLL_INTERVAL)
-  }
-
-  function stopProgressPolling() {
-    if (progressInterval.value) {
-      clearInterval(progressInterval.value)
-      progressInterval.value = null
-    }
-    idleCount = 0
-  }
+  // Progress polling (중앙화된 로직 사용)
+  const {
+    progress,
+    progressState,
+    currentImage,
+    lastUsedParams,
+    startProgressPolling,
+    stopProgressPolling,
+    setPendingUsedParams,
+    setFinalImageReceived
+  } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
@@ -1058,8 +915,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     generationStartTime.value = Date.now()
     progress.value = 0
     progressState.value = t('generation.preparing')
-    finalImageReceived.value = false
-    hasShownProgressImage.value = false
+    setFinalImageReceived(false)
     wasInterrupted.value = false
 
     const usedParams = {
@@ -1080,7 +936,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.IMG2IMG
     }
 
-    pendingUsedParams.value = usedParams
+    setPendingUsedParams(usedParams)
     lastUsedParams.value = {
       ...usedParams,
       prompt: rawPrompt,
@@ -1231,7 +1087,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
         const combined = [...newImages, ...generatedImages.value]
         generatedImages.value = combined.slice(0, MAX_IMAGES)
 
-        finalImageReceived.value = true
+        setFinalImageReceived(true)
         currentImage.value = generatedImages.value[0].image
         lastUsedParams.value = newImages[0].params
 
@@ -1374,20 +1230,12 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
   const viewType = 'inpaint'
 
   const isGenerating = ref(false)
-  const progress = ref(0)
-  const progressState = ref('')
-  const currentImage = ref('')
-  const lastUsedParams = ref(null)
   const generatedImages = ref([])
   const isInfiniteMode = ref(false)
   const infiniteCount = ref(0)
   const wasInterrupted = ref(false)
-  const finalImageReceived = ref(false)
   const generationStartTime = ref(null)
-  const pendingUsedParams = ref(null)
-  const hasShownProgressImage = ref(false)
   const onCompleteCallback = ref(null)
-  const progressInterval = ref(null)
   const consecutiveErrors = ref(0)
 
   // 탭 전환 시 유지할 상태
@@ -1397,7 +1245,6 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
   const savedInitImageHeight = ref(0)
 
   let isInfiniteLoopRunning = false
-  let idleCount = 0
 
   const currentParams = ref(null)
   const currentEnabledADetailers = ref([])
@@ -1405,75 +1252,17 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
   const { network, storage, generation } = errorHandler
   const { buildControlNetScript } = useControlNet()
 
-  function startProgressPolling() {
-    if (progressInterval.value) return
-
-    idleCount = 0
-    progressInterval.value = setInterval(async () => {
-      try {
-        const response = await get('/sdapi/v1/progress')
-        if (response.ok) {
-          const data = await response.json()
-          const progressPercentage = data.progress * 100
-          const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
-
-          if (!hasActiveJob && progressPercentage === 0) {
-            idleCount++
-            if (idleCount >= MAX_IDLE_COUNT) {
-              stopProgressPolling()
-              return
-            }
-          } else {
-            idleCount = 0
-          }
-
-          progress.value = progressPercentage
-
-          let stateText = ''
-          if (data.textinfo) {
-            stateText = data.textinfo
-          } else if (data.state) {
-            const state = data.state
-            const parts = []
-            if (state.job_count > 1) {
-              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
-            }
-            if (state.job) parts.push(state.job)
-            if (state.sampling_step !== undefined && state.sampling_steps > 0) {
-              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
-            }
-            if (data.eta_relative > 0) {
-              const eta = Math.ceil(data.eta_relative)
-              parts.push(t('time.secondsRemaining', { eta }))
-            }
-            stateText = parts.join(' • ') || t('generation.processing')
-          } else {
-            stateText = t('generation.processing')
-          }
-
-          progressState.value = stateText
-
-          if (data.current_image && !finalImageReceived.value) {
-            currentImage.value = `data:image/png;base64,${data.current_image}`
-            if (!hasShownProgressImage.value && pendingUsedParams.value) {
-              lastUsedParams.value = pendingUsedParams.value
-              hasShownProgressImage.value = true
-            }
-          }
-        }
-      } catch (error) {
-        network(error, { context: 'progressPolling', silent: true })
-      }
-    }, PROGRESS_POLL_INTERVAL)
-  }
-
-  function stopProgressPolling() {
-    if (progressInterval.value) {
-      clearInterval(progressInterval.value)
-      progressInterval.value = null
-    }
-    idleCount = 0
-  }
+  // Progress polling (중앙화된 로직 사용)
+  const {
+    progress,
+    progressState,
+    currentImage,
+    lastUsedParams,
+    startProgressPolling,
+    stopProgressPolling,
+    setPendingUsedParams,
+    setFinalImageReceived
+  } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
@@ -1727,8 +1516,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     generationStartTime.value = Date.now()
     progress.value = 0
     progressState.value = t('generation.preparing')
-    finalImageReceived.value = false
-    hasShownProgressImage.value = false
+    setFinalImageReceived(false)
     wasInterrupted.value = false
 
     const usedParams = {
@@ -1753,7 +1541,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.INPAINT
     }
 
-    pendingUsedParams.value = usedParams
+    setPendingUsedParams(usedParams)
     lastUsedParams.value = {
       ...usedParams,
       prompt: rawPrompt,
@@ -1913,7 +1701,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
         const combined = [...newImages, ...generatedImages.value]
         generatedImages.value = combined.slice(0, MAX_IMAGES)
 
-        finalImageReceived.value = true
+        setFinalImageReceived(true)
         currentImage.value = generatedImages.value[0].image
         lastUsedParams.value = newImages[0].params
 

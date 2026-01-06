@@ -4,7 +4,8 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { useIndexedDB } from './useIndexedDB'
 import { useBookmarks } from './useBookmarks'
-import { useErrorHandler, ErrorCategory } from './useErrorHandler'
+import { useErrorHandler } from './useErrorHandler'
+import { useProgressPolling } from './useProgressPolling'
 import { cloneADetailers } from '../utils/adetailer'
 import { notifyCompletion } from '../utils/notification'
 import { expandRandomCombination } from '../utils/promptCombination'
@@ -14,37 +15,40 @@ import { useControlNet } from './useControlNet'
 import {
   SEED_MAX,
   MAX_CONSECUTIVE_ERRORS,
-  MAX_IDLE_COUNT,
-  PROGRESS_POLL_INTERVAL,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT,
-  MAX_IMAGES,
-  PARAM_RANGES
+  MAX_IMAGES
 } from '../config/constants'
 
 export function useImageGeneration(params, enabledADetailers, showToast, t, appliedBookmarkId = null) {
   const isGenerating = ref(false)
-  const progress = ref(0)
-  const progressState = ref('')
-  const currentImage = ref('')
-  const lastUsedParams = ref(null)
   const generatedImages = ref([])
   const isInfiniteMode = ref(false)
   const infiniteCount = ref(0)
   const wasInterrupted = ref(false) // 스킵/중단 플래그
-  const finalImageReceived = ref(false) // 최종 이미지 수신 플래그
   const generationStartTime = ref(null) // 생성 시작 시간 (소요시간 계산용)
-  const pendingUsedParams = ref(null) // progress 이미지 첫 등장 시 lastUsedParams로 설정될 파라미터
-  const hasShownProgressImage = ref(false) // progress 이미지가 표시되었는지 플래그
   const onCompleteCallback = ref(null) // 생성 완료 콜백 (파이프라인용)
-
-  const progressInterval = ref(null)
 
   // IndexedDB 초기화
   const { saveImage } = useIndexedDB()
 
   // Error handler 초기화
   const { network, storage, generation } = useErrorHandler({ showToast, t })
+
+  // Progress polling (중앙화된 로직 사용)
+  const {
+    progress,
+    progressState,
+    currentImage,
+    lastUsedParams,
+    finalImageReceived,
+    startProgressPolling,
+    stopProgressPolling,
+    resetProgress,
+    setPendingUsedParams,
+    setFinalImageReceived,
+    isPolling
+  } = useProgressPolling({ t, onError: (error) => network(error, { context: 'progressPolling', silent: true }) })
 
   // 연속 에러 카운터
   const consecutiveErrors = ref(0)
@@ -76,114 +80,6 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
       // API가 없을 수 있음 - silent 처리
       network(error, { context: 'checkOngoingGeneration', silent: true })
     }
-  }
-
-  /**
-   * 진행 상태 폴링 시작
-   */
-  let idleCount = 0
-
-  function startProgressPolling() {
-    // CRITICAL: 중복 실행 방지 (race condition 방지)
-    // 이미 폴링이 실행 중이면 중단
-    if (progressInterval.value) {
-      return
-    }
-
-    // 기존 인터벌이 있으면 먼저 정리 (안전장치)
-    stopProgressPolling()
-    idleCount = 0
-
-    progressInterval.value = setInterval(async () => {
-      try {
-        const response = await get('/sdapi/v1/progress')
-        if (response.ok) {
-          const data = await response.json()
-          const progressPercentage = data.progress * 100
-          const hasActiveJob = data.state?.job_count > 0 || progressPercentage > 0
-
-          // Check if idle (no progress and no jobs)
-          if (!hasActiveJob && progressPercentage === 0) {
-            idleCount++
-
-            // Stop polling after idle for too long
-            if (idleCount >= MAX_IDLE_COUNT) {
-              stopProgressPolling()
-              return
-            }
-          } else {
-            // Reset idle counter if there's activity
-            idleCount = 0
-          }
-
-          progress.value = progressPercentage
-
-          // Update progress state text
-          let stateText = ''
-
-          // Use textinfo if available (most detailed)
-          if (data.textinfo) {
-            stateText = data.textinfo
-          }
-          // Use state information
-          else if (data.state) {
-            const state = data.state
-            const parts = []
-
-            // Job number (for batch)
-            if (state.job_count > 1) {
-              parts.push(t('generation.imageCount', { current: state.job_no, total: state.job_count }))
-            }
-
-            // Job description
-            if (state.job) {
-              parts.push(state.job)
-            }
-
-            // Sampling progress
-            if (state.sampling_step !== undefined && state.sampling_steps > 0) {
-              parts.push(t('generation.step', { current: state.sampling_step, total: state.sampling_steps }))
-            }
-
-            // ETA
-            if (data.eta_relative > 0) {
-              const eta = Math.ceil(data.eta_relative)
-              parts.push(t('time.secondsRemaining', { eta }))
-            }
-
-            stateText = parts.join(' • ') || t('generation.processing')
-          } else {
-            stateText = t('generation.processing')
-          }
-
-          progressState.value = stateText
-
-          // 최종 이미지를 이미 받았으면 중간 이미지로 덮어쓰지 않음
-          if (data.current_image && !finalImageReceived.value) {
-            currentImage.value = `data:image/png;base64,${data.current_image}`
-
-            // 첫 progress 이미지가 나타나면 lastUsedParams 설정 (조합 결과 표시)
-            if (!hasShownProgressImage.value && pendingUsedParams.value) {
-              lastUsedParams.value = pendingUsedParams.value
-              hasShownProgressImage.value = true
-            }
-          }
-        }
-      } catch (error) {
-        network(error, { context: 'progressPolling', silent: true })
-      }
-    }, PROGRESS_POLL_INTERVAL)
-  }
-
-  /**
-   * 진행 상태 폴링 중지
-   */
-  function stopProgressPolling() {
-    if (progressInterval.value) {
-      clearInterval(progressInterval.value)
-      progressInterval.value = null
-    }
-    idleCount = 0
   }
 
   /**
@@ -496,8 +392,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     progress.value = 0
     progressState.value = t('generation.preparing')
     // currentImage는 초기화하지 않음 - progress에서 current_image가 올 때까지 직전 이미지 유지
-    finalImageReceived.value = false // 플래그 리셋
-    hasShownProgressImage.value = false // progress 이미지 플래그 리셋
+    setFinalImageReceived(false) // 플래그 리셋
 
     // Save parameters used for generation (with expanded prompts)
     const usedParams = {
@@ -521,7 +416,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     }
 
     // Store expanded params for later (will be set when progress image first appears)
-    pendingUsedParams.value = usedParams
+    setPendingUsedParams(usedParams)
 
     // Update lastUsedParams with raw prompts to clear "changed" indicator
     // The expanded prompt will be set when progress image appears
@@ -719,7 +614,7 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         generatedImages.value = combined.slice(0, MAX_IMAGES)
 
         // 최종 이미지 설정 (첫 번째 이미지를 미리보기로)
-        finalImageReceived.value = true
+        setFinalImageReceived(true)
         currentImage.value = generatedImages.value[0].image
         lastUsedParams.value = newImages[0].params
 
