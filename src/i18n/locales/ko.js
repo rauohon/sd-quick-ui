@@ -706,6 +706,38 @@ export default {
     empty: '위의 템플릿을 선택하여 파이프라인을 시작하세요.'
   },
 
+  // 워크플로
+  workflow: {
+    settings: '설정',
+    systemStatus: '시스템 상태',
+    connected: '연결됨',
+    disconnected: '연결 안됨',
+    model: '모델',
+    noModel: '모델 없음',
+    templates: '템플릿',
+    savedWorkflows: '저장된 워크플로',
+    noSavedWorkflows: '저장된 워크플로가 없습니다',
+    pipelineSteps: '파이프라인 스텝',
+    stepsCount: '개',
+    usingDefaults: '기본값 사용',
+    hasOverrides: '오버라이드 설정됨',
+    edit: '편집',
+    moveUp: '위로 이동',
+    moveDown: '아래로 이동',
+    remove: '삭제',
+    noSteps: '스텝이 없습니다',
+    selectTemplate: '템플릿을 선택하거나 스텝을 추가하세요',
+    addStep: '스텝 추가',
+    start: '실행',
+    running: '실행 중...',
+    stop: '중지',
+    clear: '초기화',
+    results: '결과',
+    waiting: '대기 중',
+    generating: '생성 중...',
+    noResults: '아직 결과가 없습니다'
+  },
+
   // img2img
   img2img: {
     title: 'img2img',

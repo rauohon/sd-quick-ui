@@ -706,6 +706,38 @@ export default {
     empty: 'Select a template above to start a pipeline.'
   },
 
+  // Workflow
+  workflow: {
+    settings: 'Settings',
+    systemStatus: 'System Status',
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    model: 'Model',
+    noModel: 'No Model',
+    templates: 'Templates',
+    savedWorkflows: 'Saved Workflows',
+    noSavedWorkflows: 'No saved workflows',
+    pipelineSteps: 'Pipeline Steps',
+    stepsCount: 'steps',
+    usingDefaults: 'Using defaults',
+    hasOverrides: 'Has overrides',
+    edit: 'Edit',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    remove: 'Remove',
+    noSteps: 'No steps',
+    selectTemplate: 'Select a template or add steps',
+    addStep: 'Add Step',
+    start: 'Start',
+    running: 'Running...',
+    stop: 'Stop',
+    clear: 'Clear',
+    results: 'Results',
+    waiting: 'Waiting',
+    generating: 'Generating...',
+    noResults: 'No results yet'
+  },
+
   // img2img
   img2img: {
     title: 'img2img',
