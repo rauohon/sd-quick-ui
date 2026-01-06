@@ -72,10 +72,15 @@
   - usePipeline.js에서 오버라이드 적용 로직
   - 편집 UI: 오른쪽 패널 대체 방식 (인라인 편집)
 
-- [ ] Step 5: 오른쪽 패널 - 결과 미리보기 (진행 중)
+- [x] Step 5: 파이프라인 실행 개선 & 결과 미리보기 ✅
+  - usePipeline.js 재작성: generationEngine 직접 사용 (탭 전환 제거)
+  - 기본 프롬프트 입력 UI (왼쪽 패널)
+  - 실시간 진행률 표시 (currentEngineState.progress, progressState)
+  - 생성 중 이미지 미리보기 (currentEngineState.currentImage)
   - 각 스텝별 출력 이미지 표시
-  - 진행률 표시
   - 최종 결과 하이라이트
+  - 이미지 클릭 시 확대 모달
+  - 오버라이드 프롬프트 유효성 검사 개선
 
 - [ ] Step 6: 워크플로 저장/불러오기
   - 현재 파이프라인을 템플릿으로 저장
@@ -109,4 +114,4 @@
 - 완료된 작업은 TODO_COMPLETED.md로 이동하여 토큰 절약
 
 ---
-Last updated: 2026-01-06 (Workflow UI 개선 계획 추가)
+Last updated: 2026-01-06 (Step 5 완료 - 파이프라인 실행 개선)

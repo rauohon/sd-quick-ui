@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted, watch, toRaw, inject } from 'vue
 import { useI18n } from 'vue-i18n'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { usePipelineImage } from '../composables/usePipelineImage'
-import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
@@ -764,35 +763,6 @@ function handleKeyDown(e) {
   }
 }
 
-// ===== Pipeline Integration =====
-const pipeline = usePipeline()
-
-function setInputImageFromPipeline(imageData) {
-  initImage.value = imageData
-  // base64에서 포맷 감지
-  const formatMatch = imageData.match(/^data:image\/(\w+);/)
-  initImageFormat.value = formatMatch ? formatMatch[1].toUpperCase() : 'WEBP'
-  // Get image dimensions
-  const img = new Image()
-  img.onload = () => {
-    initImageWidth.value = img.width
-    initImageHeight.value = img.height
-  }
-  img.src = imageData
-}
-
-function registerPipelineView() {
-  pipeline.registerView('inpaint', {
-    generate: generateImage,
-    setInputImage: setInputImageFromPipeline
-  })
-
-  // Set completion callback for pipeline
-  setOnComplete((outputImage) => {
-    pipeline.onStepComplete('inpaint', outputImage)
-  })
-}
-
 // ===== Lifecycle =====
 onMounted(async () => {
   // 탭 복귀 시 저장된 initImage/mask 복원
@@ -810,9 +780,6 @@ onMounted(async () => {
       }, 100)
     }
   }
-
-  // Register with pipeline
-  registerPipelineView()
 
   // Initialize panel visibility (load from localStorage)
   initPanelVisibility()
@@ -880,15 +847,9 @@ onMounted(async () => {
     }
   }
 
-  // Mark view as ready for pipeline
-  pipeline.setViewReady('inpaint', true)
 })
 
 onUnmounted(() => {
-  // Unregister from pipeline
-  pipeline.unregisterView('inpaint')
-  setOnComplete(null)
-
   // 키보드 단축키 이벤트 해제
   window.removeEventListener('keydown', handleKeyDown)
   // 클립보드 붙여넣기 이벤트 해제

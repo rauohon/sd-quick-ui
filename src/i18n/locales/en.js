@@ -733,6 +733,7 @@ export default {
     stop: 'Stop',
     clear: 'Clear',
     results: 'Results',
+    runningStep: 'Running Step',
     waiting: 'Waiting',
     generating: 'Generating...',
     noResults: 'No results yet',
@@ -751,7 +752,17 @@ export default {
     inpaintAreaWholePicture: 'Whole picture',
     inpaintAreaOnlyMasked: 'Only masked',
     clearOverrides: 'Clear Overrides',
-    saveOverrides: 'Save'
+    saveOverrides: 'Save',
+
+    // Default prompts
+    defaultPrompts: 'Default Prompts',
+    defaultPromptsDescription: 'Default prompts used for all steps. Can be overridden per step.',
+    defaultPositive: 'Default Positive Prompt',
+    defaultNegative: 'Default Negative Prompt',
+
+    // Live preview
+    livePreview: 'Live Preview',
+    noPreview: 'No preview'
   },
 
   // img2img

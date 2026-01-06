@@ -4,6 +4,8 @@
  * Manages automatic sequential execution of generation steps:
  * txt2img -> img2img -> inpaint (or any combination)
  *
+ * Now uses generationEngine directly - no tab switching required!
+ *
  * Singleton pattern - shared across all components
  */
 
@@ -15,25 +17,39 @@ const currentStepIndex = ref(-1)
 const isRunning = ref(false)
 const isPaused = ref(false)
 
-// Callbacks registered by views
-const viewCallbacks = ref({
-  txt2img: null,
-  img2img: null,
-  inpaint: null
-})
-
-// View ready state (set after initialization complete)
-const viewReady = ref({
-  txt2img: false,
-  img2img: false,
-  inpaint: false
-})
-
-// Tab switch callback (set by App.vue)
-let switchTabCallback = null
+// Generation engine reference (set from WorkflowView)
+let generationEngine = null
 
 // Toast callback (set by App.vue)
 let showToastCallback = null
+
+// Default parameters for generation (can be set from WorkflowView)
+const defaultParams = ref({
+  prompt: '',
+  negativePrompt: '',
+  steps: 20,
+  cfgScale: 7,
+  samplerName: 'Euler a',
+  scheduler: 'automatic',
+  width: 512,
+  height: 512,
+  batchCount: 1,
+  batchSize: 1,
+  seed: -1,
+  denoisingStrength: 0.75,
+  maskBlur: 4,
+  inpaintingFill: 1,
+  inpaintFullRes: 0,
+  inpaintFullResPadding: 32
+})
+
+// Current step's engine state (for UI binding)
+const currentEngineState = ref({
+  isGenerating: false,
+  progress: 0,
+  progressState: '',
+  currentImage: ''
+})
 
 /**
  * Pipeline step structure:
@@ -51,6 +67,41 @@ let showToastCallback = null
 let stepIdCounter = 0
 function generateStepId() {
   return `step_${Date.now()}_${++stepIdCounter}`
+}
+
+// Progress polling interval for current engine
+let progressPollInterval = null
+
+function startProgressPolling() {
+  if (progressPollInterval) return
+
+  progressPollInterval = setInterval(() => {
+    const step = steps.value[currentStepIndex.value]
+    if (!step || !generationEngine) return
+
+    const engine = generationEngine.getEngine(step.type)
+    if (!engine) return
+
+    currentEngineState.value = {
+      isGenerating: engine.isGenerating?.value || false,
+      progress: engine.progress?.value || 0,
+      progressState: engine.progressState?.value || '',
+      currentImage: engine.currentImage?.value || ''
+    }
+  }, 100)
+}
+
+function stopProgressPolling() {
+  if (progressPollInterval) {
+    clearInterval(progressPollInterval)
+    progressPollInterval = null
+  }
+  currentEngineState.value = {
+    isGenerating: false,
+    progress: 0,
+    progressState: '',
+    currentImage: ''
+  }
 }
 
 export function usePipeline() {
@@ -74,30 +125,24 @@ export function usePipeline() {
     return Math.round((completedSteps.value / steps.value.length) * 100)
   })
 
-  // Register view callback for generation trigger
-  function registerView(viewType, callbacks) {
-    viewCallbacks.value[viewType] = callbacks
-  }
-
-  // Unregister view callback
-  function unregisterView(viewType) {
-    viewCallbacks.value[viewType] = null
-    viewReady.value[viewType] = false
-  }
-
-  // Mark view as ready (call after initialization complete)
-  function setViewReady(viewType, ready = true) {
-    viewReady.value[viewType] = ready
-  }
-
-  // Set tab switch callback (called from App.vue)
-  function setSwitchTabCallback(callback) {
-    switchTabCallback = callback
+  // Set generation engine (called from WorkflowView)
+  function setGenerationEngine(engine) {
+    generationEngine = engine
   }
 
   // Set toast callback (called from App.vue)
   function setShowToastCallback(callback) {
     showToastCallback = callback
+  }
+
+  // Set default parameters
+  function setDefaultParams(params) {
+    defaultParams.value = { ...defaultParams.value, ...params }
+  }
+
+  // Get default parameters
+  function getDefaultParams() {
+    return defaultParams.value
   }
 
   // Add a step to the pipeline
@@ -128,6 +173,7 @@ export function usePipeline() {
     currentStepIndex.value = -1
     isRunning.value = false
     isPaused.value = false
+    stopProgressPolling()
   }
 
   // Move step up/down
@@ -156,16 +202,100 @@ export function usePipeline() {
     return steps.value.find(s => s.id === stepId)
   }
 
+  // Build parameters for a step
+  function buildStepParams(step) {
+    const defaults = defaultParams.value
+    const overrides = step.settings || {}
+
+    // Base parameters
+    const params = {
+      prompt: overrides.prompt || defaults.prompt,
+      negativePrompt: overrides.negativePrompt || defaults.negativePrompt,
+      steps: overrides.steps || defaults.steps,
+      cfgScale: overrides.cfgScale || defaults.cfgScale,
+      samplerName: defaults.samplerName,
+      scheduler: defaults.scheduler,
+      width: defaults.width,
+      height: defaults.height,
+      batchCount: defaults.batchCount,
+      batchSize: defaults.batchSize,
+      seed: defaults.seed,
+      adetailers: [],
+      enabledADetailers: [],
+      selectedModel: defaults.selectedModel || '',
+      notificationType: defaults.notificationType,
+      notificationVolume: defaults.notificationVolume
+    }
+
+    // img2img / inpaint specific
+    if (step.type === 'img2img' || step.type === 'inpaint') {
+      params.initImage = step.inputImage
+      params.denoisingStrength = overrides.denoisingStrength || defaults.denoisingStrength
+    }
+
+    // inpaint specific
+    if (step.type === 'inpaint') {
+      params.maskBlur = overrides.maskBlur || defaults.maskBlur
+      params.inpaintingFill = defaults.inpaintingFill
+      params.inpaintFullRes = overrides.inpaintFullRes !== undefined
+        ? overrides.inpaintFullRes
+        : defaults.inpaintFullRes
+      params.inpaintFullResPadding = defaults.inpaintFullResPadding
+      // For inpaint without mask, use full image mask (all white)
+      params.mask = step.mask || null
+    }
+
+    // Debug logging
+    console.log(`[Pipeline] Step ${step.type} params:`, {
+      prompt: params.prompt?.substring(0, 50) + (params.prompt?.length > 50 ? '...' : ''),
+      negativePrompt: params.negativePrompt?.substring(0, 30) + (params.negativePrompt?.length > 30 ? '...' : ''),
+      steps: params.steps,
+      cfgScale: params.cfgScale,
+      denoisingStrength: params.denoisingStrength,
+      hasOverrides: Object.keys(overrides).length > 0,
+      overrideKeys: Object.keys(overrides)
+    })
+
+    return params
+  }
+
   // Start pipeline execution
   async function startPipeline() {
     if (steps.value.length === 0) {
       console.warn('Pipeline: No steps to execute')
+      showToastCallback?.('파이프라인에 스텝이 없습니다', 'warning')
       return false
     }
 
     if (isRunning.value) {
       console.warn('Pipeline: Already running')
       return false
+    }
+
+    if (!generationEngine) {
+      console.error('Pipeline: Generation engine not set')
+      showToastCallback?.('생성 엔진이 설정되지 않았습니다', 'error')
+      return false
+    }
+
+    // Validate that each step has a prompt (either default or override)
+    const hasDefaultPrompt = defaultParams.value.prompt?.trim()
+    console.log('[Pipeline] Starting pipeline validation:', {
+      hasDefaultPrompt: !!hasDefaultPrompt,
+      defaultPrompt: defaultParams.value.prompt?.substring(0, 30) || '(empty)',
+      stepsCount: steps.value.length,
+      stepsWithOverrides: steps.value.filter(s => s.settings).map(s => ({
+        type: s.type,
+        overrideKeys: Object.keys(s.settings || {})
+      }))
+    })
+
+    for (const step of steps.value) {
+      const hasOverridePrompt = step.settings?.prompt?.trim()
+      if (!hasDefaultPrompt && !hasOverridePrompt) {
+        showToastCallback?.(`${step.type} 스텝에 프롬프트가 필요합니다 (기본 또는 오버라이드)`, 'warning')
+        return false
+      }
     }
 
     // Reset all steps to pending
@@ -178,12 +308,15 @@ export function usePipeline() {
     isPaused.value = false
     currentStepIndex.value = 0
 
+    // Start progress polling
+    startProgressPolling()
+
     // Execute first step
     await executeCurrentStep()
     return true
   }
 
-  // Execute current step
+  // Execute current step using generationEngine directly
   async function executeCurrentStep() {
     const step = currentStep.value
     if (!step) {
@@ -192,63 +325,68 @@ export function usePipeline() {
       return
     }
 
-    // Switch to the appropriate tab first
-    if (switchTabCallback) {
-      switchTabCallback(step.type)
-    }
-
-    // Wait for the view to be mounted, registered, AND ready (max 5 seconds)
-    let viewCallback = null
-    let isReady = false
-    for (let i = 0; i < 50; i++) {
-      await new Promise(resolve => setTimeout(resolve, 100))
-      viewCallback = viewCallbacks.value[step.type]
-      isReady = viewReady.value[step.type]
-      if (viewCallback && viewCallback.generate && isReady) {
-        break
-      }
-    }
-
-    if (!viewCallback || !viewCallback.generate || !isReady) {
-      console.error(`Pipeline: View ${step.type} not ready after waiting (callback: ${!!viewCallback}, ready: ${isReady})`)
+    if (!generationEngine) {
+      console.error('Pipeline: Generation engine not available')
       step.status = 'failed'
       stopPipeline()
       return
     }
 
-    // Set input image if available (for img2img/inpaint)
-    if (step.inputImage && viewCallback.setInputImage) {
-      viewCallback.setInputImage(step.inputImage)
-      // Wait for image to load
-      await new Promise(resolve => setTimeout(resolve, 200))
+    // Get the engine for this step type
+    const engine = generationEngine.getEngine(step.type)
+    if (!engine) {
+      console.error(`Pipeline: Engine for ${step.type} not available`)
+      step.status = 'failed'
+      stopPipeline()
+      return
     }
 
-    // Apply step override settings if available
-    if (step.settings && viewCallback.applyOverrides) {
-      viewCallback.applyOverrides(step.settings)
-      // Wait for settings to apply
-      await new Promise(resolve => setTimeout(resolve, 100))
+    // Check if img2img/inpaint has input image
+    if ((step.type === 'img2img' || step.type === 'inpaint') && !step.inputImage) {
+      console.error(`Pipeline: ${step.type} requires input image`)
+      step.status = 'failed'
+      showToastCallback?.(`${step.type}에 입력 이미지가 필요합니다`, 'error')
+      stopPipeline()
+      return
     }
 
     // Mark step as running
     step.status = 'running'
 
+    // Build parameters for this step
+    const params = buildStepParams(step)
+
+    // Set completion callback
+    engine.setOnComplete((outputImage) => {
+      onStepComplete(step.type, outputImage)
+    })
+
     // Trigger generation
     try {
-      viewCallback.generate()
+      showToastCallback?.(`${step.type} 생성 시작`, 'info')
+      await engine.generateImage(params)
     } catch (error) {
       console.error('Pipeline: Generation failed', error)
       step.status = 'failed'
+      showToastCallback?.(`생성 실패: ${error.message}`, 'error')
       stopPipeline()
     }
   }
 
-  // Called when a generation completes (from view)
+  // Called when a generation completes
   function onStepComplete(viewType, outputImage) {
     if (!isRunning.value || isPaused.value) return
 
     const step = currentStep.value
     if (!step || step.type !== viewType) return
+
+    // Debug logging
+    console.log(`[Pipeline] Step ${step.type} completed:`, {
+      stepIndex: currentStepIndex.value + 1,
+      totalSteps: steps.value.length,
+      hasOutputImage: !!outputImage,
+      usedOverrides: step.settings ? Object.keys(step.settings) : []
+    })
 
     // Save output image
     step.outputImage = outputImage
@@ -262,9 +400,7 @@ export function usePipeline() {
         nextStep.inputImage = outputImage
 
         // Show toast for image transfer
-        if (showToastCallback) {
-          showToastCallback(`이미지 전달: ${step.type} → ${nextStep.type}`, 'success')
-        }
+        showToastCallback?.(`이미지 전달: ${step.type} → ${nextStep.type}`, 'success')
       }
 
       // Move to next step
@@ -278,6 +414,7 @@ export function usePipeline() {
       }, 500)
     } else {
       // Pipeline complete
+      showToastCallback?.('파이프라인 완료!', 'success')
       stopPipeline()
     }
   }
@@ -302,6 +439,21 @@ export function usePipeline() {
     isRunning.value = false
     isPaused.value = false
     currentStepIndex.value = -1
+    stopProgressPolling()
+  }
+
+  // Interrupt current generation
+  async function interruptPipeline() {
+    const step = currentStep.value
+    if (!step || !generationEngine) return
+
+    const engine = generationEngine.getEngine(step.type)
+    if (engine?.interruptGeneration) {
+      await engine.interruptGeneration()
+    }
+
+    step.status = 'failed'
+    stopPipeline()
   }
 
   // Quick pipeline creation helpers
@@ -334,13 +486,14 @@ export function usePipeline() {
     hasSteps,
     completedSteps,
     progress,
+    defaultParams,
+    currentEngineState,
 
-    // View registration
-    registerView,
-    unregisterView,
-    setViewReady,
-    setSwitchTabCallback,
+    // Engine setup
+    setGenerationEngine,
     setShowToastCallback,
+    setDefaultParams,
+    getDefaultParams,
 
     // Step management
     addStep,
@@ -356,6 +509,7 @@ export function usePipeline() {
     pausePipeline,
     resumePipeline,
     stopPipeline,
+    interruptPipeline,
 
     // Quick helpers
     createTxt2ImgToImg2Img,

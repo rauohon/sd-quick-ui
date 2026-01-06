@@ -733,6 +733,7 @@ export default {
     stop: '중지',
     clear: '초기화',
     results: '결과',
+    runningStep: '실행 중 스텝',
     waiting: '대기 중',
     generating: '생성 중...',
     noResults: '아직 결과가 없습니다',
@@ -751,7 +752,17 @@ export default {
     inpaintAreaWholePicture: '전체',
     inpaintAreaOnlyMasked: '마스크 영역만',
     clearOverrides: '오버라이드 초기화',
-    saveOverrides: '저장'
+    saveOverrides: '저장',
+
+    // Default prompts
+    defaultPrompts: '기본 프롬프트',
+    defaultPromptsDescription: '모든 스텝에서 사용될 기본 프롬프트입니다. 스텝별 오버라이드로 재정의할 수 있습니다.',
+    defaultPositive: '기본 포지티브 프롬프트',
+    defaultNegative: '기본 네거티브 프롬프트',
+
+    // Live preview
+    livePreview: '실시간 미리보기',
+    noPreview: '미리보기 없음'
   },
 
   // img2img

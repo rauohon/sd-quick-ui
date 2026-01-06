@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
@@ -19,8 +19,33 @@ const props = defineProps({
 // Notification settings (shared singleton)
 const { notificationType, notificationVolume } = useNotificationSettings()
 
+// Generation Engine (injected from App.vue)
+const generationEngine = inject('generationEngine')
+
 // Pipeline
 const pipeline = usePipeline()
+
+// Set generation engine for pipeline
+if (generationEngine) {
+  pipeline.setGenerationEngine(generationEngine)
+}
+
+// Set toast callback
+pipeline.setShowToastCallback(props.showToast)
+
+// Default params for pipeline (bound to UI)
+const defaultPrompt = ref('')
+const defaultNegativePrompt = ref('')
+
+// Sync default params with pipeline
+watch([defaultPrompt, defaultNegativePrompt], () => {
+  pipeline.setDefaultParams({
+    prompt: defaultPrompt.value,
+    negativePrompt: defaultNegativePrompt.value,
+    notificationType: notificationType.value,
+    notificationVolume: notificationVolume.value
+  })
+}, { immediate: true })
 
 // API Status
 const { apiConnected, checkApiStatus } = useApiStatus(props.showToast)
@@ -131,6 +156,33 @@ function getStepStatusEmoji(status) {
     case 'failed': return '❌'
     default: return '⏳'
   }
+}
+
+// Image preview modal
+const previewImage = ref(null)
+const previewStepInfo = ref(null)
+
+function openImagePreview(step, index) {
+  if (step.outputImage) {
+    previewImage.value = step.outputImage
+    previewStepInfo.value = { type: step.type, index: index + 1 }
+  }
+}
+
+function closeImagePreview() {
+  previewImage.value = null
+  previewStepInfo.value = null
+}
+
+// Check if step is the final completed step
+function isFinalCompletedStep(step, index) {
+  const steps = pipeline.steps.value
+  if (step.status !== 'completed') return false
+  // Check if this is the last completed step
+  for (let i = index + 1; i < steps.length; i++) {
+    if (steps[i].status === 'completed') return false
+  }
+  return true
 }
 
 // Step override editing (replaces right panel)
@@ -263,6 +315,32 @@ onUnmounted(() => {
             <button @click="createFullPipeline" class="template-btn">
               txt2img → img2img → inpaint
             </button>
+          </div>
+        </div>
+
+        <!-- Default Prompts -->
+        <div class="settings-section">
+          <h4 class="section-title">{{ t('workflow.defaultPrompts') }}</h4>
+          <p class="section-description">{{ t('workflow.defaultPromptsDescription') }}</p>
+
+          <div class="form-group compact">
+            <label>{{ t('workflow.defaultPositive') }}</label>
+            <textarea
+              v-model="defaultPrompt"
+              rows="4"
+              :placeholder="t('prompt.placeholder')"
+              class="default-prompt-input"
+            ></textarea>
+          </div>
+
+          <div class="form-group compact">
+            <label>{{ t('workflow.defaultNegative') }}</label>
+            <textarea
+              v-model="defaultNegativePrompt"
+              rows="3"
+              :placeholder="t('prompt.negativePlaceholder')"
+              class="default-prompt-input"
+            ></textarea>
           </div>
         </div>
 
@@ -439,15 +517,34 @@ onUnmounted(() => {
     <div v-if="!editingStep" class="results-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ t('workflow.results') }}</h3>
+        <span v-if="pipeline.hasSteps.value" class="results-summary">
+          {{ pipeline.completedSteps.value }}/{{ pipeline.steps.value.length }}
+        </span>
       </div>
 
       <div class="panel-content">
         <!-- Progress (when running) -->
         <div class="progress-section" v-if="pipeline.isRunning.value">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: pipeline.progress.value + '%' }"></div>
+          <div class="progress-info">
+            <span class="progress-label">
+              {{ t('workflow.runningStep') }} {{ pipeline.currentStepIndex.value + 1 }}/{{ pipeline.steps.value.length }}
+              <span v-if="pipeline.currentEngineState.value.progressState" class="progress-state">
+                ({{ pipeline.currentEngineState.value.progressState }})
+              </span>
+            </span>
+            <span class="progress-percent">{{ Math.round(pipeline.currentEngineState.value.progress) }}%</span>
           </div>
-          <span class="progress-text">{{ pipeline.progress.value }}%</span>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: pipeline.currentEngineState.value.progress + '%' }"></div>
+          </div>
+
+          <!-- Live Preview Image -->
+          <div class="live-preview" v-if="pipeline.currentEngineState.value.currentImage">
+            <div class="live-preview-header">
+              <span class="live-preview-label">{{ t('workflow.livePreview') }}</span>
+            </div>
+            <img :src="pipeline.currentEngineState.value.currentImage" alt="Live preview" class="live-preview-image" />
+          </div>
         </div>
 
         <!-- Step Results -->
@@ -456,17 +553,30 @@ onUnmounted(() => {
             v-for="(step, index) in pipeline.steps.value"
             :key="step.id"
             class="result-item"
-            :class="{ 'has-image': step.outputImage }"
+            :class="{
+              'has-image': step.outputImage,
+              'is-running': step.status === 'running',
+              'is-final': isFinalCompletedStep(step, index)
+            }"
           >
             <div class="result-header">
               <span class="result-step">Step {{ index + 1 }}: {{ step.type }}</span>
               <span class="result-status">{{ getStepStatusEmoji(step.status) }}</span>
             </div>
-            <div class="result-image" v-if="step.outputImage">
+            <div
+              class="result-image"
+              v-if="step.outputImage"
+              @click="openImagePreview(step, index)"
+            >
               <img :src="step.outputImage" :alt="`Step ${index + 1} result`" />
+              <div class="image-overlay">
+                <span class="zoom-icon">🔍</span>
+              </div>
             </div>
             <div class="result-placeholder" v-else>
-              <span>{{ step.status === 'pending' ? t('workflow.waiting') : step.status === 'running' ? t('workflow.generating') : '-' }}</span>
+              <span v-if="step.status === 'pending'">{{ t('workflow.waiting') }}</span>
+              <span v-else-if="step.status === 'running'" class="generating-text">{{ t('workflow.generating') }}</span>
+              <span v-else>-</span>
             </div>
           </div>
         </div>
@@ -582,6 +692,19 @@ onUnmounted(() => {
         <button class="btn btn-primary" @click="saveOverrides">
           {{ t('workflow.saveOverrides') }}
         </button>
+      </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div v-if="previewImage" class="image-preview-modal" @click.self="closeImagePreview">
+      <div class="preview-container">
+        <div class="preview-header">
+          <span class="preview-title">Step {{ previewStepInfo?.index }}: {{ previewStepInfo?.type }}</span>
+          <button class="preview-close" @click="closeImagePreview">✕</button>
+        </div>
+        <div class="preview-image-wrapper">
+          <img :src="previewImage" alt="Preview" />
+        </div>
       </div>
     </div>
   </div>
@@ -1063,18 +1186,43 @@ onUnmounted(() => {
 }
 
 /* Results Panel */
+.results-summary {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
 .progress-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 16px;
   padding: 12px;
   background: var(--color-bg-tertiary);
   border-radius: 6px;
+  border: 1px solid var(--color-primary);
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.progress-percent {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 .progress-bar {
-  flex: 1;
   height: 8px;
   background: var(--color-bg-secondary);
   border-radius: 4px;
@@ -1085,13 +1233,6 @@ onUnmounted(() => {
   height: 100%;
   background: var(--gradient-primary);
   transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-primary);
-  min-width: 40px;
 }
 
 .results-list {
@@ -1109,6 +1250,31 @@ onUnmounted(() => {
 
 .result-item.has-image {
   border-color: var(--color-success);
+}
+
+.result-item.is-running {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  animation: pulse-border 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+  }
+}
+
+.result-item.is-final {
+  border-color: var(--color-success);
+  border-width: 2px;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.result-item.is-final .result-step {
+  color: var(--color-success);
 }
 
 .result-header {
@@ -1129,14 +1295,40 @@ onUnmounted(() => {
 }
 
 .result-image {
+  position: relative;
   border-radius: 6px;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .result-image img {
   width: 100%;
   height: auto;
   display: block;
+  transition: transform 0.2s;
+}
+
+.result-image:hover img {
+  transform: scale(1.02);
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.result-image:hover .image-overlay {
+  opacity: 1;
+}
+
+.zoom-icon {
+  font-size: 24px;
 }
 
 .result-placeholder {
@@ -1146,6 +1338,16 @@ onUnmounted(() => {
   font-size: 12px;
   background: var(--color-bg-secondary);
   border-radius: 6px;
+}
+
+.generating-text {
+  color: var(--color-primary);
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .results-empty {
@@ -1294,5 +1496,150 @@ onUnmounted(() => {
 
 .btn-secondary:hover {
   background: var(--color-bg-hover);
+}
+
+/* Image Preview Modal */
+.image-preview-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.preview-container {
+  max-width: 90vw;
+  max-height: 90vh;
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.preview-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.preview-close:hover {
+  background: var(--color-error);
+  color: white;
+}
+
+.preview-image-wrapper {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.preview-image-wrapper img {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Section description */
+.section-description {
+  margin: 0 0 12px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+
+/* Compact form group (for settings panel) */
+.form-group.compact {
+  margin-bottom: 12px;
+}
+
+.form-group.compact label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.default-prompt-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  resize: vertical;
+  min-height: 40px;
+}
+
+.default-prompt-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* Progress state text */
+.progress-state {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: normal;
+}
+
+/* Live Preview */
+.live-preview {
+  margin-top: 12px;
+  padding: 8px;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.live-preview-header {
+  margin-bottom: 8px;
+}
+
+.live-preview-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.live-preview-image {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
 }
 </style>

@@ -8,7 +8,6 @@ import WorkflowView from './views/WorkflowView.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
 import { useDarkMode } from './composables/useDarkMode'
-import { usePipeline } from './composables/usePipeline'
 import { useGenerationEngine } from './composables/useGenerationEngine'
 
 // i18n
@@ -76,10 +75,6 @@ function updateTabGenerating(tabId, isGenerating) {
   generatingTabs.value[tabId] = isGenerating
 }
 
-// Pipeline integration (setSwitchTabCallback for tab switching during pipeline execution)
-const pipeline = usePipeline()
-pipeline.setSwitchTabCallback(setActiveTab)
-
 // Modal state
 const showModal = ref(false)
 const modalType = ref('') // 'comparison' or 'viewer'
@@ -107,9 +102,6 @@ function showToast(message, type = 'info') {
     }
   }, duration)
 }
-
-// Set pipeline toast callback (after showToast is defined)
-pipeline.setShowToastCallback(showToast)
 
 // Initialize generation engine (after showToast is defined)
 generationEngine = useGenerationEngine(showToast, t)

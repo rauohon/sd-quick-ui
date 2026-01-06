@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted, watch, toRaw, inject } from 'vue
 import { useI18n } from 'vue-i18n'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { usePipelineImage } from '../composables/usePipelineImage'
-import { usePipeline } from '../composables/usePipeline'
 import { useApiStatus } from '../composables/useApiStatus'
 import { useModelLoader } from '../composables/useModelLoader'
 import { useSlotManagement } from '../composables/useSlotManagement'
@@ -463,36 +462,8 @@ const currentParams = computed(() => ({
   adetailers: JSON.parse(JSON.stringify(adetailers.value))
 }))
 
-// ===== Pipeline Integration =====
-const pipeline = usePipeline()
-
-function setInputImageFromPipeline(imageData) {
-  initImage.value = imageData
-  // Get image dimensions
-  const img = new Image()
-  img.onload = () => {
-    initImageWidth.value = img.width
-    initImageHeight.value = img.height
-  }
-  img.src = imageData
-}
-
-function registerPipelineView() {
-  pipeline.registerView('img2img', {
-    generate: generateImage,
-    setInputImage: setInputImageFromPipeline
-  })
-
-  // Set completion callback for pipeline
-  setOnComplete((outputImage) => {
-    pipeline.onStepComplete('img2img', outputImage)
-  })
-}
-
 // ===== Lifecycle =====
 onMounted(async () => {
-  // Register with pipeline
-  registerPipelineView()
 
   // Initialize panel visibility (load from localStorage)
   initPanelVisibility()
@@ -550,15 +521,9 @@ onMounted(async () => {
     }
   }
 
-  // Mark view as ready for pipeline
-  pipeline.setViewReady('img2img', true)
 })
 
 onUnmounted(() => {
-  // Unregister from pipeline
-  pipeline.unregisterView('img2img')
-  setOnComplete(null)
-
   // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
   slotManagement.cancelDebouncedSlotSave()
   slotManagement.saveCurrentSlot()
