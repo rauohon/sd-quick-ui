@@ -15,7 +15,6 @@ import { get, post } from '../api/client'
 import { useControlNet } from './useControlNet'
 import {
   SEED_MAX,
-  MAX_CONSECUTIVE_ERRORS,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT,
   MAX_IMAGES,
@@ -64,7 +63,9 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   /**
@@ -486,40 +487,19 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
         callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
-      console.error('Generation failed:', error)
-      consecutiveErrors.value++
-
-      let message = t('message.error.generationFailed')
-
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = t('message.error.connectionFailed')
-      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
-        const statusMatch = error.message.match(/\d+/)
-        const status = statusMatch ? parseInt(statusMatch[0]) : null
-
-        switch (status) {
-          case 401: message = t('message.error.authRequired'); break
-          case 403: message = t('message.error.accessDenied'); break
-          case 500: message = t('message.error.serverInternalError'); break
-          case 503: message = t('message.error.noResponse'); break
-          default: message = t('message.error.serverError', { status })
-        }
-      } else {
-        message = t('message.error.generationFailedMessage', { error: error.message })
-      }
-
-      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
-        isInfiniteMode.value = false
-        isInfiniteLoopRunning = false
-        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
-      } else {
-        showToast(message, 'error')
-      }
+      handleGenerationError({
+        error,
+        consecutiveErrors,
+        isInfiniteMode,
+        infiniteLoopControl: { get isRunning() { return isInfiniteLoopRunning }, set isRunning(v) { isInfiniteLoopRunning = v } }
+      })
     } finally {
-      isGenerating.value = false
-      stopProgressPolling()
-      progress.value = 0
-      progressState.value = ''
+      cleanupAfterGeneration({
+        isGenerating,
+        stopProgressPolling,
+        progress,
+        progressState
+      })
     }
   }
 
@@ -626,7 +606,9 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   async function interruptGeneration() {
@@ -1062,40 +1044,19 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
         callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
-      console.error('Generation failed:', error)
-      consecutiveErrors.value++
-
-      let message = t('message.error.generationFailed')
-
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = t('message.error.connectionFailed')
-      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
-        const statusMatch = error.message.match(/\d+/)
-        const status = statusMatch ? parseInt(statusMatch[0]) : null
-
-        switch (status) {
-          case 401: message = t('message.error.authRequired'); break
-          case 403: message = t('message.error.accessDenied'); break
-          case 500: message = t('message.error.serverInternalError'); break
-          case 503: message = t('message.error.noResponse'); break
-          default: message = t('message.error.serverError', { status })
-        }
-      } else {
-        message = t('message.error.generationFailedMessage', { error: error.message })
-      }
-
-      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
-        isInfiniteMode.value = false
-        isInfiniteLoopRunning = false
-        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
-      } else {
-        showToast(message, 'error')
-      }
+      handleGenerationError({
+        error,
+        consecutiveErrors,
+        isInfiniteMode,
+        infiniteLoopControl: { get isRunning() { return isInfiniteLoopRunning }, set isRunning(v) { isInfiniteLoopRunning = v } }
+      })
     } finally {
-      isGenerating.value = false
-      stopProgressPolling()
-      progress.value = 0
-      progressState.value = ''
+      cleanupAfterGeneration({
+        isGenerating,
+        stopProgressPolling,
+        progress,
+        progressState
+      })
     }
   }
 
@@ -1175,7 +1136,9 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   async function interruptGeneration() {
@@ -1585,40 +1548,19 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
         callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
-      console.error('Generation failed:', error)
-      consecutiveErrors.value++
-
-      let message = t('message.error.generationFailed')
-
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = t('message.error.connectionFailed')
-      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
-        const statusMatch = error.message.match(/\d+/)
-        const status = statusMatch ? parseInt(statusMatch[0]) : null
-
-        switch (status) {
-          case 401: message = t('message.error.authRequired'); break
-          case 403: message = t('message.error.accessDenied'); break
-          case 500: message = t('message.error.serverInternalError'); break
-          case 503: message = t('message.error.noResponse'); break
-          default: message = t('message.error.serverError', { status })
-        }
-      } else {
-        message = t('message.error.generationFailedMessage', { error: error.message })
-      }
-
-      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
-        isInfiniteMode.value = false
-        isInfiniteLoopRunning = false
-        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
-      } else {
-        showToast(message, 'error')
-      }
+      handleGenerationError({
+        error,
+        consecutiveErrors,
+        isInfiniteMode,
+        infiniteLoopControl: { get isRunning() { return isInfiniteLoopRunning }, set isRunning(v) { isInfiniteLoopRunning = v } }
+      })
     } finally {
-      isGenerating.value = false
-      stopProgressPolling()
-      progress.value = 0
-      progressState.value = ''
+      cleanupAfterGeneration({
+        isGenerating,
+        stopProgressPolling,
+        progress,
+        progressState
+      })
     }
   }
 

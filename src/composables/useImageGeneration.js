@@ -14,7 +14,6 @@ import { get, post } from '../api/client'
 import { useControlNet } from './useControlNet'
 import {
   SEED_MAX,
-  MAX_CONSECUTIVE_ERRORS,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT
 } from '../config/constants'
@@ -55,7 +54,9 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   // 연속 에러 카운터
@@ -564,53 +565,19 @@ export function useImageGeneration(params, enabledADetailers, showToast, t, appl
         callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
-      console.error(t('message.error.generationFailed'), error)
-
-      // 에러 카운터 증가
-      consecutiveErrors.value++
-
-      let message = t('message.error.generationFailed')
-
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = t('message.error.connectionFailed')
-      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
-        const statusMatch = error.message.match(/\d+/)
-        const status = statusMatch ? parseInt(statusMatch[0]) : null
-
-        switch (status) {
-          case 401:
-            message = t('message.error.authRequired')
-            break
-          case 403:
-            message = t('message.error.accessDenied')
-            break
-          case 500:
-            message = t('message.error.serverInternalError')
-            break
-          case 503:
-            message = t('message.error.noResponse')
-            break
-          default:
-            message = t('message.error.serverError', { status })
-        }
-      } else {
-        message = t('message.error.generationFailedMessage', { error: error.message })
-      }
-
-      // 무한 모드일 때 연속 에러 체크
-      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
-        isInfiniteMode.value = false
-        isInfiniteLoopRunning = false // 루프 플래그도 리셋
-        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
-        console.warn(`Infinite mode auto-stopped after ${consecutiveErrors.value} consecutive errors`)
-      } else {
-        showToast(message, 'error')
-      }
+      handleGenerationError({
+        error,
+        consecutiveErrors,
+        isInfiniteMode,
+        infiniteLoopControl: { get isRunning() { return isInfiniteLoopRunning }, set isRunning(v) { isInfiniteLoopRunning = v } }
+      })
     } finally {
-      isGenerating.value = false
-      stopProgressPolling()
-      progress.value = 0
-      progressState.value = ''
+      cleanupAfterGeneration({
+        isGenerating,
+        stopProgressPolling,
+        progress,
+        progressState
+      })
     }
   }
 

@@ -3,7 +3,7 @@
  * Centralized logic for processing generated images
  */
 
-import { MAX_IMAGES } from '../config/constants'
+import { MAX_IMAGES, MAX_CONSECUTIVE_ERRORS } from '../config/constants'
 import { notifyCompletion } from '../utils/notification'
 
 /**
@@ -201,11 +201,92 @@ export function useGenerationResult({ t, showToast, saveImage, onError }) {
     }
   }
 
+  /**
+   * Build error message from generation error
+   * @param {Error} error - The error object
+   * @returns {string} Translated error message
+   */
+  function buildErrorMessage(error) {
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      return t('message.error.connectionFailed')
+    }
+
+    if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
+      const statusMatch = error.message.match(/\d+/)
+      const status = statusMatch ? parseInt(statusMatch[0]) : null
+
+      switch (status) {
+        case 401: return t('message.error.authRequired')
+        case 403: return t('message.error.accessDenied')
+        case 500: return t('message.error.serverInternalError')
+        case 503: return t('message.error.noResponse')
+        default: return t('message.error.serverError', { status })
+      }
+    }
+
+    return t('message.error.generationFailedMessage', { error: error.message })
+  }
+
+  /**
+   * Handle generation error
+   * @param {Object} options - Error handling options
+   * @param {Error} options.error - The error object
+   * @param {import('vue').Ref} options.consecutiveErrors - Ref to consecutive error counter
+   * @param {import('vue').Ref} options.isInfiniteMode - Ref to infinite mode flag
+   * @param {Object} options.infiniteLoopControl - Object with isRunning flag to control infinite loop
+   * @returns {void}
+   */
+  function handleGenerationError({
+    error,
+    consecutiveErrors,
+    isInfiniteMode,
+    infiniteLoopControl
+  }) {
+    console.error(t('message.error.generationFailed'), error)
+    consecutiveErrors.value++
+
+    const message = buildErrorMessage(error)
+
+    // 무한 모드일 때 연속 에러 체크
+    if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
+      isInfiniteMode.value = false
+      if (infiniteLoopControl) {
+        infiniteLoopControl.isRunning = false
+      }
+      showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
+      console.warn(`Infinite mode auto-stopped after ${consecutiveErrors.value} consecutive errors`)
+    } else {
+      showToast(message, 'error')
+    }
+  }
+
+  /**
+   * Cleanup after generation (success or failure)
+   * @param {Object} options - Cleanup options
+   * @param {import('vue').Ref} options.isGenerating - Ref to generating flag
+   * @param {Function} options.stopProgressPolling - Function to stop polling
+   * @param {import('vue').Ref} options.progress - Ref to progress value
+   * @param {import('vue').Ref} options.progressState - Ref to progress state text
+   */
+  function cleanupAfterGeneration({
+    isGenerating,
+    stopProgressPolling,
+    progress,
+    progressState
+  }) {
+    isGenerating.value = false
+    stopProgressPolling()
+    progress.value = 0
+    progressState.value = ''
+  }
+
   return {
     parseGenerationInfo,
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   }
 }

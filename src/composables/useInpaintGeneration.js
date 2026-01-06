@@ -14,7 +14,6 @@ import { validateNumber, sleep } from '../utils/paramValidation'
 import { post } from '../api/client'
 import {
   SEED_MAX,
-  MAX_CONSECUTIVE_ERRORS,
   GENERATION_TIMEOUT,
   INFINITE_MODE_INITIAL_WAIT,
   IMAGE_TYPES
@@ -51,7 +50,9 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
     processGeneratedImages,
     updateStateAfterGeneration,
     sendCompletionNotification,
-    callPipelineCallback
+    callPipelineCallback,
+    handleGenerationError,
+    cleanupAfterGeneration
   } = useGenerationResult({ t, showToast, saveImage, onError: storage })
 
   const consecutiveErrors = ref(0)
@@ -478,50 +479,19 @@ export function useInpaintGeneration(params, enabledADetailers, showToast, t) {
         callPipelineCallback(newImages, generatedImages, onCompleteCallback)
       }
     } catch (error) {
-      console.error(t('message.error.generationFailed'), error)
-
-      consecutiveErrors.value++
-
-      let message = t('message.error.generationFailed')
-
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        message = t('message.error.connectionFailed')
-      } else if (error.message.includes(t('message.error.apiErrorWithStatus', { status: '' }))) {
-        const statusMatch = error.message.match(/\d+/)
-        const status = statusMatch ? parseInt(statusMatch[0]) : null
-
-        switch (status) {
-          case 401:
-            message = t('message.error.authRequired')
-            break
-          case 403:
-            message = t('message.error.accessDenied')
-            break
-          case 500:
-            message = t('message.error.serverInternalError')
-            break
-          case 503:
-            message = t('message.error.noResponse')
-            break
-          default:
-            message = t('message.error.serverError', { status })
-        }
-      } else {
-        message = t('message.error.generationFailedMessage', { error: error.message })
-      }
-
-      if (isInfiniteMode.value && consecutiveErrors.value >= MAX_CONSECUTIVE_ERRORS) {
-        isInfiniteMode.value = false
-        isInfiniteLoopRunning = false
-        showToast(t('infiniteMode.autoStopped', { count: MAX_CONSECUTIVE_ERRORS }), 'error')
-      } else {
-        showToast(message, 'error')
-      }
+      handleGenerationError({
+        error,
+        consecutiveErrors,
+        isInfiniteMode,
+        infiniteLoopControl: { get isRunning() { return isInfiniteLoopRunning }, set isRunning(v) { isInfiniteLoopRunning = v } }
+      })
     } finally {
-      isGenerating.value = false
-      stopProgressPolling()
-      progress.value = 0
-      progressState.value = ''
+      cleanupAfterGeneration({
+        isGenerating,
+        stopProgressPolling,
+        progress,
+        progressState
+      })
     }
   }
 
