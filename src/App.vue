@@ -602,9 +602,9 @@ onUnmounted(() => {
 }
 
 .template-btn:hover {
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: white;
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .steps-list {
@@ -620,12 +620,12 @@ onUnmounted(() => {
   gap: 12px;
   padding: 12px 16px;
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 8px;
 }
 
 .step-item.step-running {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
   background: rgba(59, 130, 246, 0.1);
 }
 
@@ -637,7 +637,7 @@ onUnmounted(() => {
 .step-number {
   width: 24px;
   height: 24px;
-  background: var(--color-accent);
+  background: var(--color-primary);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -693,12 +693,13 @@ onUnmounted(() => {
 }
 
 .start-btn {
-  background: var(--color-accent);
+  background: var(--gradient-primary);
   color: white;
 }
 
 .start-btn:hover:not(:disabled) {
-  background: var(--color-accent-hover);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .stop-btn {
@@ -712,7 +713,7 @@ onUnmounted(() => {
 
 .clear-btn {
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
   color: var(--color-text-primary);
 }
 
@@ -741,7 +742,7 @@ onUnmounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: var(--color-accent);
+  background: var(--gradient-primary);
   transition: width 0.3s ease;
 }
 
