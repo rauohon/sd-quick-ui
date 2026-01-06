@@ -735,7 +735,23 @@ export default {
     results: '결과',
     waiting: '대기 중',
     generating: '생성 중...',
-    noResults: '아직 결과가 없습니다'
+    noResults: '아직 결과가 없습니다',
+
+    // Step override
+    editStep: '스텝 설정 편집',
+    overrideSettings: '오버라이드 설정',
+    overrideDescription: '워크플로우 실행 시 이 스텝에만 적용되는 설정입니다. 각 탭의 원래 설정은 변경되지 않습니다. 비워두면 해당 탭의 현재 값이 사용됩니다.',
+    promptOverride: '프롬프트',
+    negativeOverride: '네거티브 프롬프트',
+    stepsOverride: 'Steps',
+    cfgOverride: 'CFG Scale',
+    denoisingOverride: 'Denoising Strength',
+    maskBlurOverride: 'Mask Blur',
+    inpaintAreaOverride: 'Inpaint Area',
+    inpaintAreaWholePicture: '전체',
+    inpaintAreaOnlyMasked: '마스크 영역만',
+    clearOverrides: '오버라이드 초기화',
+    saveOverrides: '저장'
   },
 
   // img2img

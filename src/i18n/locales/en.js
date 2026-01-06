@@ -735,7 +735,23 @@ export default {
     results: 'Results',
     waiting: 'Waiting',
     generating: 'Generating...',
-    noResults: 'No results yet'
+    noResults: 'No results yet',
+
+    // Step override
+    editStep: 'Edit Step Settings',
+    overrideSettings: 'Override Settings',
+    overrideDescription: 'Settings applied only during workflow execution for this step. Original tab settings remain unchanged. Leave empty to use current tab values.',
+    promptOverride: 'Prompt',
+    negativeOverride: 'Negative Prompt',
+    stepsOverride: 'Steps',
+    cfgOverride: 'CFG Scale',
+    denoisingOverride: 'Denoising Strength',
+    maskBlurOverride: 'Mask Blur',
+    inpaintAreaOverride: 'Inpaint Area',
+    inpaintAreaWholePicture: 'Whole picture',
+    inpaintAreaOnlyMasked: 'Only masked',
+    clearOverrides: 'Clear Overrides',
+    saveOverrides: 'Save'
   },
 
   // img2img

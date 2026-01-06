@@ -133,6 +133,69 @@ function getStepStatusEmoji(status) {
   }
 }
 
+// Step override editing (replaces right panel)
+const editingStep = ref(null)
+const overrideForm = ref({
+  prompt: '',
+  negativePrompt: '',
+  steps: '',
+  cfgScale: '',
+  denoisingStrength: '',
+  maskBlur: '',
+  inpaintFullRes: ''
+})
+
+function openOverrideModal(step) {
+  editingStep.value = step
+  // Load existing settings or empty
+  const settings = step.settings || {}
+  overrideForm.value = {
+    prompt: settings.prompt || '',
+    negativePrompt: settings.negativePrompt || '',
+    steps: settings.steps || '',
+    cfgScale: settings.cfgScale || '',
+    denoisingStrength: settings.denoisingStrength || '',
+    maskBlur: settings.maskBlur || '',
+    inpaintFullRes: settings.inpaintFullRes || ''
+  }
+}
+
+function closeOverrideModal() {
+  editingStep.value = null
+}
+
+function clearOverrides() {
+  overrideForm.value = {
+    prompt: '',
+    negativePrompt: '',
+    steps: '',
+    cfgScale: '',
+    denoisingStrength: '',
+    maskBlur: '',
+    inpaintFullRes: ''
+  }
+}
+
+function saveOverrides() {
+  if (!editingStep.value) return
+
+  // Build settings object (only include non-empty values)
+  const settings = {}
+  if (overrideForm.value.prompt) settings.prompt = overrideForm.value.prompt
+  if (overrideForm.value.negativePrompt) settings.negativePrompt = overrideForm.value.negativePrompt
+  if (overrideForm.value.steps) settings.steps = Number(overrideForm.value.steps)
+  if (overrideForm.value.cfgScale) settings.cfgScale = Number(overrideForm.value.cfgScale)
+  if (overrideForm.value.denoisingStrength) settings.denoisingStrength = Number(overrideForm.value.denoisingStrength)
+  if (overrideForm.value.maskBlur) settings.maskBlur = Number(overrideForm.value.maskBlur)
+  if (overrideForm.value.inpaintFullRes) settings.inpaintFullRes = overrideForm.value.inpaintFullRes === 'masked' ? 1 : 0
+
+  // Save to step (null if empty)
+  pipeline.updateStepSettings(editingStep.value.id, Object.keys(settings).length > 0 ? settings : null)
+
+  props.showToast(t('common.save') + ' ✓', 'success')
+  closeOverrideModal()
+}
+
 // Computed: current model name
 const currentModelName = computed(() => {
   if (!selectedModel.value) return t('workflow.noModel')
@@ -308,6 +371,7 @@ onUnmounted(() => {
             <div class="step-actions">
               <button
                 class="action-btn edit-btn"
+                @click="openOverrideModal(step)"
                 :disabled="pipeline.isRunning.value"
                 :title="t('workflow.edit')"
               >
@@ -371,8 +435,8 @@ onUnmounted(() => {
 
     </div>
 
-    <!-- Right Panel: Results Preview -->
-    <div class="results-panel">
+    <!-- Right Panel: Results Preview (when not editing) -->
+    <div v-if="!editingStep" class="results-panel">
       <div class="panel-header">
         <h3 class="panel-title">{{ t('workflow.results') }}</h3>
       </div>
@@ -411,6 +475,113 @@ onUnmounted(() => {
         <div class="results-empty" v-else>
           <p>{{ t('workflow.noResults') }}</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Override Editor (when editing) -->
+    <div v-else class="results-panel edit-panel">
+      <div class="panel-header">
+        <div class="header-left">
+          <h3 class="panel-title">{{ t('workflow.editStep') }}: {{ editingStep?.type }}</h3>
+        </div>
+        <button class="header-close-btn" @click="closeOverrideModal" :title="t('common.close')">✕</button>
+      </div>
+
+      <div class="panel-content edit-content">
+        <p class="edit-description">{{ t('workflow.overrideDescription') }}</p>
+
+        <!-- Common settings -->
+        <div class="form-section">
+          <h4 class="section-title">{{ t('workflow.overrideSettings') }}</h4>
+
+          <div class="form-group">
+            <label>{{ t('workflow.promptOverride') }}</label>
+            <textarea
+              v-model="overrideForm.prompt"
+              rows="15"
+              :placeholder="t('prompt.placeholder')"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('workflow.negativeOverride') }}</label>
+            <textarea
+              v-model="overrideForm.negativePrompt"
+              rows="12"
+              :placeholder="t('prompt.negativePlaceholder')"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>{{ t('workflow.stepsOverride') }}</label>
+              <input
+                type="number"
+                v-model="overrideForm.steps"
+                min="1"
+                max="150"
+                placeholder="20"
+              />
+            </div>
+            <div class="form-group">
+              <label>{{ t('workflow.cfgOverride') }}</label>
+              <input
+                type="number"
+                v-model="overrideForm.cfgScale"
+                min="1"
+                max="30"
+                step="0.5"
+                placeholder="7"
+              />
+            </div>
+          </div>
+
+          <!-- img2img / inpaint specific -->
+          <div v-if="editingStep?.type === 'img2img' || editingStep?.type === 'inpaint'" class="form-row">
+            <div class="form-group">
+              <label>{{ t('workflow.denoisingOverride') }}</label>
+              <input
+                type="number"
+                v-model="overrideForm.denoisingStrength"
+                min="0"
+                max="1"
+                step="0.05"
+                placeholder="0.75"
+              />
+            </div>
+          </div>
+
+          <!-- inpaint specific -->
+          <div v-if="editingStep?.type === 'inpaint'" class="form-row">
+            <div class="form-group">
+              <label>{{ t('workflow.maskBlurOverride') }}</label>
+              <input
+                type="number"
+                v-model="overrideForm.maskBlur"
+                min="0"
+                max="64"
+                placeholder="4"
+              />
+            </div>
+            <div class="form-group">
+              <label>{{ t('workflow.inpaintAreaOverride') }}</label>
+              <select v-model="overrideForm.inpaintFullRes">
+                <option value="">-</option>
+                <option value="whole">{{ t('workflow.inpaintAreaWholePicture') }}</option>
+                <option value="masked">{{ t('workflow.inpaintAreaOnlyMasked') }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer edit-footer">
+        <button class="btn btn-secondary" @click="clearOverrides">
+          {{ t('workflow.clearOverrides') }}
+        </button>
+        <button class="btn btn-primary" @click="saveOverrides">
+          {{ t('workflow.saveOverrides') }}
+        </button>
       </div>
     </div>
   </div>
@@ -985,5 +1156,143 @@ onUnmounted(() => {
 
 .results-empty p {
   margin: 0;
+}
+
+/* Edit Panel (replaces results panel when editing) */
+.edit-panel {
+  border-color: var(--color-primary);
+}
+
+.edit-panel .panel-header {
+  background: var(--color-primary);
+  justify-content: space-between;
+}
+
+.edit-panel .panel-header .panel-title {
+  color: white;
+}
+
+.header-close-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.header-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.edit-content {
+  padding: 20px;
+}
+
+.edit-description {
+  margin: 0 0 20px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section .section-title {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--color-bg-hover);
 }
 </style>

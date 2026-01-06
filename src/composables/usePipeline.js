@@ -143,6 +143,19 @@ export function usePipeline() {
     steps.value[newIndex] = temp
   }
 
+  // Update step settings (for overrides)
+  function updateStepSettings(stepId, settings) {
+    const step = steps.value.find(s => s.id === stepId)
+    if (step) {
+      step.settings = settings
+    }
+  }
+
+  // Get step by ID
+  function getStep(stepId) {
+    return steps.value.find(s => s.id === stepId)
+  }
+
   // Start pipeline execution
   async function startPipeline() {
     if (steps.value.length === 0) {
@@ -208,6 +221,13 @@ export function usePipeline() {
       viewCallback.setInputImage(step.inputImage)
       // Wait for image to load
       await new Promise(resolve => setTimeout(resolve, 200))
+    }
+
+    // Apply step override settings if available
+    if (step.settings && viewCallback.applyOverrides) {
+      viewCallback.applyOverrides(step.settings)
+      // Wait for settings to apply
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
 
     // Mark step as running
@@ -327,6 +347,8 @@ export function usePipeline() {
     removeStep,
     clearSteps,
     moveStep,
+    updateStepSettings,
+    getStep,
 
     // Pipeline execution
     startPipeline,
