@@ -249,17 +249,6 @@ export function usePipeline() {
       params.mask = step.mask || null
     }
 
-    // Debug logging
-    console.log(`[Pipeline] Step ${step.type} params:`, {
-      prompt: params.prompt?.substring(0, 50) + (params.prompt?.length > 50 ? '...' : ''),
-      negativePrompt: params.negativePrompt?.substring(0, 30) + (params.negativePrompt?.length > 30 ? '...' : ''),
-      steps: params.steps,
-      cfgScale: params.cfgScale,
-      denoisingStrength: params.denoisingStrength,
-      hasOverrides: Object.keys(overrides).length > 0,
-      overrideKeys: Object.keys(overrides)
-    })
-
     return params
   }
 
@@ -284,15 +273,6 @@ export function usePipeline() {
 
     // Validate that each step has a prompt (either default or override)
     const hasDefaultPrompt = defaultParams.value.prompt?.trim()
-    console.log('[Pipeline] Starting pipeline validation:', {
-      hasDefaultPrompt: !!hasDefaultPrompt,
-      defaultPrompt: defaultParams.value.prompt?.substring(0, 30) || '(empty)',
-      stepsCount: steps.value.length,
-      stepsWithOverrides: steps.value.filter(s => s.settings).map(s => ({
-        type: s.type,
-        overrideKeys: Object.keys(s.settings || {})
-      }))
-    })
 
     for (const step of steps.value) {
       const hasOverridePrompt = step.settings?.prompt?.trim()
@@ -383,14 +363,6 @@ export function usePipeline() {
 
     const step = currentStep.value
     if (!step || step.type !== viewType) return
-
-    // Debug logging
-    console.log(`[Pipeline] Step ${step.type} completed:`, {
-      stepIndex: currentStepIndex.value + 1,
-      totalSteps: steps.value.length,
-      hasOutputImage: !!outputImage,
-      usedOverrides: step.settings ? Object.keys(step.settings) : []
-    })
 
     // Save output image
     step.outputImage = outputImage

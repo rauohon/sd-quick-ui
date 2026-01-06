@@ -26,23 +26,16 @@ const tabs = [
 const savedTab = localStorage.getItem('sd-active-tab')
 const activeTab = ref(tabs.some(t => t.id === savedTab) ? savedTab : 'txt2img')
 
-// 각 탭별 생성 상태 추적 (img2img, inpaint용 - txt2img은 engine에서 관리)
-const generatingTabs = ref({
-  txt2img: false,
-  img2img: false,
-  inpaint: false
-})
-
 // Toast function reference (showToast가 정의된 후 engine 초기화)
 let generationEngine = null
 
 // 현재 탭이 생성 중인지 확인
 function isCurrentTabGenerating() {
   // txt2img, img2img, inpaint은 engine에서 체크
-  if ((activeTab.value === 'txt2img' || activeTab.value === 'img2img' || activeTab.value === 'inpaint') && generationEngine) {
+  if (generationEngine) {
     return generationEngine.isViewGenerating(activeTab.value)
   }
-  return generatingTabs.value[activeTab.value] || false
+  return false
 }
 
 // 탭 변경 시 저장
@@ -66,13 +59,6 @@ async function setActiveTab(tabId, forceSwitch = false) {
 
   activeTab.value = tabId
   localStorage.setItem('sd-active-tab', tabId)
-}
-
-// 각 탭의 생성 상태 업데이트 (현재 모든 탭이 engine에서 관리됨)
-function updateTabGenerating(tabId, isGenerating) {
-  // txt2img, img2img, inpaint은 engine에서 관리하므로 무시
-  if (tabId === 'txt2img' || tabId === 'img2img' || tabId === 'inpaint') return
-  generatingTabs.value[tabId] = isGenerating
 }
 
 // Modal state
