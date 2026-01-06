@@ -155,11 +155,32 @@ src/
 
 ## Contributing
 
-Bug fixes welcome. Fork and submit PR.
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the [MIT License](LICENSE).
+
+### Third-Party Components
+
+| Component | License | Notes |
+|-----------|---------|-------|
+| Vue.js, Vite, vue-i18n | MIT | Dependencies |
+| Stable Diffusion WebUI | AGPL-3.0 | API server (not included) |
+| Patch files (`patches/`) | AGPL-3.0 | Modifies SD WebUI code |
+
+### Important Notes
+
+- This project is a **frontend client** that communicates with SD WebUI via API
+- It does **not include or redistribute** any SD WebUI code
+- The `patches/` directory contains optional patches for SD WebUI (AGPL-3.0)
+  - Only required for LoRA browser functionality
+  - When applied to SD WebUI, they fall under AGPL-3.0
+
+### Disclaimer
+
+This project is not affiliated with, endorsed by, or sponsored by Stability AI,
+AUTOMATIC1111, or any related entities. "Stable Diffusion" is a trademark of Stability AI.
 
 ## Acknowledgments
 

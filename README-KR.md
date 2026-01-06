@@ -155,11 +155,32 @@ src/
 
 ## 기여
 
-버그 수정 환영. Fork 후 PR 제출.
+[CONTRIBUTING-KR.md](CONTRIBUTING-KR.md) 참고
 
 ## 라이선스
 
-[MIT](LICENSE)
+이 프로젝트는 [MIT 라이선스](LICENSE)로 배포됩니다.
+
+### 서드파티 컴포넌트
+
+| 컴포넌트 | 라이선스 | 비고 |
+|----------|----------|------|
+| Vue.js, Vite, vue-i18n | MIT | 의존성 |
+| Stable Diffusion WebUI | AGPL-3.0 | API 서버 (포함되지 않음) |
+| 패치 파일 (`patches/`) | AGPL-3.0 | SD WebUI 코드 수정 |
+
+### 중요 사항
+
+- 이 프로젝트는 SD WebUI와 API로 통신하는 **프론트엔드 클라이언트**입니다
+- SD WebUI 코드를 **포함하거나 재배포하지 않습니다**
+- `patches/` 디렉토리는 SD WebUI용 선택적 패치를 포함합니다 (AGPL-3.0)
+  - LoRA 브라우저 기능에만 필요합니다
+  - SD WebUI에 적용 시 AGPL-3.0 라이선스를 따릅니다
+
+### 면책 조항
+
+이 프로젝트는 Stability AI, AUTOMATIC1111 또는 관련 단체와 제휴, 보증, 후원 관계가 없습니다.
+"Stable Diffusion"은 Stability AI의 상표입니다.
 
 ## 감사의 말
 

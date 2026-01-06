@@ -19,3 +19,38 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Third-Party Licenses and Notices
+
+### Dependencies
+
+This project uses the following open-source packages, all under MIT-compatible licenses:
+
+- Vue.js (MIT License) - https://github.com/vuejs/core
+- vue-i18n (MIT License) - https://github.com/intlify/vue-i18n
+- Vite (MIT License) - https://github.com/vitejs/vite
+
+### Stable Diffusion WebUI
+
+This project is a **frontend client** that communicates with Stable Diffusion WebUI
+(AUTOMATIC1111) via its API. It does not include or redistribute any code from SD WebUI.
+
+- Stable Diffusion WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui
+- SD WebUI License: AGPL-3.0
+
+### Patch Files
+
+The `patches/` directory contains patch files intended to be applied to Stable Diffusion
+WebUI to add additional API endpoints. These patches modify AGPL-3.0 licensed code and
+should be considered as falling under the AGPL-3.0 license terms when applied to SD WebUI.
+
+The patch files are provided for convenience and are not required to run this application
+(only LoRA browsing functionality requires the patch).
+
+### Disclaimer
+
+This project is not affiliated with, endorsed by, or sponsored by Stability AI,
+AUTOMATIC1111, or any related entities. "Stable Diffusion" is a trademark of
+Stability AI.
