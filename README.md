@@ -4,6 +4,8 @@
 
 Full-featured alternative UI with **txt2img**, **img2img**, **inpaint/outpaint**, **ControlNet**, and **Workflow pipelines**. Built with simplicity and speed in mind.
 
+![SD Quick UI - txt2img](screenshots/tabs_txt2img.png)
+
 ## Features
 
 ### Generation Modes
@@ -42,7 +44,27 @@ Full-featured alternative UI with **txt2img**, **img2img**, **inpaint/outpaint**
 
 ## Screenshots
 
-> Screenshots coming soon
+### Generation Tabs
+
+| txt2img | img2img | inpaint | workflow |
+|---------|---------|---------|----------|
+| ![txt2img](screenshots/tabs_txt2img.png) | ![img2img](screenshots/tabs_img2img.png) | ![inpaint](screenshots/tabs_inpaint.png) | ![workflow](screenshots/tabs_workflow.png) |
+
+### ControlNet
+
+![ControlNet Panel](screenshots/controlnet.png)
+
+### Inpaint Canvas
+
+![Inpaint with Mask](screenshots/inpaint.png)
+
+### Workflow Pipeline
+
+![Workflow Editor](screenshots/workflow.png)
+
+### Dark Mode
+
+![Dark Mode](screenshots/dark-mode.png)
 
 ## Quick Start
 
