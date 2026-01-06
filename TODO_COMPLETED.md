@@ -4,6 +4,22 @@
 
 ## 2026-01-06
 
+### 생성 로직 리팩토링 (Phase 1-4)
+- Phase 1: 파라미터 검증 중앙화 (`useParamValidation.js`)
+- Phase 2: 진행률 폴링 중앙화 (`useProgressPolling.js`)
+- Phase 3: 이미지 결과 처리 중앙화 (`useGenerationResult.js`)
+- Phase 4: 에러 처리 중앙화 (`useGenerationResult.js` 확장)
+- 총 ~370줄 중복 코드 제거
+- 영향 파일: useImageGeneration, useImg2imgGeneration, useInpaintGeneration, useGenerationEngine
+
+### Workflow UI 개선 & Phase 3 구현
+- Step 1: 3컬럼 레이아웃 구조 (WorkflowView 컴포넌트 분리)
+- Step 2: 왼쪽 패널 - 시스템 & 설정 (API 상태, 템플릿, SystemSettingsSection)
+- Step 3: 중앙 패널 - 스텝 편집 (스텝 카드 UI, 순서 변경, 스텝 추가)
+- Step 4: 스텝별 오버라이드 (프롬프트, Steps, CFG, Denoising 등)
+- Step 5: 파이프라인 실행 개선 & 결과 미리보기
+- Step 6: 워크플로 저장/불러오기 (localStorage)
+
 ### 탭 이동 시에도 이미지 생성 유지 (txt2img, img2img, inpaint)
 - `useGenerationEngine.js` composable 생성 (App.vue 레벨)
 - App.vue에서 provide/inject로 엔진 공유
