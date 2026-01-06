@@ -11,11 +11,15 @@
 
 import { ref, computed } from 'vue'
 
+// LocalStorage key for saved workflows
+const SAVED_WORKFLOWS_KEY = 'sd-saved-workflows'
+
 // Singleton state
 const steps = ref([])
 const currentStepIndex = ref(-1)
 const isRunning = ref(false)
 const isPaused = ref(false)
+const savedWorkflows = ref([])
 
 // Generation engine reference (set from WorkflowView)
 let generationEngine = null
@@ -476,6 +480,110 @@ export function usePipeline() {
     addStep('inpaint')
   }
 
+  // ===== Workflow Save/Load =====
+
+  // Load saved workflows from localStorage
+  function loadSavedWorkflows() {
+    try {
+      const saved = localStorage.getItem(SAVED_WORKFLOWS_KEY)
+      if (saved) {
+        savedWorkflows.value = JSON.parse(saved)
+      }
+    } catch (error) {
+      console.error('Failed to load saved workflows:', error)
+      savedWorkflows.value = []
+    }
+  }
+
+  // Save workflows to localStorage
+  function persistWorkflows() {
+    try {
+      localStorage.setItem(SAVED_WORKFLOWS_KEY, JSON.stringify(savedWorkflows.value))
+    } catch (error) {
+      console.error('Failed to persist workflows:', error)
+    }
+  }
+
+  // Save current pipeline as a workflow
+  function saveWorkflow(name) {
+    if (!name?.trim()) {
+      showToastCallback?.('워크플로 이름을 입력해주세요', 'warning')
+      return false
+    }
+
+    if (steps.value.length === 0) {
+      showToastCallback?.('저장할 스텝이 없습니다', 'warning')
+      return false
+    }
+
+    // Create workflow object
+    const workflow = {
+      id: `workflow_${Date.now()}`,
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+      steps: steps.value.map(step => ({
+        type: step.type,
+        settings: step.settings ? JSON.parse(JSON.stringify(step.settings)) : null
+      })),
+      defaultParams: {
+        prompt: defaultParams.value.prompt,
+        negativePrompt: defaultParams.value.negativePrompt
+      }
+    }
+
+    // Check if workflow with same name exists
+    const existingIndex = savedWorkflows.value.findIndex(w => w.name === name.trim())
+    if (existingIndex !== -1) {
+      // Update existing
+      savedWorkflows.value[existingIndex] = workflow
+    } else {
+      // Add new
+      savedWorkflows.value.unshift(workflow)
+    }
+
+    persistWorkflows()
+    return true
+  }
+
+  // Load a saved workflow
+  function loadWorkflow(workflowId) {
+    const workflow = savedWorkflows.value.find(w => w.id === workflowId)
+    if (!workflow) {
+      showToastCallback?.('워크플로를 찾을 수 없습니다', 'error')
+      return false
+    }
+
+    // Clear current steps
+    clearSteps()
+
+    // Add steps from workflow
+    workflow.steps.forEach(stepData => {
+      const stepId = addStep(stepData.type)
+      if (stepData.settings) {
+        updateStepSettings(stepId, JSON.parse(JSON.stringify(stepData.settings)))
+      }
+    })
+
+    // Set default params
+    if (workflow.defaultParams) {
+      defaultParams.value.prompt = workflow.defaultParams.prompt || ''
+      defaultParams.value.negativePrompt = workflow.defaultParams.negativePrompt || ''
+    }
+
+    return true
+  }
+
+  // Delete a saved workflow
+  function deleteWorkflow(workflowId) {
+    const index = savedWorkflows.value.findIndex(w => w.id === workflowId)
+    if (index !== -1) {
+      savedWorkflows.value.splice(index, 1)
+      persistWorkflows()
+      return true
+    }
+    return false
+  }
+
   return {
     // State
     steps,
@@ -514,6 +622,13 @@ export function usePipeline() {
     // Quick helpers
     createTxt2ImgToImg2Img,
     createTxt2ImgToInpaint,
-    createFullPipeline
+    createFullPipeline,
+
+    // Workflow save/load
+    savedWorkflows,
+    loadSavedWorkflows,
+    saveWorkflow,
+    loadWorkflow,
+    deleteWorkflow
   }
 }

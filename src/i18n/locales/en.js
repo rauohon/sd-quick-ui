@@ -762,7 +762,21 @@ export default {
 
     // Live preview
     livePreview: 'Live Preview',
-    noPreview: 'No preview'
+    noPreview: 'No preview',
+
+    // Save/Load workflows
+    saveWorkflow: 'Save Workflow',
+    saveWorkflowAs: 'Save As',
+    workflowName: 'Workflow Name',
+    workflowNamePlaceholder: 'Enter workflow name',
+    workflowSaved: 'Workflow saved',
+    workflowLoaded: 'Workflow loaded',
+    workflowDeleted: 'Workflow deleted',
+    deleteWorkflow: 'Delete Workflow',
+    deleteWorkflowConfirm: 'Delete this workflow?',
+    loadWorkflow: 'Load',
+    overwriteWorkflow: 'Overwrite existing workflow?',
+    workflowSteps: '{count} steps'
   },
 
   // img2img

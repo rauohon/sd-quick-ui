@@ -762,7 +762,21 @@ export default {
 
     // Live preview
     livePreview: '실시간 미리보기',
-    noPreview: '미리보기 없음'
+    noPreview: '미리보기 없음',
+
+    // Save/Load workflows
+    saveWorkflow: '워크플로 저장',
+    saveWorkflowAs: '다른 이름으로 저장',
+    workflowName: '워크플로 이름',
+    workflowNamePlaceholder: '워크플로 이름을 입력하세요',
+    workflowSaved: '워크플로가 저장되었습니다',
+    workflowLoaded: '워크플로를 불러왔습니다',
+    workflowDeleted: '워크플로가 삭제되었습니다',
+    deleteWorkflow: '워크플로 삭제',
+    deleteWorkflowConfirm: '이 워크플로를 삭제하시겠습니까?',
+    loadWorkflow: '불러오기',
+    overwriteWorkflow: '기존 워크플로를 덮어쓰시겠습니까?',
+    workflowSteps: '{count}개 스텝'
   },
 
   // img2img

@@ -284,6 +284,7 @@ onUnmounted(() => {
       <WorkflowView
         v-else-if="activeTab === 'workflow'"
         :showToast="showToast"
+        :showConfirm="showConfirm"
         :isDark="isDark"
         :toggleTheme="toggleTheme"
       />

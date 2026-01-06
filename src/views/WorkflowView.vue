@@ -12,6 +12,7 @@ const { t } = useI18n()
 // Props
 const props = defineProps({
   showToast: { type: Function, required: true },
+  showConfirm: { type: Function, required: true },
   isDark: { type: Boolean, default: false },
   toggleTheme: { type: Function, required: true }
 })
@@ -256,8 +257,56 @@ const currentModelName = computed(() => {
   return parts[parts.length - 1] || selectedModel.value
 })
 
+// ===== Workflow Save/Load =====
+const workflowName = ref('')
+const showSaveInput = ref(false)
+
+function toggleSaveInput() {
+  showSaveInput.value = !showSaveInput.value
+  if (showSaveInput.value) {
+    workflowName.value = ''
+  }
+}
+
+function handleSaveWorkflow() {
+  if (pipeline.saveWorkflow(workflowName.value)) {
+    props.showToast(t('workflow.workflowSaved'), 'success')
+    showSaveInput.value = false
+    workflowName.value = ''
+  }
+}
+
+function handleLoadWorkflow(workflowId) {
+  if (pipeline.loadWorkflow(workflowId)) {
+    props.showToast(t('workflow.workflowLoaded'), 'success')
+    // Sync default prompts with UI
+    defaultPrompt.value = pipeline.defaultParams.value.prompt
+    defaultNegativePrompt.value = pipeline.defaultParams.value.negativePrompt
+  }
+}
+
+async function handleDeleteWorkflow(workflowId) {
+  // Find workflow name for confirmation message
+  const workflow = pipeline.savedWorkflows.value.find(w => w.id === workflowId)
+  if (!workflow) return
+
+  const result = await props.showConfirm({
+    title: t('workflow.deleteWorkflow'),
+    message: t('workflow.deleteWorkflowConfirm'),
+    confirmText: t('common.delete'),
+    cancelText: t('common.cancel')
+  })
+
+  if (result.confirmed && pipeline.deleteWorkflow(workflowId)) {
+    props.showToast(t('workflow.workflowDeleted'), 'success')
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
+  // Load saved workflows
+  pipeline.loadSavedWorkflows()
+
   // Check API connection
   await checkApiStatus()
 
@@ -344,10 +393,68 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Saved Workflows (placeholder for Step 6) -->
+        <!-- Saved Workflows -->
         <div class="settings-section">
-          <h4 class="section-title">{{ t('workflow.savedWorkflows') }}</h4>
-          <div class="saved-list-empty">
+          <div class="section-header">
+            <h4 class="section-title">{{ t('workflow.savedWorkflows') }}</h4>
+            <button
+              class="save-btn"
+              @click="toggleSaveInput"
+              :disabled="!pipeline.hasSteps.value"
+              :title="t('workflow.saveWorkflow')"
+            >
+              💾
+            </button>
+          </div>
+
+          <!-- Save Input -->
+          <div v-if="showSaveInput" class="save-input-container">
+            <input
+              v-model="workflowName"
+              type="text"
+              :placeholder="t('workflow.workflowNamePlaceholder')"
+              class="workflow-name-input"
+              @keyup.enter="handleSaveWorkflow"
+            />
+            <div class="save-input-actions">
+              <button class="action-btn save" @click="handleSaveWorkflow">
+                {{ t('common.save') }}
+              </button>
+              <button class="action-btn cancel" @click="showSaveInput = false">
+                {{ t('common.cancel') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Saved Workflows List -->
+          <div v-if="pipeline.savedWorkflows.value.length > 0" class="saved-workflows-list">
+            <div
+              v-for="workflow in pipeline.savedWorkflows.value"
+              :key="workflow.id"
+              class="saved-workflow-item"
+            >
+              <div class="workflow-name-row">
+                <span class="workflow-name">{{ workflow.name }}</span>
+              </div>
+              <div class="workflow-actions-row">
+                <button
+                  class="workflow-action-btn load"
+                  @click="handleLoadWorkflow(workflow.id)"
+                >
+                  {{ t('workflow.loadWorkflow') }}
+                </button>
+                <button
+                  class="workflow-action-btn delete"
+                  @click="handleDeleteWorkflow(workflow.id)"
+                >
+                  {{ t('common.delete') }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="saved-list-empty">
             {{ t('workflow.noSavedWorkflows') }}
           </div>
         </div>
@@ -1641,5 +1748,179 @@ onUnmounted(() => {
   height: auto;
   border-radius: 4px;
   display: block;
+}
+
+/* Section header with button */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-header .section-title {
+  margin: 0;
+}
+
+.save-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Save Input */
+.save-input-container {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.workflow-name-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.workflow-name-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.save-input-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.save-input-actions .action-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-input-actions .action-btn.save {
+  background: var(--color-primary);
+  color: white;
+}
+
+.save-input-actions .action-btn.save:hover {
+  opacity: 0.9;
+}
+
+.save-input-actions .action-btn.cancel {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+.save-input-actions .action-btn.cancel:hover {
+  background: var(--color-bg-hover);
+}
+
+/* Saved Workflows List */
+.saved-workflows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.saved-workflow-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.saved-workflow-item:hover {
+  border-color: var(--color-primary);
+}
+
+.workflow-name-row {
+  padding: 8px 10px;
+}
+
+.workflow-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.workflow-actions-row {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--color-bg-secondary);
+}
+
+.workflow-action-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.workflow-action-btn.load {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+}
+
+.workflow-action-btn.load:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.workflow-action-btn.delete {
+  background: transparent;
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-tertiary);
+}
+
+.workflow-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+  border-color: var(--color-error);
 }
 </style>
