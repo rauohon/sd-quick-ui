@@ -241,7 +241,7 @@ defineExpose({ loadImageFromUrl })
 .upload-area {
   position: relative;
   min-height: 150px;
-  border: 2px dashed var(--color-border);
+  border: 2px dashed var(--color-border-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -253,12 +253,12 @@ defineExpose({ loadImageFromUrl })
 
 .upload-area.dragging {
   border-color: var(--color-primary);
-  background: rgba(var(--color-primary-rgb), 0.1);
+  background: var(--color-primary-light);
 }
 
 .upload-area.has-image {
   border-style: solid;
-  border-color: var(--color-border);
+  border-color: var(--color-border-primary);
 }
 
 .upload-area.disabled {
@@ -350,7 +350,7 @@ defineExpose({ loadImageFromUrl })
 .history-btn {
   background: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
 }
 
 .history-btn:hover:not(:disabled) {

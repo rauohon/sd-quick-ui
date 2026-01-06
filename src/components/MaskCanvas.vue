@@ -904,7 +904,7 @@ defineExpose({
 }
 
 .mask-canvas-container.no-image {
-  border: 2px dashed var(--color-border);
+  border: 2px dashed var(--color-border-primary);
 }
 
 .placeholder {

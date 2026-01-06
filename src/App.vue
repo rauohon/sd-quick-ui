@@ -464,7 +464,7 @@ onUnmounted(() => {
   gap: 2px;
   padding: 8px 12px 0;
   background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-primary);
   flex-shrink: 0;
 }
 
@@ -594,7 +594,7 @@ onUnmounted(() => {
 .template-btn {
   padding: 8px 16px;
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-primary);
   border-radius: 6px;
   color: var(--color-text-primary);
   cursor: pointer;

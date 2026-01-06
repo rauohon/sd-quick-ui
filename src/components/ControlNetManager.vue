@@ -1552,7 +1552,7 @@ function close() {
 
 .intensity-hint {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-top: 8px;
   white-space: normal;
   word-break: keep-all;
