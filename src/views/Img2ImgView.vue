@@ -1,7 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, toRaw, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useImg2imgGeneration } from '../composables/useImg2imgGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { usePipelineImage } from '../composables/usePipelineImage'
 import { usePipeline } from '../composables/usePipeline'
@@ -59,7 +58,7 @@ const props = defineProps({
   toggleTheme: { type: Function, required: true }
 })
 
-const emit = defineEmits(['updateCurrentImage', 'switch-tab', 'update:isGenerating'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
 
 // ===== 기본 파라미터 =====
 const prompt = ref('')
@@ -253,36 +252,76 @@ const enabledADetailers = computed(() =>
   adetailers.value.filter(ad => ad.enable)
 )
 
-// Generation params object
-const generationParams = {
-  prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-  width, height, batchCount, batchSize, seed, seedVariationRange,
-  adetailers, selectedModel, notificationType, notificationVolume,
-  // img2img 전용
-  initImage, denoisingStrength,
-  // 업스케일
-  enableUpscale, upscaler, upscaleScale,
-  // ControlNet
-  controlnetUnits
+// ===== Generation Engine (App.vue에서 inject) =====
+const generationEngine = inject('generationEngine')
+const img2imgEngine = generationEngine?.getEngine('img2img')
+
+// Engine에서 상태와 메서드 추출
+const isGenerating = img2imgEngine?.isGenerating || ref(false)
+const progress = img2imgEngine?.progress || ref(0)
+const progressState = img2imgEngine?.progressState || ref('')
+const currentImage = img2imgEngine?.currentImage || ref('')
+const lastUsedParams = img2imgEngine?.lastUsedParams || ref(null)
+const generatedImages = img2imgEngine?.generatedImages || ref([])
+const isInfiniteMode = img2imgEngine?.isInfiniteMode || ref(false)
+const infiniteCount = img2imgEngine?.infiniteCount || ref(0)
+
+// Engine 메서드 래핑
+function generateImage() {
+  if (!img2imgEngine) {
+    props.showToast('Generation engine not available', 'error')
+    return
+  }
+
+  const params = {
+    prompt: prompt.value,
+    negativePrompt: negativePrompt.value,
+    steps: steps.value,
+    cfgScale: cfgScale.value,
+    samplerName: samplerName.value,
+    scheduler: scheduler.value,
+    width: width.value,
+    height: height.value,
+    batchCount: batchCount.value,
+    batchSize: batchSize.value,
+    seed: seed.value,
+    seedVariationRange: seedVariationRange.value,
+    adetailers: adetailers.value,
+    selectedModel: selectedModel.value,
+    controlnetUnits: controlnetUnits.value,
+    notificationType: notificationType.value,
+    notificationVolume: notificationVolume.value,
+    enabledADetailers: enabledADetailers.value,
+    // img2img 전용
+    initImage: initImage.value,
+    denoisingStrength: denoisingStrength.value,
+    enableUpscale: enableUpscale.value,
+    upscaler: upscaler.value,
+    upscaleScale: upscaleScale.value
+  }
+
+  img2imgEngine.generateImage(params)
 }
 
-// Image generation composable
-const {
-  isGenerating,
-  progress,
-  progressState,
-  currentImage,
-  lastUsedParams,
-  generatedImages,
-  isInfiniteMode,
-  infiniteCount,
-  generateImage,
-  interruptGeneration,
-  skipCurrentImage,
-  stopInfiniteModeOnly,
-  toggleInfiniteMode,
-  setOnComplete
-} = useImg2imgGeneration(generationParams, enabledADetailers, props.showToast, t)
+function interruptGeneration() {
+  img2imgEngine?.interruptGeneration()
+}
+
+function skipCurrentImage() {
+  img2imgEngine?.skipCurrentImage()
+}
+
+function stopInfiniteModeOnly() {
+  img2imgEngine?.stopInfiniteModeOnly()
+}
+
+function toggleInfiniteMode() {
+  img2imgEngine?.toggleInfiniteMode()
+}
+
+function setOnComplete(callback) {
+  img2imgEngine?.setOnComplete(callback)
+}
 
 // ===== History Composable =====
 const historyRefs = {
@@ -345,11 +384,6 @@ const {
 // Watch current image for parent
 watch(currentImage, (newImage) => {
   emit('updateCurrentImage', newImage)
-})
-
-// Emit isGenerating updates to parent (for tab switch blocking)
-watch(isGenerating, (newValue) => {
-  emit('update:isGenerating', newValue)
 })
 
 // 입력 이미지 크기로 출력 크기 자동 설정

@@ -1,7 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, toRaw, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useInpaintGeneration } from '../composables/useInpaintGeneration'
 import { useIndexedDB } from '../composables/useIndexedDB'
 import { usePipelineImage } from '../composables/usePipelineImage'
 import { usePipeline } from '../composables/usePipeline'
@@ -64,7 +63,7 @@ const props = defineProps({
   toggleTheme: { type: Function, required: true }
 })
 
-const emit = defineEmits(['updateCurrentImage', 'switch-tab', 'update:isGenerating'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
 
 // ===== 기본 파라미터 =====
 const prompt = ref('')
@@ -335,35 +334,78 @@ const enabledADetailers = computed(() =>
   adetailers.value.filter(ad => ad.enable)
 )
 
-// Generation params object
-const generationParams = {
-  prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-  width, height, batchCount, batchSize, seed, seedVariationRange,
-  adetailers, selectedModel, notificationType, notificationVolume,
-  // Inpaint 전용
-  initImage, mask, denoisingStrength,
-  maskBlur, inpaintingFill, inpaintFullRes, inpaintFullResPadding,
-  // ControlNet
-  controlnetUnits
+// ===== Generation Engine (App.vue에서 inject) =====
+const generationEngine = inject('generationEngine')
+const inpaintEngine = generationEngine?.getEngine('inpaint')
+
+// Engine에서 상태와 메서드 추출
+const isGenerating = inpaintEngine?.isGenerating || ref(false)
+const progress = inpaintEngine?.progress || ref(0)
+const progressState = inpaintEngine?.progressState || ref('')
+const currentImage = inpaintEngine?.currentImage || ref('')
+const lastUsedParams = inpaintEngine?.lastUsedParams || ref(null)
+const generatedImages = inpaintEngine?.generatedImages || ref([])
+const isInfiniteMode = inpaintEngine?.isInfiniteMode || ref(false)
+const infiniteCount = inpaintEngine?.infiniteCount || ref(0)
+
+// Engine 메서드 래핑
+function generateImage(overrides = {}) {
+  if (!inpaintEngine) {
+    props.showToast('Generation engine not available', 'error')
+    return
+  }
+
+  const params = {
+    prompt: overrides.prompt !== undefined ? overrides.prompt : prompt.value,
+    negativePrompt: overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value,
+    steps: steps.value,
+    cfgScale: cfgScale.value,
+    samplerName: samplerName.value,
+    scheduler: scheduler.value,
+    width: overrides.width || width.value,
+    height: overrides.height || height.value,
+    batchCount: batchCount.value,
+    batchSize: batchSize.value,
+    seed: seed.value,
+    seedVariationRange: seedVariationRange.value,
+    adetailers: adetailers.value,
+    selectedModel: selectedModel.value,
+    controlnetUnits: controlnetUnits.value,
+    notificationType: notificationType.value,
+    notificationVolume: notificationVolume.value,
+    enabledADetailers: enabledADetailers.value,
+    // inpaint 전용
+    initImage: overrides.initImage || initImage.value,
+    mask: overrides.mask || mask.value,
+    denoisingStrength: denoisingStrength.value,
+    maskBlur: maskBlur.value,
+    inpaintingFill: inpaintingFill.value,
+    inpaintFullRes: inpaintFullRes.value,
+    inpaintFullResPadding: inpaintFullResPadding.value
+  }
+
+  inpaintEngine.generateImage(params)
 }
 
-// Image generation composable
-const {
-  isGenerating,
-  progress,
-  progressState,
-  currentImage,
-  lastUsedParams,
-  generatedImages,
-  isInfiniteMode,
-  infiniteCount,
-  generateImage,
-  interruptGeneration,
-  skipCurrentImage,
-  stopInfiniteModeOnly,
-  toggleInfiniteMode,
-  setOnComplete
-} = useInpaintGeneration(generationParams, enabledADetailers, props.showToast, t)
+function interruptGeneration() {
+  inpaintEngine?.interruptGeneration()
+}
+
+function skipCurrentImage() {
+  inpaintEngine?.skipCurrentImage()
+}
+
+function stopInfiniteModeOnly() {
+  inpaintEngine?.stopInfiniteModeOnly()
+}
+
+function toggleInfiniteMode() {
+  inpaintEngine?.toggleInfiniteMode()
+}
+
+function setOnComplete(callback) {
+  inpaintEngine?.setOnComplete(callback)
+}
 
 // ===== History Composable =====
 const historyRefs = {
@@ -426,11 +468,6 @@ const {
 // Watch current image for parent
 watch(currentImage, (newImage) => {
   emit('updateCurrentImage', newImage)
-})
-
-// Emit isGenerating updates to parent (for tab switch blocking)
-watch(isGenerating, (newValue) => {
-  emit('update:isGenerating', newValue)
 })
 
 // 입력 이미지 크기로 출력 크기 자동 설정
@@ -758,6 +795,22 @@ function registerPipelineView() {
 
 // ===== Lifecycle =====
 onMounted(async () => {
+  // 탭 복귀 시 저장된 initImage/mask 복원
+  const savedState = inpaintEngine?.restoreViewState?.()
+  if (savedState?.initImage) {
+    initImage.value = savedState.initImage
+    mask.value = savedState.mask || ''
+    initImageWidth.value = savedState.initImageWidth || 0
+    initImageHeight.value = savedState.initImageHeight || 0
+
+    // MaskCanvas가 초기화된 후 마스크 로드 (약간의 지연 필요)
+    if (savedState.mask) {
+      setTimeout(() => {
+        maskCanvasRef.value?.loadMask?.(savedState.mask)
+      }, 100)
+    }
+  }
+
   // Register with pipeline
   registerPipelineView()
 
@@ -776,15 +829,18 @@ onMounted(async () => {
   loadBookmarks()
   loadPresets()
 
-  // Load existing images from IndexedDB
+  // Load existing images from IndexedDB (engine이 비어있을 때만)
   try {
     const count = await indexedDB.getImageCount()
     totalImageCount.value = count
-    const images = await indexedDB.getRecentImages(INITIAL_LOAD_COUNT)
-    if (images.length > 0) {
-      generatedImages.value = images
-      if (images[0]?.image) {
-        currentImage.value = images[0].image
+    // Engine에 이미 이미지가 있으면 (백그라운드 생성 완료) 덮어쓰지 않음
+    if (generatedImages.value.length === 0) {
+      const images = await indexedDB.getRecentImages(INITIAL_LOAD_COUNT)
+      if (images.length > 0) {
+        generatedImages.value = images
+        if (images[0]?.image) {
+          currentImage.value = images[0].image
+        }
       }
     }
   } catch (error) {
@@ -841,6 +897,14 @@ onUnmounted(() => {
   // 탭 전환 시 현재 슬롯 즉시 저장 (debounce 대기 중인 저장 취소 후 즉시 저장)
   slotManagement.cancelDebouncedSlotSave()
   slotManagement.saveCurrentSlot()
+
+  // 탭 전환 시 initImage/mask 상태 저장
+  inpaintEngine?.saveViewState?.({
+    initImage: initImage.value,
+    mask: mask.value,
+    initImageWidth: initImageWidth.value,
+    initImageHeight: initImageHeight.value
+  })
 })
 
 // Slots → IndexedDB persistence

@@ -715,6 +715,44 @@ function isMaskEmpty() {
   return true
 }
 
+// 마스크 로드 (탭 전환 시 복원용)
+function loadMask(base64Mask) {
+  if (!base64Mask || !maskCtx) return
+
+  const img = new Image()
+  img.onload = () => {
+    // 흑백 마스크를 빨간 반투명 마스크로 변환
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = img.width
+    tempCanvas.height = img.height
+    const tempCtx = tempCanvas.getContext('2d')
+    tempCtx.drawImage(img, 0, 0)
+
+    const srcData = tempCtx.getImageData(0, 0, img.width, img.height)
+    const dstData = maskCtx.createImageData(canvasWidth.value, canvasHeight.value)
+
+    // 마스크 색상 파싱 (rgba 형식)
+    const colorMatch = props.maskColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
+    const r = colorMatch ? parseInt(colorMatch[1]) : 255
+    const g = colorMatch ? parseInt(colorMatch[2]) : 0
+    const b = colorMatch ? parseInt(colorMatch[3]) : 0
+    const a = colorMatch && colorMatch[4] ? parseFloat(colorMatch[4]) * 255 : 128
+
+    for (let i = 0; i < srcData.data.length; i += 4) {
+      // 흰색 영역(마스크)을 빨간색으로 변환
+      if (srcData.data[i] > 128) {
+        dstData.data[i] = r
+        dstData.data[i + 1] = g
+        dstData.data[i + 2] = b
+        dstData.data[i + 3] = a
+      }
+    }
+
+    maskCtx.putImageData(dstData, 0, 0)
+  }
+  img.src = base64Mask
+}
+
 // 키보드 단축키
 function handleKeyDown(e) {
   if (props.disabled) return
@@ -774,6 +812,7 @@ defineExpose({
   isMaskEmpty,
   emitMask,
   getMaskBase64,
+  loadMask,
   fitToScreen,
   resetZoom
 })

@@ -1,7 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, toRaw, nextTick } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted, watch, toRaw, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useImageGeneration } from '../composables/useImageGeneration'
 import { useSlotManagement } from '../composables/useSlotManagement'
 import { useLocalStorage } from '../composables/useLocalStorage'
 import { useIndexedDB } from '../composables/useIndexedDB'
@@ -89,7 +88,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits(['updateCurrentImage', 'switch-tab', 'update:isGenerating'])
+const emit = defineEmits(['updateCurrentImage', 'switch-tab'])
 
 // Constants (expose to template)
 const NOTIFICATION_TYPES_CONST = NOTIFICATION_TYPES
@@ -281,39 +280,66 @@ function reorderADetailers(fromIndex, toIndex) {
 // ControlNet
 const { units: controlnetUnits, hasControlNet, enabledCount: controlnetEnabledCount } = useControlNetUnits('txt2img')
 
-const imageGeneration = useImageGeneration(
-  {
-    prompt, negativePrompt, steps, cfgScale, samplerName, scheduler,
-    width, height, batchCount, batchSize, seed, seedVariationRange,
-    enableHr, hrUpscaler, hrSteps, denoisingStrength, hrUpscale,
-    adetailers, notificationType, notificationVolume, selectedModel,
-    controlnetUnits
-  },
-  enabledADetailers,
-  props.showToast,
-  t,
-  appliedBookmarkId
-)
+// Inject generation engine from App.vue
+const generationEngine = inject('generationEngine')
+const txt2imgEngine = generationEngine?.getEngine('txt2img')
 
-const {
-  isGenerating,
-  progress,
-  progressState,
-  currentImage,
-  lastUsedParams,
-  generatedImages,
-  isInfiniteMode,
-  infiniteCount,
-  generateImage,
-  interruptGeneration,
-  skipCurrentImage,
-  stopInfiniteModeOnly,
-  toggleInfiniteMode,
-  startProgressPolling,
-  stopProgressPolling,
-  checkOngoingGeneration,
-  setOnComplete,
-} = imageGeneration
+// Engine에서 상태와 메서드 추출
+const isGenerating = txt2imgEngine?.isGenerating || ref(false)
+const progress = txt2imgEngine?.progress || ref(0)
+const progressState = txt2imgEngine?.progressState || ref('')
+const currentImage = txt2imgEngine?.currentImage || ref('')
+const lastUsedParams = txt2imgEngine?.lastUsedParams || ref(null)
+const generatedImages = txt2imgEngine?.generatedImages || ref([])
+const isInfiniteMode = txt2imgEngine?.isInfiniteMode || ref(false)
+const infiniteCount = txt2imgEngine?.infiniteCount || ref(0)
+
+// Engine 메서드 래핑 (파라미터를 현재 값으로 전달)
+function generateImage(overrides = {}) {
+  if (!txt2imgEngine) {
+    console.error('Generation engine not available')
+    return
+  }
+
+  // 현재 파라미터를 모아서 engine에 전달
+  const params = {
+    prompt: overrides.prompt !== undefined ? overrides.prompt : prompt.value,
+    negativePrompt: overrides.negativePrompt !== undefined ? overrides.negativePrompt : negativePrompt.value,
+    steps: steps.value,
+    cfgScale: cfgScale.value,
+    samplerName: samplerName.value,
+    scheduler: scheduler.value,
+    width: width.value,
+    height: height.value,
+    batchCount: batchCount.value,
+    batchSize: batchSize.value,
+    seed: seed.value,
+    seedVariationRange: seedVariationRange.value,
+    enableHr: enableHr.value,
+    hrUpscaler: hrUpscaler.value,
+    hrSteps: hrSteps.value,
+    denoisingStrength: denoisingStrength.value,
+    hrUpscale: hrUpscale.value,
+    adetailers: toRaw(adetailers.value),
+    selectedModel: selectedModel.value,
+    controlnetUnits: toRaw(controlnetUnits.value),
+    notificationType: notificationType.value,
+    notificationVolume: notificationVolume.value,
+    enabledADetailers: toRaw(enabledADetailers.value),
+    appliedBookmarkId: appliedBookmarkId.value,
+  }
+
+  txt2imgEngine.generateImage(params)
+}
+
+const interruptGeneration = () => txt2imgEngine?.interruptGeneration()
+const skipCurrentImage = () => txt2imgEngine?.skipCurrentImage()
+const stopInfiniteModeOnly = () => txt2imgEngine?.stopInfiniteModeOnly()
+const toggleInfiniteMode = () => txt2imgEngine?.toggleInfiniteMode()
+const startProgressPolling = () => txt2imgEngine?.startProgressPolling()
+const stopProgressPolling = () => txt2imgEngine?.stopProgressPolling()
+const checkOngoingGeneration = () => txt2imgEngine?.checkOngoingGeneration()
+const setOnComplete = (cb) => txt2imgEngine?.setOnComplete(cb)
 
 // Combination mode
 const combinationMode = ref(window.localStorage.getItem('sd-combination-mode') === 'true')
@@ -360,7 +386,13 @@ function handleGenerate() {
 }
 
 // Queue Processor composable (must be after useQueue, useImageGeneration, useParamsApplication)
-const queueProcessor = useQueueProcessor(queueSystem, imageGeneration, paramsApplication, props.showToast)
+// Engine에서 필요한 인터페이스를 맞춰서 전달
+const imageGenerationInterface = {
+  isGenerating,
+  generateImage,
+  interruptGeneration
+}
+const queueProcessor = useQueueProcessor(queueSystem, imageGenerationInterface, paramsApplication, props.showToast)
 const {
   queueConsecutiveErrors,
   queueSuccessCount,
@@ -591,10 +623,7 @@ watch(currentImage, (newValue) => {
   emit('updateCurrentImage', newValue)
 })
 
-// Emit isGenerating updates to parent (for tab switch blocking)
-watch(isGenerating, (newValue) => {
-  emit('update:isGenerating', newValue)
-})
+// isGenerating는 이제 generationEngine에서 관리되므로 emit 불필요
 
 // Watch selectedModel changes and update WebUI checkpoint
 const isInitialLoad = ref(true)
@@ -662,8 +691,10 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  stopProgressPolling()
-  stopQueue() // Clean up queue processor interval
+  // 생성 엔진의 polling은 App.vue 레벨에서 관리되므로 여기서는 중단하지 않음
+  // stopProgressPolling은 엔진이 관리
+  // 백그라운드 생성을 유지하기 위해 현재 생성은 중단하지 않음
+  stopQueue({ interruptCurrentGeneration: false, silent: true })
 
   // Unregister from pipeline
   pipeline.unregisterView('txt2img')

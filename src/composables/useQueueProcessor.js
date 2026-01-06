@@ -249,16 +249,21 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
 
   /**
    * 큐 중단
+   * @param {Object} options - 옵션
+   * @param {boolean} options.interruptCurrentGeneration - 현재 생성도 중단할지 여부 (기본: true)
+   * @param {boolean} options.silent - 토스트 표시 여부 (기본: false)
    */
-  function stopQueue() {
+  function stopQueue(options = {}) {
+    const { interruptCurrentGeneration = true, silent = false } = options
+
     // Stop processor first
     if (queueProcessorTimeout) {
       clearTimeout(queueProcessorTimeout)
       queueProcessorTimeout = null
     }
 
-    // 현재 생성 중이면 중단
-    if (isGenerating.value) {
+    // 현재 생성 중이면 중단 (옵션에 따라)
+    if (interruptCurrentGeneration && isGenerating.value) {
       interruptGeneration()
     }
 
@@ -272,7 +277,9 @@ export function useQueueProcessor(queueSystem, imageGeneration, paramsApplicatio
     currentIndex.value = -1
     saveQueue()
 
-    showToast?.('큐가 중단되었습니다', 'info')
+    if (!silent) {
+      showToast?.('큐가 중단되었습니다', 'info')
+    }
   }
 
   return {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, h, render } from 'vue'
+import { ref, provide, onMounted, onUnmounted, h, render } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Txt2ImgView from './views/Txt2ImgView.vue'
 import Img2ImgView from './views/Img2ImgView.vue'
@@ -8,6 +8,7 @@ import ConfirmDialog from './components/ConfirmDialog.vue'
 import { TOAST_DURATION } from './config/constants'
 import { useDarkMode } from './composables/useDarkMode'
 import { usePipeline } from './composables/usePipeline'
+import { useGenerationEngine } from './composables/useGenerationEngine'
 
 // i18n
 const { t } = useI18n()
@@ -25,15 +26,22 @@ const tabs = [
 const savedTab = localStorage.getItem('sd-active-tab')
 const activeTab = ref(tabs.some(t => t.id === savedTab) ? savedTab : 'txt2img')
 
-// 각 탭별 생성 상태 추적
+// 각 탭별 생성 상태 추적 (img2img, inpaint용 - txt2img은 engine에서 관리)
 const generatingTabs = ref({
   txt2img: false,
   img2img: false,
   inpaint: false
 })
 
+// Toast function reference (showToast가 정의된 후 engine 초기화)
+let generationEngine = null
+
 // 현재 탭이 생성 중인지 확인
 function isCurrentTabGenerating() {
+  // txt2img, img2img, inpaint은 engine에서 체크
+  if ((activeTab.value === 'txt2img' || activeTab.value === 'img2img' || activeTab.value === 'inpaint') && generationEngine) {
+    return generationEngine.isViewGenerating(activeTab.value)
+  }
   return generatingTabs.value[activeTab.value] || false
 }
 
@@ -42,8 +50,8 @@ async function setActiveTab(tabId, forceSwitch = false) {
   // 같은 탭이면 무시
   if (tabId === activeTab.value) return
 
-  // 현재 탭이 생성 중인데 강제 전환이 아니면 확인
-  if (isCurrentTabGenerating() && !forceSwitch) {
+  // txt2img, img2img, inpaint의 경우 백그라운드에서 생성이 계속되므로 경고 없이 전환
+  if (activeTab.value !== 'txt2img' && activeTab.value !== 'img2img' && activeTab.value !== 'inpaint' && isCurrentTabGenerating() && !forceSwitch) {
     const result = await showConfirm({
       title: t('tabs.switchWarningTitle'),
       message: t('tabs.switchWarningMessage'),
@@ -60,8 +68,10 @@ async function setActiveTab(tabId, forceSwitch = false) {
   localStorage.setItem('sd-active-tab', tabId)
 }
 
-// 각 탭의 생성 상태 업데이트
+// 각 탭의 생성 상태 업데이트 (현재 모든 탭이 engine에서 관리됨)
 function updateTabGenerating(tabId, isGenerating) {
+  // txt2img, img2img, inpaint은 engine에서 관리하므로 무시
+  if (tabId === 'txt2img' || tabId === 'img2img' || tabId === 'inpaint') return
   generatingTabs.value[tabId] = isGenerating
 }
 
@@ -128,6 +138,12 @@ function showToast(message, type = 'info') {
 
 // Set pipeline toast callback (after showToast is defined)
 pipeline.setShowToastCallback(showToast)
+
+// Initialize generation engine (after showToast is defined)
+generationEngine = useGenerationEngine(showToast, t)
+
+// Provide engine to child components
+provide('generationEngine', generationEngine)
 
 /**
  * Remove toast manually
@@ -238,6 +254,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress)
+  // Cleanup generation engine
+  generationEngine?.cleanup()
 })
 </script>
 
@@ -260,6 +278,7 @@ onUnmounted(() => {
     <!-- Tab Content -->
     <div class="tab-container">
       <!-- txt2img -->
+      <!-- isGenerating는 generationEngine에서 직접 관리 -->
       <Txt2ImgView
         v-if="activeTab === 'txt2img'"
         :showToast="showToast"
@@ -269,10 +288,10 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
-        @update:isGenerating="updateTabGenerating('txt2img', $event)"
       />
 
       <!-- img2img -->
+      <!-- isGenerating는 generationEngine에서 직접 관리 -->
       <Img2ImgView
         v-else-if="activeTab === 'img2img'"
         :showToast="showToast"
@@ -282,10 +301,10 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
-        @update:isGenerating="updateTabGenerating('img2img', $event)"
       />
 
       <!-- inpaint -->
+      <!-- isGenerating는 generationEngine에서 직접 관리 -->
       <InpaintView
         v-else-if="activeTab === 'inpaint'"
         :showToast="showToast"
@@ -295,7 +314,6 @@ onUnmounted(() => {
         :toggleTheme="toggleTheme"
         @updateCurrentImage="currentImage = $event"
         @switch-tab="setActiveTab"
-        @update:isGenerating="updateTabGenerating('inpaint', $event)"
       />
 
       <!-- Pipeline / Workflow -->
