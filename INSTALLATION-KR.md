@@ -41,7 +41,7 @@
 
 GitHub Releases에서 최신 버전 다운로드:
 ```
-https://github.com/yourusername/sd-quick-ui/releases
+https://github.com/rauohon/sd-quick-ui/releases
 ```
 
 **다운로드 파일**: `sd-quick-ui-v1.0.0.zip` (약 10MB)
@@ -116,7 +116,7 @@ parent-folder/
 
 ```bash
 cd parent-folder
-git clone https://github.com/yourusername/sd-quick-ui.git
+git clone https://github.com/rauohon/sd-quick-ui.git
 cd sd-quick-ui
 ```
 
@@ -312,8 +312,7 @@ npm install
 
 ### 💡 더 많은 도움말
 
-- **GitHub Issues**: https://github.com/yourusername/sd-quick-ui/issues
-- **Discord**: https://discord.gg/xxx
+- **GitHub Issues**: https://github.com/rauohon/sd-quick-ui/issues
 - **WebUI 공식 문서**: https://github.com/AUTOMATIC1111/stable-diffusion-webui
 
 ---
@@ -327,9 +326,7 @@ npm install
    - 에러 메시지
    - 실행 로그
 
-2. Discord 커뮤니티 질문
-
-3. WebUI 버전 확인
+2. WebUI 버전 확인
    ```bash
    cd stable-diffusion-webui
    git log --oneline -1
