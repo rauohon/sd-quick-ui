@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Easy Prompts Enhancement**: Major improvements to PromptSelector component
+  - Subcategory filtering UI - select a category to see subcategory tabs for further filtering
+  - Prompt CRUD operations - add, edit, and delete prompts (both default and user-added)
+  - Category management - add new custom categories, edit/delete existing ones
+  - Import/Export functionality - backup and restore user prompt data as JSON
+  - Hover overlay on prompt cards with edit/delete buttons
+  - Highlight animation for newly added/imported prompts
+  - New composable `useEasyPrompts.js` for prompt data management
+  - User data persisted in localStorage (`sd-easy-prompts-data`)
+
 ### Fixed
 - **Infinite Mode Indicator Bug**: Fixed generating-indicator not updating correctly during infinite mode
   - Issue 1: Indicator stayed visible even after prompt changes were applied

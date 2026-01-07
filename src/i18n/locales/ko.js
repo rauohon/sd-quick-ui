@@ -15,6 +15,8 @@ export default {
     reset: '초기화',
     copy: '복사',
     refresh: '새로고침',
+    import: '가져오기',
+    export: '내보내기',
 
     // States
     generating: '생성 중...',
@@ -899,6 +901,55 @@ export default {
     preparationFailed: '이미지 준비에 실패했습니다',
     // Pipeline
     imageReceived: '이미지 전달: {from} → inpaint'
+  },
+
+  // Easy Prompts
+  easyPrompts: {
+    title: 'Easy Prompts',
+    all: '전체',
+    searchPlaceholder: '프롬프트 검색...',
+    selected: '선택됨',
+    addToPromptBtn: '프롬프트에 추가',
+    addToNegativeBtn: '네거티브에 추가',
+    addedToPrompt: '프롬프트에 추가됨: {label}',
+    addedToNegative: '네거티브에 추가됨: {label}',
+
+    // 프롬프트 관리
+    addPrompt: '프롬프트 추가',
+    editPrompt: '프롬프트 수정',
+    promptAdded: '프롬프트가 추가되었습니다',
+    promptUpdated: '프롬프트가 수정되었습니다',
+    promptDeleted: '프롬프트가 삭제되었습니다',
+    confirmDeletePrompt: '이 프롬프트를 삭제하시겠습니까?',
+
+    // 카테고리 관리
+    addCategory: '카테고리 추가',
+    editCategory: '카테고리 수정',
+    categoryAdded: '카테고리가 추가되었습니다',
+    categoryUpdated: '카테고리가 수정되었습니다',
+    categoryDeleted: '카테고리가 삭제되었습니다',
+    confirmDeleteCategory: '이 카테고리를 삭제하시겠습니까? 카테고리 내 모든 프롬프트도 삭제됩니다.',
+
+    // 폼 필드
+    labelField: '라벨',
+    promptText: '프롬프트 텍스트',
+    category: '카테고리',
+    selectCategory: '카테고리 선택',
+    subcategory: '서브카테고리',
+    subcategoryPlaceholder: '예: 얼굴, 몸매, 포즈',
+    categoryName: '카테고리 이름',
+    categoryIcon: '아이콘',
+    fillRequired: '필수 항목을 입력해주세요',
+    enterNumber: '번호를 입력하세요',
+
+    // 가져오기/내보내기
+    exported: '데이터가 내보내졌습니다',
+    imported: '데이터를 가져왔습니다',
+    importError: '데이터 가져오기 실패',
+    importFormat: '형식',
+    importHint: 'Easy Prompts에서 내보낸 JSON 파일을 가져옵니다. 가장 쉬운 방법은 먼저 내보내기를 한 후 파일을 수정하는 것입니다.',
+    importTip: '팁: 먼저 현재 데이터를 내보내서 올바른 형식을 확인하세요.',
+    selectFile: '파일 선택'
   },
 
   // ControlNet

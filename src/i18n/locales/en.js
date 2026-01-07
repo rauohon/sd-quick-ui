@@ -15,6 +15,8 @@ export default {
     reset: 'Reset',
     copy: 'Copy',
     refresh: 'Refresh',
+    import: 'Import',
+    export: 'Export',
 
     // States
     generating: 'Generating...',
@@ -899,6 +901,55 @@ export default {
     preparationFailed: 'Failed to prepare image',
     // Pipeline
     imageReceived: 'Image transfer: {from} → inpaint'
+  },
+
+  // Easy Prompts
+  easyPrompts: {
+    title: 'Easy Prompts',
+    all: 'All',
+    searchPlaceholder: 'Search prompts...',
+    selected: 'Selected',
+    addToPromptBtn: 'Add to Prompt',
+    addToNegativeBtn: 'Add to Negative',
+    addedToPrompt: 'Added to Prompt: {label}',
+    addedToNegative: 'Added to Negative: {label}',
+
+    // Prompt management
+    addPrompt: 'Add Prompt',
+    editPrompt: 'Edit Prompt',
+    promptAdded: 'Prompt added',
+    promptUpdated: 'Prompt updated',
+    promptDeleted: 'Prompt deleted',
+    confirmDeletePrompt: 'Delete this prompt?',
+
+    // Category management
+    addCategory: 'Add Category',
+    editCategory: 'Edit Category',
+    categoryAdded: 'Category added',
+    categoryUpdated: 'Category updated',
+    categoryDeleted: 'Category deleted',
+    confirmDeleteCategory: 'Delete this category? All prompts in this category will also be deleted.',
+
+    // Form fields
+    labelField: 'Label',
+    promptText: 'Prompt Text',
+    category: 'Category',
+    selectCategory: 'Select category',
+    subcategory: 'Subcategory',
+    subcategoryPlaceholder: 'e.g., Face, Body, Pose',
+    categoryName: 'Category Name',
+    categoryIcon: 'Icon',
+    fillRequired: 'Please fill in required fields',
+    enterNumber: 'Enter number',
+
+    // Import/Export
+    exported: 'Data exported',
+    imported: 'Data imported',
+    importError: 'Failed to import data',
+    importFormat: 'Format',
+    importHint: 'Import a JSON file exported from Easy Prompts. The easiest way is to export first, then modify the file.',
+    importTip: 'Tip: Export your current data first to see the correct format.',
+    selectFile: 'Select File'
   },
 
   // ControlNet
