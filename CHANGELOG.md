@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Prompt Collector**: New feature in Easy Prompts for flexible prompt composition
+  - Textarea at the bottom of PromptSelector panel for collecting prompts
+  - Green `+` button on prompt card hover overlay to add prompts to collector
+  - Prompts are added with comma + newline formatting for easy editing
+  - Copy to clipboard button for pasting collected prompts anywhere
+  - Clear button to reset the collector
+  - Freely editable textarea allows reordering and customizing before copying
+
 - **Easy Prompts Enhancement**: Major improvements to PromptSelector component
   - Subcategory filtering UI - select a category to see subcategory tabs for further filtering
   - Prompt CRUD operations - add, edit, and delete prompts (both default and user-added)

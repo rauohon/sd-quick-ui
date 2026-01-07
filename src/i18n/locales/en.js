@@ -949,7 +949,18 @@ export default {
     importFormat: 'Format',
     importHint: 'Import a JSON file exported from Easy Prompts. The easiest way is to export first, then modify the file.',
     importTip: 'Tip: Export your current data first to see the correct format.',
-    selectFile: 'Select File'
+    selectFile: 'Select File',
+
+    // Prompt Collector
+    promptCollector: 'Prompt Collector',
+    addToCollector: 'Add to Collector',
+    addedToCollector: 'Added to collector: {label}',
+    copyToClipboard: 'Copy to clipboard',
+    clearCollector: 'Clear collector',
+    collectorPlaceholder: 'Click + button on prompts to collect here.\nEdit freely, then copy to clipboard.',
+    collectorEmpty: 'Collector is empty',
+    copiedToClipboard: 'Copied to clipboard',
+    copyFailed: 'Failed to copy'
   },
 
   // ControlNet

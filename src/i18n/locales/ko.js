@@ -949,7 +949,18 @@ export default {
     importFormat: '형식',
     importHint: 'Easy Prompts에서 내보낸 JSON 파일을 가져옵니다. 가장 쉬운 방법은 먼저 내보내기를 한 후 파일을 수정하는 것입니다.',
     importTip: '팁: 먼저 현재 데이터를 내보내서 올바른 형식을 확인하세요.',
-    selectFile: '파일 선택'
+    selectFile: '파일 선택',
+
+    // 프롬프트 수집기
+    promptCollector: '프롬프트 수집기',
+    addToCollector: '수집기에 추가',
+    addedToCollector: '수집기에 추가됨: {label}',
+    copyToClipboard: '클립보드에 복사',
+    clearCollector: '수집기 비우기',
+    collectorPlaceholder: '프롬프트의 + 버튼을 클릭하여 여기에 수집하세요.\n자유롭게 편집 후 클립보드에 복사하세요.',
+    collectorEmpty: '수집기가 비어있습니다',
+    copiedToClipboard: '클립보드에 복사되었습니다',
+    copyFailed: '복사 실패'
   },
 
   // ControlNet

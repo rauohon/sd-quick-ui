@@ -33,6 +33,7 @@ const searchQuery = ref('')
 const selectedCategory = ref('all')
 const selectedSubcategory = ref('all')
 const selectedPrompt = ref(null)
+const collectorText = ref('')
 
 // Dialog states
 const showPromptDialog = ref(false)
@@ -160,6 +161,39 @@ function addToNegative() {
 function close() {
   emit('close')
   selectedPrompt.value = null
+}
+
+// ===== Prompt Collector =====
+function addToCollector(prompt, event) {
+  event?.stopPropagation()
+  const text = prompt.text.trim()
+  if (!text) return
+
+  if (collectorText.value) {
+    // Add with comma and newline
+    collectorText.value = collectorText.value.trimEnd() + ',\n' + text
+  } else {
+    collectorText.value = text
+  }
+
+  props.showToast?.(t('easyPrompts.addedToCollector', { label: prompt.label }), 'success')
+}
+
+function copyCollector() {
+  if (!collectorText.value.trim()) {
+    props.showToast?.(t('easyPrompts.collectorEmpty'), 'warning')
+    return
+  }
+
+  navigator.clipboard.writeText(collectorText.value).then(() => {
+    props.showToast?.(t('easyPrompts.copiedToClipboard'), 'success')
+  }).catch(() => {
+    props.showToast?.(t('easyPrompts.copyFailed'), 'error')
+  })
+}
+
+function clearCollector() {
+  collectorText.value = ''
 }
 
 // ===== Prompt Dialog =====
@@ -447,8 +481,11 @@ function handleCategoryContextMenu(categoryKey, event) {
         }"
         @click="selectPrompt(prompt)"
       >
-        <!-- Hover overlay with edit/delete buttons -->
+        <!-- Hover overlay with action buttons -->
         <div class="prompt-overlay">
+          <button class="overlay-btn collect-btn" @click="addToCollector(prompt, $event)" :title="t('easyPrompts.addToCollector')">
+            +
+          </button>
           <button class="overlay-btn edit-btn" @click="openEditPromptDialog(prompt, $event)">
             {{ t('common.edit') }}
           </button>
@@ -472,6 +509,27 @@ function handleCategoryContextMenu(categoryKey, event) {
       <div v-if="filteredPrompts.length === 0" class="no-prompts">
         {{ t('common.noSearchResults') }}
       </div>
+    </div>
+
+    <!-- Prompt Collector -->
+    <div class="collector-section">
+      <div class="collector-header">
+        <span class="collector-title">📋 {{ t('easyPrompts.promptCollector') }}</span>
+        <div class="collector-actions">
+          <button class="collector-btn copy-btn" @click="copyCollector" :title="t('easyPrompts.copyToClipboard')">
+            📋 {{ t('common.copy') }}
+          </button>
+          <button class="collector-btn clear-btn" @click="clearCollector" :title="t('easyPrompts.clearCollector')">
+            🗑️
+          </button>
+        </div>
+      </div>
+      <textarea
+        v-model="collectorText"
+        class="collector-textarea"
+        :placeholder="t('easyPrompts.collectorPlaceholder')"
+        rows="4"
+      ></textarea>
     </div>
 
     <!-- Action Buttons -->
@@ -899,6 +957,19 @@ function handleCategoryContextMenu(categoryKey, event) {
   background: #5568d9;
 }
 
+.overlay-btn.collect-btn {
+  background: #4caf50;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  width: 20px;
+  padding: 0;
+}
+
+.overlay-btn.collect-btn:hover {
+  background: #43a047;
+}
+
 .overlay-btn.delete-btn {
   background: #ff6b6b;
   color: white;
@@ -960,6 +1031,91 @@ function handleCategoryContextMenu(categoryKey, event) {
   padding: 30px 20px;
   color: var(--color-text-tertiary);
   font-size: 13px;
+}
+
+/* Prompt Collector */
+.collector-section {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+}
+
+.collector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.collector-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.collector-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.collector-btn {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.collector-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.collector-btn.copy-btn:hover {
+  background: #e8eaf6;
+}
+
+.collector-btn.clear-btn {
+  padding: 0 6px;
+}
+
+.collector-btn.clear-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: #ffebee;
+}
+
+.collector-textarea {
+  width: 100%;
+  min-height: 80px;
+  max-height: 150px;
+  padding: 10px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.collector-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.collector-textarea::placeholder {
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
 /* Action Panel */
