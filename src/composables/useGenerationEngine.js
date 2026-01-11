@@ -372,12 +372,14 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       adetailers: adetailers ? cloneADetailers(adetailers) : [],
     }
 
-    setPendingUsedParams(usedParams)
-    lastUsedParams.value = {
+    // Store raw prompts for change detection (before dynamic syntax resolution)
+    const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
       negative_prompt: rawNegativePrompt
     }
+    setPendingUsedParams(usedParamsWithRaw)
+    lastUsedParams.value = usedParamsWithRaw
 
     try {
       setBatchInfo(validatedBatchCount)
@@ -894,12 +896,14 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.IMG2IMG
     }
 
-    setPendingUsedParams(usedParams)
-    lastUsedParams.value = {
+    // Store raw prompts for change detection (before dynamic syntax resolution)
+    const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
       negative_prompt: rawNegativePrompt
     }
+    setPendingUsedParams(usedParamsWithRaw)
+    lastUsedParams.value = usedParamsWithRaw
 
     try {
       setBatchInfo(validatedBatchCount)
@@ -1444,12 +1448,14 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.INPAINT
     }
 
-    setPendingUsedParams(usedParams)
-    lastUsedParams.value = {
+    // Store raw prompts for change detection (before dynamic syntax resolution)
+    const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
       negative_prompt: rawNegativePrompt
     }
+    setPendingUsedParams(usedParamsWithRaw)
+    lastUsedParams.value = usedParamsWithRaw
 
     try {
       setBatchInfo(validatedBatchCount)

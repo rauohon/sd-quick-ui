@@ -161,7 +161,16 @@ export function useGenerationResult({ t, showToast, saveImage, onError }) {
     // Set final image (first image as preview)
     setFinalImageReceived(true)
     currentImage.value = generatedImages.value[0].image
-    lastUsedParams.value = newImages[0].params
+
+    // Preserve raw prompts from generation start for change detection
+    // (API returns resolved prompts for dynamic syntax like {a|b})
+    const currentRawPrompt = lastUsedParams.value?.prompt
+    const currentRawNegativePrompt = lastUsedParams.value?.negative_prompt
+    lastUsedParams.value = {
+      ...newImages[0].params,
+      prompt: currentRawPrompt ?? newImages[0].params.prompt,
+      negative_prompt: currentRawNegativePrompt ?? newImages[0].params.negative_prompt
+    }
   }
 
   /**

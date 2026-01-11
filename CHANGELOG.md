@@ -33,6 +33,11 @@ All notable changes to this project will be documented in this file.
   - User data persisted in localStorage (`sd-easy-prompts-data`)
 
 ### Fixed
+- **Dynamic Prompt Change Detection**: Fixed spinner showing incorrectly when using dynamic prompt syntax
+  - Issue: Spinner appeared even without prompt changes when using `{a|b|c}` dynamic syntax
+  - Root cause: API returns resolved prompts (e.g., "a") instead of original syntax, causing false change detection
+  - Solution: Store raw prompts in `pendingUsedParams` and preserve them through generation lifecycle
+
 - **Infinite Mode Indicator Bug**: Fixed generating-indicator not updating correctly during infinite mode
   - Issue 1: Indicator stayed visible even after prompt changes were applied
   - Issue 2: Indicator appeared immediately when starting infinite mode without any changes
