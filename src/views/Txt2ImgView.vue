@@ -378,10 +378,10 @@ const combinationCount = computed(() => {
   return getCombinationCount(prompt.value)
 })
 
-// 사용된 조합 값만 추출 (원본 프롬프트와 비교)
+// 사용된 조합 값만 추출 (원본 프롬프트와 해석된 프롬프트 비교)
 const usedCombinationResult = computed(() => {
-  if (!lastUsedParams.value?.prompt) return ''
-  return extractUsedCombinations(prompt.value, lastUsedParams.value.prompt)
+  if (!lastUsedParams.value?.resolved_prompt) return ''
+  return extractUsedCombinations(prompt.value, lastUsedParams.value.resolved_prompt)
 })
 
 function saveCombinationMode(value) {

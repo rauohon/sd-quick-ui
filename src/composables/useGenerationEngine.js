@@ -372,11 +372,13 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       adetailers: adetailers ? cloneADetailers(adetailers) : [],
     }
 
-    // Store raw prompts for change detection (before dynamic syntax resolution)
+    // Store raw prompts for change detection, and resolved prompts for combination display
     const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
-      negative_prompt: rawNegativePrompt
+      negative_prompt: rawNegativePrompt,
+      resolved_prompt: actualPrompt,
+      resolved_negative_prompt: actualNegativePrompt
     }
     setPendingUsedParams(usedParamsWithRaw)
     lastUsedParams.value = usedParamsWithRaw
@@ -896,11 +898,13 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.IMG2IMG
     }
 
-    // Store raw prompts for change detection (before dynamic syntax resolution)
+    // Store raw prompts for change detection, and resolved prompts for combination display
     const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
-      negative_prompt: rawNegativePrompt
+      negative_prompt: rawNegativePrompt,
+      resolved_prompt: actualPrompt,
+      resolved_negative_prompt: actualNegativePrompt
     }
     setPendingUsedParams(usedParamsWithRaw)
     lastUsedParams.value = usedParamsWithRaw
@@ -1448,11 +1452,13 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       type: IMAGE_TYPES.INPAINT
     }
 
-    // Store raw prompts for change detection (before dynamic syntax resolution)
+    // Store raw prompts for change detection, and resolved prompts for combination display
     const usedParamsWithRaw = {
       ...usedParams,
       prompt: rawPrompt,
-      negative_prompt: rawNegativePrompt
+      negative_prompt: rawNegativePrompt,
+      resolved_prompt: actualPrompt,
+      resolved_negative_prompt: actualNegativePrompt
     }
     setPendingUsedParams(usedParamsWithRaw)
     lastUsedParams.value = usedParamsWithRaw

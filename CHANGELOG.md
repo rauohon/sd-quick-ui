@@ -37,6 +37,7 @@ All notable changes to this project will be documented in this file.
   - Issue: Spinner appeared even without prompt changes when using `{a|b|c}` dynamic syntax
   - Root cause: API returns resolved prompts (e.g., "a") instead of original syntax, causing false change detection
   - Solution: Store raw prompts in `pendingUsedParams` and preserve them through generation lifecycle
+  - Added `resolved_prompt` field to preserve both raw and resolved prompts for combination display
 
 - **Infinite Mode Indicator Bug**: Fixed generating-indicator not updating correctly during infinite mode
   - Issue 1: Indicator stayed visible even after prompt changes were applied
