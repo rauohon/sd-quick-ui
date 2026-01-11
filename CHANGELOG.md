@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **LoRA Custom Metadata**: Edit and manage custom metadata for LoRAs that lack Civitai information
+  - New metadata editing modal with fields for display name, thumbnail URL, trigger words, memo, and default weight
+  - Quick edit button (✏️) on LoRA cards for direct metadata access
+  - Image filter buttons (All/With Image/No Image) to filter LoRAs by thumbnail status
+  - Custom metadata takes priority over Civitai/WebUI data
+  - Data persisted in localStorage (`lora_custom_metadata`)
+  - New composable `useLoraCustomMetadata.js` with singleton pattern for shared state
+  - LazyImage component now emits load/error events for status tracking
+
 - **Prompt Collector**: New feature in Easy Prompts for flexible prompt composition
   - Textarea at the bottom of PromptSelector panel for collecting prompts
   - Green `+` button on prompt card hover overlay to add prompts to collector
