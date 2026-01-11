@@ -91,7 +91,28 @@ export default {
     refreshed: 'LoRA 목록이 갱신되었습니다',
     refreshFailed: 'LoRA 목록 갱신 실패',
     loadFailed: 'LoRA 목록을 불러오지 못했습니다',
-    addedToPrompt: '프롬프트에 추가됨: {name}'
+    addedToPrompt: '프롬프트에 추가됨: {name}',
+    // 메타데이터 편집
+    editMetadata: '메타데이터 편집',
+    customAlias: '표시 이름',
+    customAliasHint: '비워두면 원래 이름을 사용합니다',
+    customThumbnail: '썸네일 URL',
+    customThumbnailPlaceholder: 'https://example.com/image.jpg',
+    customThumbnailHint: '외부 이미지 URL (비워두면 기본값 사용)',
+    triggerWords: '트리거 워드',
+    triggerWordsPlaceholder: '단어1, 단어2, 단어3 (쉼표로 구분)',
+    triggerWordsHint: '비워두면 자동 감지된 단어를 사용합니다',
+    memo: '메모',
+    memoPlaceholder: '이 LoRA에 대한 메모...',
+    defaultWeight: '기본 가중치',
+    metadataSaved: 'LoRA 메타데이터가 저장되었습니다',
+    metadataDeleted: 'LoRA 메타데이터가 삭제되었습니다',
+    metadataDeleteConfirm: '이 LoRA의 사용자 정의 메타데이터를 삭제하시겠습니까?',
+    customBadge: '커스텀',
+    // 필터
+    filterAll: '전체',
+    filterWithImage: '이미지 있음',
+    filterNoImage: '이미지 없음'
   },
 
   // 북마크

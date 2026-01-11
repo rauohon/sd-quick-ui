@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { mockLoras } from '../mocks/lorasMock'
 import { logError } from '../composables/useErrorHandler'
 import { useCivitaiCache } from '../composables/useCivitaiCache'
+import { useLoraCustomMetadata } from '../composables/useLoraCustomMetadata'
 import {
   getCategory,
   getSdVersion,
@@ -12,6 +13,7 @@ import {
   getThumbnailUrl
 } from '../utils/loraUtils'
 import LazyImage from './LazyImage.vue'
+import LoraMetadataModal from './LoraMetadataModal.vue'
 
 const { t } = useI18n()
 const API_URL = 'http://127.0.0.1:7860'
@@ -20,9 +22,21 @@ const USE_MOCK_DATA = import.meta.env.VITE_MOCK_API === 'true'
 // Civitai cache composable
 const { fetchTriggerWords: fetchCivitaiTriggerWords } = useCivitaiCache()
 
+// Custom metadata composable
+const {
+  getCustomMetadata,
+  getCustomTriggerWords,
+  getCustomWeight,
+  hasCustomMetadata
+} = useLoraCustomMetadata()
+
+// Metadata modal state
+const showMetadataModal = ref(false)
+
 // Props
 const props = defineProps({
   showToast: Function,
+  showConfirm: Function,
 })
 
 // Emits
@@ -36,6 +50,8 @@ const selectedLora = ref(null)
 const loraWeight = ref(1.0)
 const hasLoaded = ref(false) // 한 번만 로드
 const selectedCategory = ref('all') // 선택된 카테고리
+const imageFilter = ref('all') // 이미지 필터: all, hasImage, noImage
+const loraImageStatus = ref({}) // LoRA별 이미지 로드 상태 추적
 
 // Computed
 const categories = computed(() => {
@@ -54,13 +70,32 @@ const filteredLoras = computed(() => {
     filtered = filtered.filter(lora => getCategory(lora) === selectedCategory.value)
   }
 
-  // Filter by search query
+  // Filter by search query (including custom alias)
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(lora =>
-      lora.name.toLowerCase().includes(query) ||
-      (lora.alias && lora.alias.toLowerCase().includes(query))
-    )
+    filtered = filtered.filter(lora => {
+      const customMeta = getCustomMetadata(lora.name)
+      const displayName = customMeta?.customAlias || lora.alias || lora.name
+      return lora.name.toLowerCase().includes(query) ||
+        displayName.toLowerCase().includes(query)
+    })
+  }
+
+  // Filter by image status
+  if (imageFilter.value === 'hasImage') {
+    filtered = filtered.filter(lora => {
+      const thumbUrl = getLoraThumbUrl(lora)
+      if (!thumbUrl) return false // No thumbnail URL at all
+      const status = loraImageStatus.value[lora.name]
+      return status !== 'error' // loaded or not yet loaded
+    })
+  } else if (imageFilter.value === 'noImage') {
+    filtered = filtered.filter(lora => {
+      const thumbUrl = getLoraThumbUrl(lora)
+      if (!thumbUrl) return true // No thumbnail URL at all
+      const status = loraImageStatus.value[lora.name]
+      return status === 'error'
+    })
   }
 
   return filtered
@@ -142,10 +177,39 @@ async function refreshLoras() {
 }
 
 /**
- * Get thumbnail URL for LoRA (wrapper to pass API_URL)
+ * Get thumbnail URL for LoRA (custom > default)
  */
 function getLoraThumbUrl(lora) {
+  const customMeta = getCustomMetadata(lora.name)
+  if (customMeta?.customThumbnailUrl) {
+    return customMeta.customThumbnailUrl
+  }
   return getThumbnailUrl(lora, API_URL)
+}
+
+/**
+ * Get display name for LoRA (custom alias > original alias > name)
+ */
+function getLoraDisplayName(lora) {
+  const customMeta = getCustomMetadata(lora.name)
+  if (customMeta?.customAlias) {
+    return customMeta.customAlias
+  }
+  return lora.alias || lora.name
+}
+
+/**
+ * Handle image load success
+ */
+function handleImageLoad(loraName) {
+  loraImageStatus.value[loraName] = 'loaded'
+}
+
+/**
+ * Handle image load error
+ */
+function handleImageError(loraName) {
+  loraImageStatus.value[loraName] = 'error'
 }
 
 /**
@@ -157,9 +221,13 @@ function addLoraWithTriggers(lora, event) {
     event.stopPropagation()
   }
 
+  // Use custom weight if available
+  const customWeight = getCustomWeight(lora.name)
+  const weight = customWeight !== null ? customWeight : loraWeight.value
+
   // Build prompt text: LoRA tag + trigger words
-  const loraTag = `<lora:${lora.name}:${loraWeight.value}>`
-  const triggers = getTriggerWords(lora)
+  const loraTag = `<lora:${lora.name}:${weight}>`
+  const triggers = getEffectiveTriggerWords(lora)
 
   let promptText = loraTag
   if (triggers.length > 0) {
@@ -179,6 +247,51 @@ function addLoraWithTriggers(lora, event) {
  */
 function selectLora(lora) {
   selectedLora.value = lora
+  // Apply custom weight if available
+  const customWeight = getCustomWeight(lora.name)
+  if (customWeight !== null) {
+    loraWeight.value = customWeight
+  }
+}
+
+/**
+ * Get effective trigger words (custom > civitai > metadata)
+ */
+function getEffectiveTriggerWords(lora) {
+  // Check custom metadata first
+  const customWords = getCustomTriggerWords(lora.name)
+  if (customWords.length > 0) {
+    return customWords
+  }
+  // Fall back to default logic
+  return getTriggerWords(lora)
+}
+
+/**
+ * Open metadata edit modal
+ */
+function openMetadataModal() {
+  if (selectedLora.value) {
+    showMetadataModal.value = true
+  }
+}
+
+/**
+ * Open metadata edit modal for specific LoRA (from card button)
+ */
+function openMetadataModalFor(lora, event) {
+  if (event) {
+    event.stopPropagation()
+  }
+  selectedLora.value = lora
+  showMetadataModal.value = true
+}
+
+/**
+ * Handle metadata saved
+ */
+function handleMetadataSaved() {
+  // Refresh trigger words display if needed
 }
 
 /**
@@ -237,6 +350,30 @@ onMounted(() => {
           </button>
         </div>
 
+        <div class="image-filters">
+          <button
+            class="image-filter-chip"
+            :class="{ active: imageFilter === 'all' }"
+            @click="imageFilter = 'all'"
+          >
+            {{ t('lora.filterAll') }}
+          </button>
+          <button
+            class="image-filter-chip"
+            :class="{ active: imageFilter === 'hasImage' }"
+            @click="imageFilter = 'hasImage'"
+          >
+            {{ t('lora.filterWithImage') }}
+          </button>
+          <button
+            class="image-filter-chip"
+            :class="{ active: imageFilter === 'noImage' }"
+            @click="imageFilter = 'noImage'"
+          >
+            {{ t('lora.filterNoImage') }}
+          </button>
+        </div>
+
         <div class="lora-count" v-if="loras.length > 0">
           {{ filteredLoras.length }} / {{ loras.length }} LoRAs
         </div>
@@ -255,10 +392,15 @@ onMounted(() => {
               v-if="getLoraThumbUrl(lora)"
               :src="getLoraThumbUrl(lora)"
               :alt="lora.name"
+              @load="handleImageLoad(lora.name)"
+              @error="handleImageError(lora.name)"
             />
             <div v-else class="no-preview-placeholder">No Preview</div>
             <div v-if="getSdVersion(lora)" class="version-badge">
               {{ getSdVersion(lora) }}
+            </div>
+            <div v-if="hasCustomMetadata(lora.name)" class="custom-badge">
+              {{ t('lora.customBadge') }}
             </div>
             <button
               class="quick-add-btn"
@@ -267,9 +409,16 @@ onMounted(() => {
             >
               ➕
             </button>
+            <button
+              class="quick-edit-btn"
+              @click="openMetadataModalFor(lora, $event)"
+              :title="t('lora.editMetadata')"
+            >
+              ✏️
+            </button>
           </div>
           <div class="lora-name" :title="lora.name">
-            {{ lora.alias || lora.name }}
+            {{ getLoraDisplayName(lora) }}
           </div>
         </div>
 
@@ -285,7 +434,7 @@ onMounted(() => {
       <div v-if="selectedLora" class="selection-panel">
         <div class="selection-info">
           <div class="selected-name">
-            <strong>Selected:</strong> {{ selectedLora.alias || selectedLora.name }}
+            <strong>Selected:</strong> {{ getLoraDisplayName(selectedLora) }}
           </div>
           <div v-if="getSdVersion(selectedLora)" class="metadata-item">
             <span class="metadata-label">Version:</span> {{ getSdVersion(selectedLora) }}
@@ -293,16 +442,23 @@ onMounted(() => {
           <div v-if="getResolution(selectedLora)" class="metadata-item">
             <span class="metadata-label">Resolution:</span> {{ getResolution(selectedLora) }}
           </div>
-          <div v-if="getTriggerWords(selectedLora).length > 0" class="metadata-item">
+          <div v-if="getEffectiveTriggerWords(selectedLora).length > 0" class="metadata-item">
             <span class="metadata-label">Triggers:</span>
             <span
               class="trigger-word"
-              v-for="word in getTriggerWords(selectedLora)"
+              v-for="word in getEffectiveTriggerWords(selectedLora)"
               :key="word"
             >
               {{ word }}
             </span>
           </div>
+          <div v-if="getCustomMetadata(selectedLora.name)?.memo" class="metadata-item memo-item">
+            <span class="metadata-label">{{ t('lora.memo') }}:</span>
+            <span class="memo-text">{{ getCustomMetadata(selectedLora.name).memo }}</span>
+          </div>
+          <button class="edit-metadata-btn" @click="openMetadataModal">
+            ✏️ {{ t('lora.editMetadata') }}
+          </button>
         </div>
         <div class="weight-control">
           <label>Weight: {{ loraWeight }}</label>
@@ -326,6 +482,15 @@ onMounted(() => {
           Add to Prompt
         </button>
       </div>
+
+      <!-- Metadata Edit Modal -->
+      <LoraMetadataModal
+        v-model="showMetadataModal"
+        :lora="selectedLora"
+        :showToast="showToast"
+        :showConfirm="showConfirm"
+        @saved="handleMetadataSaved"
+      />
   </div>
 </template>
 
@@ -471,6 +636,36 @@ onMounted(() => {
   color: var(--color-text-inverse);
 }
 
+.image-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.image-filter-chip {
+  padding: 6px 14px;
+  border: 2px solid var(--color-border-primary);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.image-filter-chip:hover {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.image-filter-chip.active {
+  border-color: #10b981;
+  background: #10b981;
+  color: white;
+}
+
 .lora-grid {
   flex: 1;
   overflow-y: auto;
@@ -528,6 +723,20 @@ onMounted(() => {
   padding: 3px 8px;
   background: rgba(102, 126, 234, 0.9);
   color: var(--color-text-inverse);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.custom-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 3px 8px;
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
@@ -623,13 +832,43 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.quick-add-btn {
+.memo-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.memo-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.edit-metadata-btn {
+  margin-top: 12px;
+  width: 100%;
+  height: 32px;
+  border: 2px solid #667eea;
+  background: transparent;
+  color: #667eea;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-metadata-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.quick-add-btn,
+.quick-edit-btn {
   position: absolute;
-  top: 6px;
-  left: 6px;
   width: 32px;
   height: 32px;
-  background: rgba(102, 126, 234, 0.9);
   border: none;
   border-radius: 50%;
   color: var(--color-text-inverse);
@@ -645,7 +884,20 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.lora-card:hover .quick-add-btn {
+.quick-add-btn {
+  top: 6px;
+  left: 6px;
+  background: rgba(102, 126, 234, 0.9);
+}
+
+.quick-edit-btn {
+  top: 6px;
+  left: 44px;
+  background: rgba(16, 185, 129, 0.9);
+}
+
+.lora-card:hover .quick-add-btn,
+.lora-card:hover .quick-edit-btn {
   opacity: 1;
 }
 
@@ -654,7 +906,13 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
-.quick-add-btn:active {
+.quick-edit-btn:hover {
+  background: rgba(16, 185, 129, 1);
+  transform: scale(1.1);
+}
+
+.quick-add-btn:active,
+.quick-edit-btn:active {
   transform: scale(0.95);
 }
 

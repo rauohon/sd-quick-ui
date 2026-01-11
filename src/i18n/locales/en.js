@@ -91,7 +91,28 @@ export default {
     refreshed: 'LoRA list refreshed',
     refreshFailed: 'Failed to refresh LoRA list',
     loadFailed: 'Failed to load LoRA list',
-    addedToPrompt: 'Added to prompt: {name}'
+    addedToPrompt: 'Added to prompt: {name}',
+    // Metadata editing
+    editMetadata: 'Edit Metadata',
+    customAlias: 'Display Name',
+    customAliasHint: 'Leave empty to use original name',
+    customThumbnail: 'Thumbnail URL',
+    customThumbnailPlaceholder: 'https://example.com/image.jpg',
+    customThumbnailHint: 'External image URL (leave empty to use default)',
+    triggerWords: 'Trigger Words',
+    triggerWordsPlaceholder: 'word1, word2, word3 (comma-separated)',
+    triggerWordsHint: 'Leave empty to use auto-detected words',
+    memo: 'Memo',
+    memoPlaceholder: 'Notes about this LoRA...',
+    defaultWeight: 'Default Weight',
+    metadataSaved: 'LoRA metadata saved',
+    metadataDeleted: 'LoRA metadata deleted',
+    metadataDeleteConfirm: 'Delete custom metadata for this LoRA?',
+    customBadge: 'Custom',
+    // Filter
+    filterAll: 'All',
+    filterWithImage: 'With Image',
+    filterNoImage: 'No Image'
   },
 
   // Bookmark

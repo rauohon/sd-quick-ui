@@ -44,6 +44,8 @@ const props = defineProps({
   }
 })
 
+const emit = defineEmits(['load', 'error'])
+
 const imgRef = ref(null)
 const isInView = ref(false)
 const isLoaded = ref(false)
@@ -54,11 +56,13 @@ let observer = null
 function onLoad() {
   isLoaded.value = true
   hasError.value = false
+  emit('load')
 }
 
 function onError() {
   hasError.value = true
   isLoaded.value = true
+  emit('error')
 }
 
 onMounted(() => {
