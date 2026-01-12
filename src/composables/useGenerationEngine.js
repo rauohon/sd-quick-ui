@@ -75,6 +75,8 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
    */
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
+    const MAX_WAIT_TIME = 10000 // 최대 10초 대기
+    const POLL_INTERVAL = 200   // 200ms 간격으로 확인
 
     try {
       wasInterrupted.value = true
@@ -88,18 +90,40 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
         isInfiniteLoopRunning = false
       }
 
+      // 먼저 progress polling 중지 (progressState 덮어쓰기 방지)
+      stopProgressPolling()
+
+      // 중단 요청
+      progressState.value = t('generation.interrupting')
       const response = await post('/sdapi/v1/interrupt')
       await response.text()
 
-      stopProgressPolling()
+      // API가 실제로 중단될 때까지 대기
+      let waitTime = 0
+      while (waitTime < MAX_WAIT_TIME) {
+        await sleep(POLL_INTERVAL)
+        waitTime += POLL_INTERVAL
+
+        try {
+          const progressResponse = await get('/sdapi/v1/progress')
+          if (progressResponse.ok) {
+            const data = await progressResponse.json()
+            const hasActiveJob = data.state?.job_count > 0 || (data.progress * 100) > 0
+
+            if (!hasActiveJob) {
+              // 실제로 중단됨
+              break
+            }
+          }
+        } catch {
+          // 에러 무시하고 계속 대기
+        }
+      }
+
+      // UI 종료
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       if (wasInfiniteMode) {
         showToast(t('infiniteMode.interrupted', { count: infiniteCount.value }), 'info')
@@ -121,12 +145,7 @@ function createViewEngine(viewType, { saveImage, showToast, t, errorHandler }) {
       stopProgressPolling()
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       showToast(t('generation.interruptComplete', { error: error.message }), 'warning')
     }
@@ -628,6 +647,8 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
+    const MAX_WAIT_TIME = 10000 // 최대 10초 대기
+    const POLL_INTERVAL = 200   // 200ms 간격으로 확인
 
     try {
       wasInterrupted.value = true
@@ -641,18 +662,40 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
         isInfiniteLoopRunning = false
       }
 
+      // 먼저 progress polling 중지 (progressState 덮어쓰기 방지)
+      stopProgressPolling()
+
+      // 중단 요청
+      progressState.value = t('generation.interrupting')
       const response = await post('/sdapi/v1/interrupt')
       await response.text()
 
-      stopProgressPolling()
+      // API가 실제로 중단될 때까지 대기
+      let waitTime = 0
+      while (waitTime < MAX_WAIT_TIME) {
+        await sleep(POLL_INTERVAL)
+        waitTime += POLL_INTERVAL
+
+        try {
+          const progressResponse = await get('/sdapi/v1/progress')
+          if (progressResponse.ok) {
+            const data = await progressResponse.json()
+            const hasActiveJob = data.state?.job_count > 0 || (data.progress * 100) > 0
+
+            if (!hasActiveJob) {
+              // 실제로 중단됨
+              break
+            }
+          }
+        } catch {
+          // 에러 무시하고 계속 대기
+        }
+      }
+
+      // UI 종료
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       if (wasInfiniteMode) {
         showToast(t('infiniteMode.interrupted', { count: infiniteCount.value }), 'info')
@@ -674,12 +717,7 @@ function createImg2ImgEngine({ saveImage, showToast, t, errorHandler }) {
       stopProgressPolling()
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       showToast(t('generation.interruptComplete', { error: error.message }), 'warning')
     }
@@ -1170,6 +1208,8 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
 
   async function interruptGeneration() {
     const wasInfiniteMode = isInfiniteMode.value
+    const MAX_WAIT_TIME = 10000 // 최대 10초 대기
+    const POLL_INTERVAL = 200   // 200ms 간격으로 확인
 
     try {
       wasInterrupted.value = true
@@ -1183,18 +1223,40 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
         isInfiniteLoopRunning = false
       }
 
+      // 먼저 progress polling 중지 (progressState 덮어쓰기 방지)
+      stopProgressPolling()
+
+      // 중단 요청
+      progressState.value = t('generation.interrupting')
       const response = await post('/sdapi/v1/interrupt')
       await response.text()
 
-      stopProgressPolling()
+      // API가 실제로 중단될 때까지 대기
+      let waitTime = 0
+      while (waitTime < MAX_WAIT_TIME) {
+        await sleep(POLL_INTERVAL)
+        waitTime += POLL_INTERVAL
+
+        try {
+          const progressResponse = await get('/sdapi/v1/progress')
+          if (progressResponse.ok) {
+            const data = await progressResponse.json()
+            const hasActiveJob = data.state?.job_count > 0 || (data.progress * 100) > 0
+
+            if (!hasActiveJob) {
+              // 실제로 중단됨
+              break
+            }
+          }
+        } catch {
+          // 에러 무시하고 계속 대기
+        }
+      }
+
+      // UI 종료
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       if (wasInfiniteMode) {
         showToast(t('infiniteMode.interrupted', { count: infiniteCount.value }), 'info')
@@ -1216,12 +1278,7 @@ function createInpaintEngine({ saveImage, showToast, t, errorHandler }) {
       stopProgressPolling()
       progress.value = 0
       progressState.value = ''
-
-      setTimeout(() => {
-        if (isGenerating.value) {
-          isGenerating.value = false
-        }
-      }, 1000)
+      isGenerating.value = false
 
       showToast(t('generation.interruptComplete', { error: error.message }), 'warning')
     }

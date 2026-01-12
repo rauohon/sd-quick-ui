@@ -33,6 +33,12 @@ All notable changes to this project will be documented in this file.
   - User data persisted in localStorage (`sd-easy-prompts-data`)
 
 ### Fixed
+- **Interrupt Button Behavior**: Improved generation interrupt to wait for actual API completion
+  - Issue: Clicking interrupt button immediately reset UI regardless of actual API state
+  - Solution: Now polls progress API after interrupt request and waits until job actually stops
+  - Shows "Interrupting..." status while waiting for API to complete the interruption
+  - Maximum wait time of 10 seconds before force cleanup
+
 - **Dynamic Prompt Change Detection**: Fixed spinner showing incorrectly when using dynamic prompt syntax
   - Issue: Spinner appeared even without prompt changes when using `{a|b|c}` dynamic syntax
   - Root cause: API returns resolved prompts (e.g., "a") instead of original syntax, causing false change detection

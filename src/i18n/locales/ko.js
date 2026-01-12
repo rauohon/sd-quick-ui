@@ -572,6 +572,7 @@ export default {
     processing: '처리 중...',
     preparing: '준비 중...',
     interrupted: '생성이 중단되었습니다',
+    interrupting: '중단 중...',
     skipCurrent: '현재 이미지를 스킵합니다',
     skipFailed: '스킵 실패',
     interruptFailed: '중단 실패',

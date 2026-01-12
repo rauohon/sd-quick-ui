@@ -572,6 +572,7 @@ export default {
     processing: 'Processing...',
     preparing: 'Preparing...',
     interrupted: 'Generation interrupted',
+    interrupting: 'Interrupting...',
     skipCurrent: 'Skipping current image',
     skipFailed: 'Skip failed',
     interruptFailed: 'Interrupt failed',
